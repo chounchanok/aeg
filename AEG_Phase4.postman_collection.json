@@ -1,0 +1,55 @@
+{
+	"info": {
+		"name": "AEG Mobile App - Phase 4",
+		"description": "API สำหรับระบบแจ้งซ่อม (Service Requests)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Service Requests",
+			"item": [
+				{
+					"name": "Get My Service Requests",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/service-requests"
+					}
+				},
+				{
+					"name": "Get Service Request Detail",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/service-requests/1"
+					}
+				},
+				{
+					"name": "Create Service Request",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Accept", "value": "application/json" } ],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "customer_product_id", "value": "1", "type": "text" },
+								{ "key": "problem_description", "value": "กล้องไม่บันทึกภาพลงฮาร์ดดิสก์", "type": "text" },
+								{ "key": "address_id", "value": "1", "type": "text", "description": "ใส่ address_id หรือ custom_address_text อย่างใดอย่างหนึ่ง" },
+								{ "key": "custom_address_text", "value": "", "type": "text", "disabled": true },
+								{ "key": "preferred_date", "value": "2026-05-15", "type": "text" },
+								{ "key": "time_slot", "value": "09:00-12:00", "type": "text" },
+								{ "key": "images[]", "type": "file", "description": "เลือกไฟล์รูปภาพที่ต้องการแนบ (เพิ่มได้หลายไฟล์โดยใช้ Key เดียวกัน)" }
+							]
+						},
+						"url": "{{base_url}}/api/service-requests"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://127.0.0.1:8000" },
+		{ "key": "auth_token", "value": "ใส่_TOKEN_ที่ได้จากตอน_LOGIN_ตรงนี้" }
+	]
+}

@@ -1,0 +1,135 @@
+{
+	"info": {
+		"name": "AEG Mobile App - Phase 2",
+		"description": "API สำหรับระบบ E-Commerce, ตะกร้าสินค้า และการสั่งซื้อ",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Products (ไม่ต้องล็อกอิน)",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/ecommerce/products"
+					}
+				},
+				{
+					"name": "Get Product Detail",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/ecommerce/products/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Cart (ต้องใช้ Token)",
+			"item": [
+				{
+					"name": "Get Cart Items",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/ecommerce/cart"
+					}
+				},
+				{
+					"name": "Add to Cart",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": 1,\n    \"quantity\": 1\n}"
+						},
+						"url": "{{base_url}}/api/ecommerce/cart/add"
+					}
+				},
+				{
+					"name": "Remove from Cart (ระบุ Cart Item ID)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "DELETE",
+						"url": "{{base_url}}/api/ecommerce/cart/remove/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Addresses (ต้องใช้ Token)",
+			"item": [
+				{
+					"name": "Get My Addresses",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/ecommerce/addresses"
+					}
+				},
+				{
+					"name": "Create Address",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"ออฟฟิศ\",\n    \"contact_name\": \"ใจดี มีตังค์\",\n    \"contact_phone\": \"0899998888\",\n    \"address_line\": \"ตึก ABC ชั้น 10\",\n    \"province\": \"กรุงเทพมหานคร\",\n    \"district\": \"ปทุมวัน\",\n    \"subdistrict\": \"ลุมพินี\",\n    \"zipcode\": \"10330\"\n}"
+						},
+						"url": "{{base_url}}/api/ecommerce/addresses"
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Checkout & Orders (ต้องใช้ Token)",
+			"item": [
+				{
+					"name": "Checkout (สร้างออเดอร์จากตะกร้า)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address_id\": 1,\n    \"payment_gateway\": \"omise\"\n}"
+						},
+						"url": "{{base_url}}/api/ecommerce/checkout"
+					}
+				},
+				{
+					"name": "Get My Order History",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/ecommerce/orders"
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Webhook (ไม่ต้องล็อกอิน)",
+			"item": [
+				{
+					"name": "Payment Gateway Webhook",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ref_no\": \"ORD-TEST-123\",\n    \"status\": \"success\",\n    \"transaction_id\": \"chrg_123456789\"\n}"
+						},
+						"url": "{{base_url}}/api/ecommerce/payment/webhook"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://127.0.0.1:8000" },
+		{ "key": "auth_token", "value": "ใส่_TOKEN_ที่ได้จากตอน_LOGIN_ตรงนี้" }
+	]
+}

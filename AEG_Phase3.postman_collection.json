@@ -1,0 +1,116 @@
+{
+	"info": {
+		"name": "AEG Mobile App - Phase 3",
+		"description": "API สำหรับระบบ Profile, Favorites และ Notifications",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Profile Management",
+			"item": [
+				{
+					"name": "Get Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/user/profile"
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Accept", "value": "application/json" } ],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "first_name", "value": "ใจดี", "type": "text" },
+								{ "key": "last_name", "value": "มีตังค์มาก", "type": "text" },
+								{ "key": "phone", "value": "0891112222", "type": "text" }
+							]
+						},
+						"url": "{{base_url}}/api/user/profile/update"
+					}
+				}
+			]
+		},
+		{
+			"name": "2. My Packages",
+			"item": [
+				{
+					"name": "Get My Packages",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/user/my-packages"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Favorites",
+			"item": [
+				{
+					"name": "Get Favorites",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/user/favorites"
+					}
+				},
+				{
+					"name": "Toggle Favorite (เพิ่ม/ลบ หัวใจ)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": 2\n}"
+						},
+						"url": "{{base_url}}/api/user/favorites/toggle"
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Notifications & Devices",
+			"item": [
+				{
+					"name": "Save Device Token",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"fcm_token_example_xxxx_yyyy\",\n    \"device_type\": \"android\"\n}"
+						},
+						"url": "{{base_url}}/api/user/device-token"
+					}
+				},
+				{
+					"name": "Get Notifications",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/user/notifications"
+					}
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"url": "{{base_url}}/api/user/notifications/2/read"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://127.0.0.1:8000" },
+		{ "key": "auth_token", "value": "ใส่_TOKEN_ที่ได้จากตอน_LOGIN_ตรงนี้" }
+	]
+}

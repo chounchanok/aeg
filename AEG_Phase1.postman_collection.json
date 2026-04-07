@@ -1,0 +1,386 @@
+{
+	"info": {
+		"name": "AEG Mobile App - Phase 1",
+		"description": "API สำหรับเฟส 1 (Main Page และ EASE CLUB Rewards)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication (สำหรับเทส)",
+			"item": [
+				{
+					"name": "Login (เพื่อเอา Token)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"customer01\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Main Page (Public - ไม่ต้องล็อกอิน)",
+			"item": [
+				{
+					"name": "Get Banners",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/main/banners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"main",
+								"banners"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Recommended Services",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/main/recommended-services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"main",
+								"recommended-services"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Main Page (Protected - ต้องใช้ Token)",
+			"item": [
+				{
+					"name": "Get Expiring Services",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/main/expiring-services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"main",
+								"expiring-services"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Recommended Privileges",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/main/recommended-privileges",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"main",
+								"recommended-privileges"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. EASE CLUB (Protected - ต้องใช้ Token)",
+			"item": [
+				{
+					"name": "Get User Info (แต้ม & Tier)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/user-info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"user-info"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Banners",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/banners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"banners"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Overview (หมวดหมู่ & แนะนำ)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/overview",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"overview"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Rewards by Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/categories/1/rewards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"categories",
+								"1",
+								"rewards"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Reward Detail",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/rewards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"rewards",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Redeem Reward",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ease-club/rewards/1/redeem",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"ease-club",
+								"rewards",
+								"1",
+								"redeem"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000"
+		},
+		{
+			"key": "auth_token",
+			"value": "ใส่_TOKEN_ที่ได้จากตอน_LOGIN_ตรงนี้"
+		}
+	]
+}
