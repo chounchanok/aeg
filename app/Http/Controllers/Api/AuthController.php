@@ -13,51 +13,53 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use App\Traits\ApiResponseTrait;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    /**
-     * Register a new user.
-     */
-    public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string|max:2550',
-            'last_name' => 'required|string|max:2550',
-            'email' => 'required|string|email|max:2550|unique:users',
-            'phone_number' => 'required|string|max:20|unique:users',
-            'company' => 'nullable|string',
-            'password' => 'required|string|min:8|confirmed',
-            'role_id' => 'nullable|integer|exists:roles,role_id',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
-        ]);
+    use ApiResponseTrait;
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+    // public function register(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'first_name' => 'required|string|max:2550',
+    //         'last_name' => 'required|string|max:2550',
+    //         'email' => 'required|string|email|max:2550|unique:users',
+    //         'phone_number' => 'required|string|max:20|unique:users',
+    //         'company' => 'nullable|string',
+    //         'password' => 'required|string|min:8|confirmed',
+    //         'role_id' => 'nullable|integer|exists:roles,role_id',
+    //         'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+    //     ]);
 
-        $data = $validator->validated();
-        $data['user_id'] = Str::uuid();
-        $data['password'] = Hash::make($request->password);
-        $data['notification'] = 'on';
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
 
-        // จัดการการอัปโหลดไฟล์
-        if ($request->hasFile('profile_image')) {
-            $path = $request->file('profile_image')->store('profile_images', 'public');
-            $data['profile_image_path'] = $path;
-        }
+    //     $data = $validator->validated();
+    //     $data['user_id'] = Str::uuid();
+    //     $data['password'] = Hash::make($request->password);
+    //     $data['notification'] = 'on';
 
-        $user = User::create($data);
+    //     // จัดการการอัปโหลดไฟล์
+    //     if ($request->hasFile('profile_image')) {
+    //         $path = $request->file('profile_image')->store('profile_images', 'public');
+    //         $data['profile_image_path'] = $path;
+    //     }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+    //     $user = User::create($data);
 
-        return response()->json([
-            'message' => 'User registered successfully',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => new UserResource($user) // ใช้ UserResource ในการตอบกลับ
-        ], 201);
-    }
+    //     $token = $user->createToken('auth_token')->plainTextToken;
+
+    //     return response()->json([
+    //         'message' => 'User registered successfully',
+    //         'access_token' => $token,
+    //         'token_type' => 'Bearer',
+    //         'user' => new UserResource($user) // ใช้ UserResource ในการตอบกลับ
+    //     ], 201);
+    // }
 
     public function roles()
     {
@@ -201,5 +203,145 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Successfully logged out']);
+    }
+    
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'username' => 'required|string|unique:users',
+            'phone' => 'required|string|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // 1. สร้าง User
+            $user_data = [
+                'username' => $request->username,
+                'email' => $request->username . '@temp.com', // ใช้ username สร้าง email ชั่วคราวถ้าไม่มี
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'role' => 'customer',
+                'is_active' => false, // รอการยืนยัน OTP
+            ];
+
+            // dd($user_data);
+            $user = User::create($user_data);
+
+            // 2. สร้าง Profile
+            DB::table('customer_profiles')->insert([
+                'user_id' => $user->id,
+                'first_name' => $request->name,
+                'phone' => $request->phone,
+                'created_at' => now(),
+            ]);
+
+            // 3. สร้าง OTP (สมมติเป็น 123456 สำหรับการเทส)
+            $otpCode = '123456'; 
+            DB::table('otp_codes')->insert([
+                'phone' => $request->phone,
+                'code' => $otpCode,
+                'expires_at' => Carbon::now()->addMinutes(5),
+                'created_at' => now(),
+            ]);
+
+            DB::commit();
+
+            // ในระบบจริงตรงนี้ต้องเรียก SMS Gateway ส่ง OTP ไปที่มือถือลูกค้า
+            return $this->successResponse(['phone' => $request->phone], 'สมัครสมาชิกสำเร็จ โปรดยืนยันรหัส OTP ที่ส่งไปยังเบอร์มือถือของท่าน');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('ไม่สามารถสมัครสมาชิกได้: ' . $e->getMessage());
+        }
+    }
+
+    // ==========================================
+    // 2. ยืนยัน OTP (Verify OTP)
+    // ==========================================
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'code' => 'required|string',
+        ]);
+
+        $otp = DB::table('otp_codes')
+            ->where('phone', $request->phone)
+            ->where('code', $request->code)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
+
+        if (!$otp) {
+            return $this->errorResponse('รหัส OTP ไม่ถูกต้องหรือหมดอายุ', 400);
+        }
+
+        $user = User::where('phone', $request->phone)->first();
+        if ($user) {
+            $user->update([
+                'is_active' => true,
+                'phone_verified_at' => now()
+            ]);
+            
+            // ลบรหัส OTP ที่ใช้แล้ว
+            DB::table('otp_codes')->where('phone', $request->phone)->delete();
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+            return $this->successResponse([
+                'access_token' => $token,
+                'token_type' => 'Bearer'
+            ], 'ยืนยันตัวตนสำเร็จ');
+        }
+
+        return $this->errorResponse('ไม่พบข้อมูลผู้ใช้งาน');
+    }
+
+    // ==========================================
+    // 3. Social Login (Line / Gmail)
+    // ==========================================
+    public function socialLogin(Request $request)
+    {
+        $request->validate([
+            'provider' => 'required|in:line,google',
+            'provider_id' => 'required|string',
+            'name' => 'required|string',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
+        ]);
+
+        $column = $request->provider === 'google' ? 'google_id' : 'line_id';
+        
+        // ค้นหา User จาก Social ID
+        $user = User::where($column, $request->provider_id)->first();
+
+        if (!$user) {
+            // ถ้าไม่พบ ให้สร้าง User ใหม่ทันที (Social Login มักถือว่ายืนยันตัวตนแล้ว)
+            DB::transaction(function () use ($request, $column, &$user) {
+                $user = User::create([
+                    'username' => $request->provider . '_' . $request->provider_id,
+                    'email' => $request->email ?? ($request->provider_id . '@' . $request->provider . '.com'),
+                    'phone' => $request->phone,
+                    'password' => Hash::make(Str::random(16)),
+                    $column => $request->provider_id,
+                    'role' => 'customer',
+                    'is_active' => true,
+                    'phone_verified_at' => now(),
+                ]);
+
+                DB::table('customer_profiles')->insert([
+                    'user_id' => $user->id,
+                    'first_name' => $request->name,
+                    'phone' => $request->phone,
+                    'created_at' => now(),
+                ]);
+            });
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+        return $this->successResponse([
+            'access_token' => $token,
+            'token_type' => 'Bearer'
+        ], 'เข้าสู่ระบบสำเร็จ');
     }
 }

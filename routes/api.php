@@ -9,6 +9,28 @@ use App\Http\Controllers\Api\EaseClubController;
 use App\Http\Controllers\Api\EcommerceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ServiceRequestController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SupportController;
+
+// --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
+Route::get('/faqs', [SupportController::class, 'getFaqs']);
+
+// --- Public Routes ---
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/social-login', [AuthController::class, 'socialLogin']);
+
+Route::post('/login', function (\Illuminate\Http\Request $request) {
+    $request->validate(['username' => 'required', 'password' => 'required']);
+    $user = User::where('username', $request->username)->first();
+    
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+    // สร้าง Token 
+    $token = $user->createToken('auth_token')->plainTextToken;
+    return response()->json(['access_token' => $token, 'token_type' => 'Bearer']);
+});
 
 // --- E-Commerce Public Routes ---
 Route::prefix('ecommerce')->group(function () {
@@ -34,18 +56,6 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     // ระบบ Checkout และ Payment
     Route::post('/checkout', [EcommerceController::class, 'checkout']);
     Route::get('/orders', [EcommerceController::class, 'getMyOrders']);
-});
-
-Route::post('/login', function (\Illuminate\Http\Request $request) {
-    $request->validate(['username' => 'required', 'password' => 'required']);
-    $user = User::where('username', $request->username)->first();
-    
-    if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json(['message' => 'Unauthorized'], 401);
-    }
-    // สร้าง Token 
-    $token = $user->createToken('auth_token')->plainTextToken;
-    return response()->json(['access_token' => $token, 'token_type' => 'Bearer']);
 });
 
 // --- Public Routes (ไม่ต้องล็อกอิน) ---
@@ -98,4 +108,14 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
     Route::get('/', [ServiceRequestController::class, 'getMyRequests']); // ดูประวัติการแจ้งซ่อม
     Route::post('/', [ServiceRequestController::class, 'createRequest']); // สร้างใบแจ้งซ่อมใหม่
     Route::get('/{id}', [ServiceRequestController::class, 'getRequestDetail']); // ดูรายละเอียดใบแจ้งซ่อม
+});
+
+// --- Support, Chat & Tracking (ต้องล็อกอิน) ---
+Route::middleware('auth:sanctum')->prefix('service-requests')->group(function () {
+    // ระบบแชทในใบแจ้งซ่อม
+    Route::get('/{id}/chats', [SupportController::class, 'getChats']);
+    Route::post('/{id}/chats', [SupportController::class, 'sendMessage']);
+    
+    // ติดตามสถานะงานซ่อม
+    Route::get('/{id}/tracking', [SupportController::class, 'getTrackingLogs']);
 });

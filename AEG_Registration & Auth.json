@@ -1,0 +1,75 @@
+{
+	"info": {
+		"name": "AEG - Registration & Auth",
+		"description": "API สำหรับระบบสมัครสมาชิกปกติ และ Social Login",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Normal Register",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Tester Name\",\n    \"username\": \"tester01\",\n    \"phone\": \"0899999999\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\"\n}"
+				},
+				"url": "{{base_url}}/api/register"
+			}
+		},
+		{
+			"name": "2. Verify OTP",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"phone\": \"0899999999\",\n    \"code\": \"123456\"\n}"
+				},
+				"url": "{{base_url}}/api/verify-otp"
+			}
+		},
+		{
+			"name": "3. Social Login (Google)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"provider\": \"google\",\n    \"provider_id\": \"G-123456789\",\n    \"name\": \"Google User Test\",\n    \"email\": \"testuser@gmail.com\"\n}"
+				},
+				"url": "{{base_url}}/api/social-login"
+			}
+		},
+		{
+			"name": "4. Social Login (Line)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"provider\": \"line\",\n    \"provider_id\": \"L-987654321\",\n    \"name\": \"Line User Test\",\n    \"phone\": \"0888888888\"\n}"
+				},
+				"url": "{{base_url}}/api/social-login"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://aeg.champagne.orangeworkshop.info"
+		}
+	]
+}

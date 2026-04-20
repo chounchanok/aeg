@@ -1,0 +1,59 @@
+{
+	"info": {
+		"name": "AEG Mobile App - Phase 5",
+		"description": "API สำหรับระบบ FAQ, Chat และ Tracking",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "FAQ",
+			"item": [
+				{
+					"name": "Get All FAQs",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/faqs"
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Request Chat & Tracking",
+			"item": [
+				{
+					"name": "Get Tracking Logs",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/service-requests/1/tracking"
+					}
+				},
+				{
+					"name": "Get Chats",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "GET",
+						"url": "{{base_url}}/api/service-requests/1/chats"
+					}
+				},
+				{
+					"name": "Send Chat Message",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{auth_token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"รับทราบครับ ขอบคุณครับ\"\n}"
+						},
+						"url": "{{base_url}}/api/service-requests/1/chats"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "https://aeg.champagne.orangeworkshop.info" },
+		{ "key": "auth_token", "value": "ใส่_TOKEN_ที่ได้จากตอน_LOGIN_ตรงนี้" }
+	]
+}

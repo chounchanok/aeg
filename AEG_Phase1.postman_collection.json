@@ -376,7 +376,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://127.0.0.1:8000"
+			"value": "https://aeg.champagne.orangeworkshop.info"
 		},
 		{
 			"key": "auth_token",

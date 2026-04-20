@@ -19,9 +19,15 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username', // เพิ่มคอลัมน์นี้
         'email',
         'password',
+        'phone', // เพิ่มคอลัมน์นี้
+        'role', // เพิ่มคอลัมน์นี้
+        'is_active', // เพิ่มคอลัมน์นี้
+        'google_id', // เพิ่มคอลัมน์นี้
+        'line_id', // เพิ่มคอลัมน์นี้
+        'phone_verified_at', // เพิ่มคอลัมน์นี้
     ];
 
     /**
@@ -43,6 +49,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
