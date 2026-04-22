@@ -12,8 +12,24 @@ class Phase5Seeder extends Seeder
     {
         // 1. สร้างข้อมูล FAQ
         DB::table('faqs')->insert([
-            ['category' => 'บริการ', 'question' => 'ต้องเตรียมตัวอย่างไรก่อนช่างเข้าติดตั้ง?', 'answer' => 'กรุณาเก็บสิ่งของมีค่า และเตรียมพื้นที่บริเวณที่จะทำการติดตั้งให้โล่งครับ', 'sort_order' => 1, 'created_at' => Carbon::now()],
-            ['category' => 'ประกัน', 'question' => 'ระยะเวลารับประกันสินค้ากี่ปี?', 'answer' => 'สินค้าของ AEG มีระยะเวลารับประกันมาตรฐาน 1 ปีนับจากวันที่ติดตั้งครับ', 'sort_order' => 2, 'created_at' => Carbon::now()],
+            [
+                'category' => 'บริการ', 
+                'question_th' => 'ต้องเตรียมตัวอย่างไรก่อนช่างเข้าติดตั้ง?', 
+                'question_en' => 'How should I prepare before the technician arrives?', 
+                'answer_th' => 'กรุณาเก็บสิ่งของมีค่า และเตรียมพื้นที่บริเวณที่จะทำการติดตั้งให้โล่งครับ', 
+                'answer_en' => 'Please secure your valuables and clear the area where the installation will take place.', 
+                'sort_order' => 1, 
+                'created_at' => Carbon::now()
+            ],
+            [
+                'category' => 'ประกัน', 
+                'question_th' => 'ระยะเวลารับประกันสินค้ากี่ปี?', 
+                'question_en' => 'How long is the warranty period?', 
+                'answer_th' => 'สินค้าของ AEG มีระยะเวลารับประกันมาตรฐาน 1 ปีนับจากวันที่ติดตั้งครับ', 
+                'answer_en' => 'AEG products come with a standard 1-year warranty starting from the installation date.', 
+                'sort_order' => 2, 
+                'created_at' => Carbon::now()
+            ],
         ]);
 
         // 2. ดึงใบแจ้งซ่อมใบแรกมาจำลองระบบ Chat และ Tracking

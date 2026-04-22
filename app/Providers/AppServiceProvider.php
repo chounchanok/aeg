@@ -3,22 +3,88 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // 1. Share ค่าพื้นฐานให้ทุกหน้า
+        View::share('layout', 'side-menu');
+        View::share('dark_mode', false);
+        View::share('color_scheme', 'default');
+
+        // 2. Share ตัวแปรเมนู ให้ทุกไฟล์มองเห็น (จบปัญหา Undefined variable)
+        $side_menu = [
+            'dashboard' => [
+                'icon' => 'home',
+                'title' => 'หน้าหลัก (Dashboard)',
+                'route_name' => 'dashboard',
+                'params' => []
+            ],
+            'devider', // เส้นคั่นเมนู
+            'service-requests' => [
+                'icon' => 'wrench',
+                'title' => 'จัดการแจ้งซ่อม',
+                'route_name' => 'admin.service-requests',
+                'params' => []
+            ],
+            'customers' => [
+                'icon' => 'users',
+                'title' => 'ลูกค้าและแพ็กเกจ',
+                'route_name' => 'admin.customers',
+                'params' => []
+            ],
+            'products' => [
+                'icon' => 'box',
+                'title' => 'สินค้าและบริการ (Master)',
+                'route_name' => 'admin.products',
+                'params' => []
+            ],
+            'devider', // เส้นคั่นเมนู
+            'cms' => [
+                'icon' => 'layout',
+                'title' => 'จัดการแอป (CMS)',
+                'sub_menu' => [
+                    'banners' => [
+                        'icon' => 'image',
+                        'title' => 'แบนเนอร์โปรโมชัน',
+                        'route_name' => 'admin.cms.banners',
+                        'params' => []
+                    ],
+                    'ease-club' => [
+                        'icon' => 'gift',
+                        'title' => 'สิทธิประโยชน์ EASE CLUB',
+                        'route_name' => 'admin.cms.ease-club',
+                        'params' => []
+                    ],
+                    'faqs' => [
+                        'icon' => 'help-circle',
+                        'title' => 'คำถามที่พบบ่อย (FAQ)',
+                        'route_name' => 'admin.cms.faqs',
+                        'params' => []
+                    ]
+                ]
+            ],
+            'settings' => [
+                'icon' => 'settings',
+                'title' => 'ตั้งค่าระบบ',
+                'sub_menu' => [
+                    'staff' => [
+                        'icon' => 'user-check',
+                        'title' => 'พนักงานและช่างซ่อม',
+                        'route_name' => 'admin.staff',
+                        'params' => []
+                    ]
+                ]
+            ]
+        ];
+        
+        View::share('side_menu', $side_menu);
     }
 }

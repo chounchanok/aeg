@@ -1,7 +1,7 @@
 @extends('../layout/' . $layout)
 
 @section('subhead')
-    <title>ปฏิทินตารางงาน - Build Smooth</title>
+    <title>ปฏิทินตารางงาน - AEG</title>
 @endsection
 
 @section('subcontent')

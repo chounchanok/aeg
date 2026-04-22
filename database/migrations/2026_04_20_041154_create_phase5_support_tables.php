@@ -11,9 +11,11 @@ return new class extends Migration
         // 1. ตารางคำถามที่พบบ่อย (FAQ)
         Schema::create('faqs', function (Blueprint $table) {
             $table->id();
-            $table->string('category')->nullable(); // หมวดหมู่เผื่อไว้จัดกลุ่ม
-            $table->string('question');
-            $table->text('answer');
+            $table->string('category')->nullable(); 
+            $table->string('question_th'); // 🌟 คำถามไทย
+            $table->string('question_en')->nullable(); // 🌟 คำถามอังกฤษ
+            $table->text('answer_th'); // 🌟 คำตอบไทย
+            $table->text('answer_en')->nullable(); // 🌟 คำตอบอังกฤษ
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

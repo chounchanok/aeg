@@ -2,33 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Asset;
-use App\Models\Project;
-use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    /**
-     * Show the application dashboard with summary data.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
     public function index()
     {
-        // ดึงข้อมูลสรุปจากฐานข้อมูล
-        $projectCount = null;
-        $assetCount = null;
-        $userCount = null;
+        $stats = [
+            'total_users' => DB::table('users')->where('role', 'customer')->count(),
+            'pending_requests' => DB::table('service_requests')->where('status', 'pending')->count()
+        ];
 
-        // ดึงโครงการล่าสุด 5 โครงการเพื่อไปแสดงผล
-        $recentProjects = null;
-
-        // ส่งข้อมูลไปยัง View
-        return view('dashboard.dashboard', [
-            'projectCount' => $projectCount,
-            'assetCount' => $assetCount,
-            'userCount' => $userCount,
-            'recentProjects' => $recentProjects,
+        return view('dashboard.index', [
+            'stats' => $stats,
+            // ส่งแค่ตัวแปรบอกว่าตอนนี้เมนูไหนกำลัง Active อยู่ (เพื่อให้เมนูมีสีสว่างขึ้น)
+            'first_level_active_index' => 'dashboard', 
+            'second_level_active_index' => '',
+            'third_level_active_index' => ''
         ]);
     }
 }

@@ -1,7 +1,7 @@
 @extends('../layout/' . $layout)
 
 @section('subhead')
-    <title>รายงานยอดพนักงานขาย - Build Smooth</title>
+    <title>รายงานยอดพนักงานขาย - AEG</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ asset('dist/css/datatables.min.css') }}">
 @endsection

@@ -167,5 +167,13 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending',
             'created_at' => Carbon::now(),
         ]);
+
+        $this->call([
+            Phase1Seeder::class, // Banners & Rewards
+            Phase2Seeder::class, // Products & Cart
+            Phase3Seeder::class, // Notifications & Device Token
+            Phase4Seeder::class, // Service Requests (ที่มีรูปภาพ)
+            Phase5Seeder::class  // FAQs & Chats
+        ]);
     }
 }

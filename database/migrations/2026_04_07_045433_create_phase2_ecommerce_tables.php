@@ -11,13 +11,15 @@ return new class extends Migration
         // 1. ตารางสินค้าและบริการ (Products / Packages)
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->string('name_th'); // 🌟 ชื่อภาษาไทย
+            $table->string('name_en')->nullable(); // 🌟 ชื่อภาษาอังกฤษ
+            $table->text('description_th')->nullable(); // 🌟 รายละเอียดภาษาไทย
+            $table->text('description_en')->nullable(); // 🌟 รายละเอียดภาษาอังกฤษ
             $table->enum('type', ['service', 'package', 'equipment'])->default('service');
             $table->decimal('price', 12, 2);
-            $table->decimal('compare_at_price', 12, 2)->nullable(); // ราคาเต็ม (สำหรับทำส่วนลด)
+            $table->decimal('compare_at_price', 12, 2)->nullable(); 
             $table->string('image_url')->nullable();
-            $table->integer('point_earn')->default(0); // แต้มที่จะได้รับเมื่อซื้อ
+            $table->integer('point_earn')->default(0); 
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

@@ -13,8 +13,10 @@ class Phase2Seeder extends Seeder
         // 1. สร้างสินค้าและบริการ (Products / Packages)
         $products = [
             [
-                'name' => 'แพ็กเกจดูแลรักษากล้องวงจรปิด (รายปี)',
-                'description' => 'บริการทำความสะอาดและตรวจเช็คสถานะการทำงานของกล้องวงจรปิด จำนวนสูงสุด 8 ตัว เข้าบริการ 2 ครั้ง/ปี',
+                'name_th' => 'แพ็กเกจดูแลรักษากล้องวงจรปิด (รายปี)',
+                'name_en' => 'CCTV Maintenance Package (Yearly)',
+                'description_th' => 'บริการทำความสะอาดและตรวจเช็คสถานะการทำงานของกล้องวงจรปิด จำนวนสูงสุด 8 ตัว เข้าบริการ 2 ครั้ง/ปี',
+                'description_en' => 'Cleaning and system health check for up to 8 CCTV cameras. Includes 2 visits per year.',
                 'type' => 'package',
                 'price' => 2990.00,
                 'compare_at_price' => 3500.00,
@@ -25,8 +27,10 @@ class Phase2Seeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'บริการติดตั้งระบบสัญญาณกันขโมย (จุดละ)',
-                'description' => 'บริการเดินสายและติดตั้งเซ็นเซอร์กันขโมยตามจุดต่างๆ ภายในบ้าน (ราคานี้ไม่รวมค่าอุปกรณ์เสริม)',
+                'name_th' => 'บริการติดตั้งระบบสัญญาณกันขโมย (จุดละ)',
+                'name_en' => 'Alarm System Installation Service (Per Point)',
+                'description_th' => 'บริการเดินสายและติดตั้งเซ็นเซอร์กันขโมยตามจุดต่างๆ ภายในบ้าน (ราคานี้ไม่รวมค่าอุปกรณ์เสริม)',
+                'description_en' => 'Cabling and installation service for security sensors (Equipment cost not included).',
                 'type' => 'service',
                 'price' => 500.00,
                 'compare_at_price' => null,
@@ -37,8 +41,10 @@ class Phase2Seeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'AEG Smart IP Camera รุ่น 360',
-                'description' => 'กล้องวงจรปิดไร้สาย ความละเอียด 2K หมุนได้ 360 องศา ดูผ่านแอปได้เรียลไทม์',
+                'name_th' => 'AEG Smart IP Camera รุ่น 360',
+                'name_en' => 'AEG Smart IP Camera 360 Edition',
+                'description_th' => 'กล้องวงจรปิดไร้สาย ความละเอียด 2K หมุนได้ 360 องศา ดูผ่านแอปได้เรียลไทม์',
+                'description_en' => 'Wireless IP Camera with 2K resolution, 360-degree rotation, and real-time app viewing.',
                 'type' => 'equipment',
                 'price' => 1290.00,
                 'compare_at_price' => 1590.00,

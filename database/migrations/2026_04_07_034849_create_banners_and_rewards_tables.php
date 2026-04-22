@@ -11,7 +11,8 @@ return new class extends Migration
         // ตารางแบนเนอร์
         Schema::create('banners', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
+            $table->string('title_th'); // 🌟 ชื่อแบนเนอร์ไทย
+            $table->string('title_en')->nullable(); // 🌟 ชื่อแบนเนอร์อังกฤษ
             $table->string('image_url');
             $table->enum('location', ['main', 'ease_club', 'service'])->default('main');
             $table->boolean('is_active')->default(true);
@@ -30,12 +31,14 @@ return new class extends Migration
         Schema::create('rewards', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('reward_categories')->onDelete('cascade');
-            $table->string('title');
-            $table->text('description')->nullable();
+            $table->string('title_th'); // 🌟 ชื่อของรางวัลไทย
+            $table->string('title_en')->nullable(); // 🌟 ชื่อของรางวัลอังกฤษ
+            $table->text('description_th')->nullable(); // 🌟 รายละเอียดไทย
+            $table->text('description_en')->nullable(); // 🌟 รายละเอียดอังกฤษ
             $table->integer('points_required');
             $table->string('image_url')->nullable();
             $table->integer('stock_quantity')->default(0);
-            $table->string('minimum_tier_required')->nullable(); // เช่น 'Advance', 'Platinum'
+            $table->string('minimum_tier_required')->nullable(); 
             $table->timestamps();
         });
 

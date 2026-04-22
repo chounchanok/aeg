@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-Template Name: Build Smooth - HTML Admin Dashboard Template
+Template Name: AEG - HTML Admin Dashboard Template
 Author: Left4code
 Website: http://www.left4code.com/
 Contact: muhammadrizki@left4code.com
@@ -15,8 +15,8 @@ License: You must have a valid license purchased only from themeforest(the above
     <link href="{{ asset('dist/images/logo.svg') }}" rel="shortcut icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Build Smooth admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
-    <meta name="keywords" content="admin template, Build Smooth Admin Template, dashboard template, flat admin template, responsive admin template, web app">
+    <meta name="description" content="AEG admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
+    <meta name="keywords" content="admin template, AEG Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
 
     @yield('head')

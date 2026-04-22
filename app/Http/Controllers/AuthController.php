@@ -2,65 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Request\LoginRequest;
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    /**
-     * Show specified view.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function loginView()
     {
+        // ส่งตัวแปร layout ไปให้ View
         return view('login.main', [
-            'layout' => 'login'
-        ]);
+            'layout' => 'base', // ใช้ base layout เพราะหน้า login ไม่ต้องการเมนู sidebar
+            'dark_mode' => false,
+            'color_scheme' => 'default'
+        ]); 
     }
 
-    /**
-     * Authenticate login user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-
-    public function email()
+    public function login(Request $request)
     {
-        return 'email'; // ✅ เปลี่ยนจาก 'email' เป็น 'username'
-    }
-
-
-    public function login(\Illuminate\Http\Request $request)
-    {
-        // ตรวจสอบค่า email และ password
+        // ฝั่ง Frontend (Axios) ส่ง key มาชื่อ 'email' เราจะรับค่านี้มาตรวจสอบ
         $request->validate([
-            'email' => ['required', 'string'],
-            'password' => ['required'],
+            'email' => 'required',
+            'password' => 'required',
+        ], [
+            'email.required' => 'กรุณากรอกชื่อผู้ใช้งานหรืออีเมล',
+            'password.required' => 'กรุณากรอกรหัสผ่าน'
         ]);
 
-        // รับค่า email และ password
-        $credentials = $request->only('email', 'password'); 
+        // ลองล็อกอินด้วย username ก่อน ถ้าไม่ได้ค่อยลองล็อกอินด้วย email
+        $loginSuccess = Auth::attempt(['username' => $request->email, 'password' => $request->password]) ||
+                        Auth::attempt(['email' => $request->email, 'password' => $request->password]);
 
-        // ลองล็อกอิน
-        if (!\Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'Wrong email or password.']);
+        if ($loginSuccess) {
+            $request->session()->regenerate();
+            // ตอบกลับเป็น JSON เพื่อให้ Axios ฝั่ง Frontend ทำงานต่อ (location.href = '/')
+            return response()->json(['message' => 'Logged in successfully.']);
         }
 
-        return redirect()->intended('/'); // ส่งไปยังหน้าหลักหลังล็อกอินสำเร็จ
+        // ถ้าล็อกอินไม่ผ่าน ส่ง Error 422 กลับไปให้ Axios แสดงผลตัวแดง
+        return response()->json([
+            'message' => 'Wrong email or password.',
+            'errors' => [
+                'email' => 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
+                'password' => 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
+            ]
+        ], 422);
     }
 
-    /**
-     * Logout user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function logout()
+    public function logout(Request $request)
     {
-        \Auth::logout();
-        return redirect('login');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/login');
     }
 }

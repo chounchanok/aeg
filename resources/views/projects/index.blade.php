@@ -1,7 +1,7 @@
 @extends('../layout/' . $layout)
 
 @section('subhead')
-    <title>รายการโครงการทั้งหมด - Build Smooth</title>
+    <title>รายการโครงการทั้งหมด - AEG</title>
     <link rel="stylesheet" type="text/css" href="{{ asset('dist/css/datatables.min.css') }}">
 @endsection
 
