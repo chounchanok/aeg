@@ -35,7 +35,8 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="font-medium whitespace-nowrap">{{ $p->name_th ?? $p->name_en }}</div>
+                                <div class="font-medium whitespace-nowrap">{{ $p->name_th }}</div>
+                                <div class="text-slate-500 text-xs mt-0.5">{{ $p->name_en }}</div>
                                 @if($p->compare_at_price > $p->price)
                                     <div class="text-slate-500 text-xs mt-0.5 line-through">ราคาเต็ม {{ number_format($p->compare_at_price, 2) }} ฿</div>
                                 @endif

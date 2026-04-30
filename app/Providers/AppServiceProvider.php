@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
             'dashboard' => [
                 'icon' => 'home',
                 'title' => 'หน้าหลัก (Dashboard)',
-                'route_name' => 'dashboard',
+                'route_name' => 'admin.dashboard',
                 'params' => []
             ],
             'devider', // เส้นคั่นเมนู
@@ -38,6 +38,12 @@ class AppServiceProvider extends ServiceProvider
                 'icon' => 'users',
                 'title' => 'ลูกค้าและแพ็กเกจ',
                 'route_name' => 'admin.customers',
+                'params' => []
+            ],
+            'orders' => [
+                'icon' => 'shopping-cart',
+                'title' => 'ประวัติคำสั่งซื้อ',
+                'route_name' => 'admin.orders',
                 'params' => []
             ],
             'products' => [

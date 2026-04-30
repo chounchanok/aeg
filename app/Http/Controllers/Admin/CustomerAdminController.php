@@ -71,7 +71,7 @@ class CustomerAdminController extends Controller
 
         DB::table('customer_products')->insert([
             'customer_id' => $id,
-            'product_name' => $masterProduct->name,
+            'product_name' => $masterProduct->name_th . ' / ' . $masterProduct->name_en,
             'serial_number' => $request->serial_number,
             'purchase_date' => $request->purchase_date,
             'warranty_expire_date' => $request->warranty_expire_date,

@@ -27,7 +27,7 @@ class MainPageController extends Controller
         $expiring = DB::table('customer_products')
             ->where('customer_id', $request->user()->id)
             ->where('status', 'active')
-            ->whereBetween('warranty_expire_date', [Carbon::now(), Carbon::now()->addDays(30)])
+            ->whereBetween('warranty_expire_date', [Carbon::now()->subDays(30), Carbon::now()])
             ->get();
 
         return $this->successResponse($expiring, 'Expiring services retrieved');
@@ -43,9 +43,9 @@ class MainPageController extends Controller
     public function getRecommendedServices()
     {
         // ดึงข้อมูล Content ข่าวสารหรือบริการจากหมวดหมู่ promotion
-        $services = DB::table('contents')
-            ->where('category', 'promotion')
-            ->where('status', 'published')
+        $services = DB::table('rewards')
+            // ->where('category', 'promotion')
+            // ->where('status', 'published')
             ->limit(4)->get();
             
         return $this->successResponse($services, 'Recommended services retrieved');

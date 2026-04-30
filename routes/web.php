@@ -8,6 +8,44 @@ use App\Http\Controllers\Admin\CustomerAdminController;
 use App\Http\Controllers\Admin\CmsAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
 use App\Http\Controllers\Admin\ProductAdminController;
+use App\Http\Controllers\Admin\OrderAdminController;
+use App\Http\Controllers\Admin\DashboardAdminController;
+use Illuminate\Support\Facades\Artisan;
+
+
+Route::view('/', 'frontend.index')->name('home');
+
+// Main Pages
+Route::view('/cart', 'frontend.cart')->name('cart');
+Route::view('/faq', 'frontend.faq')->name('faq');
+Route::view('/insurance', 'frontend.insurance')->name('insurance');
+Route::view('/lockers', 'frontend.locker-service')->name('lockers');
+Route::view('/my-account', 'frontend.my-account')->name('my-account');
+Route::view('/packages', 'frontend.packages')->name('packages');
+Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
+Route::view('/product-categories', 'frontend.product-catagry')->name('product-categories'); // Retained view typo
+Route::view('/rewards', 'frontend.reward')->name('rewards');
+Route::view('/services', 'frontend.services')->name('services');
+Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
+
+// Repair related pages
+Route::view('/repairs/history', 'frontend.repair-history')->name('repair-history');
+Route::view('/repairs/request', 'frontend.repair-request')->name('repair-request');
+Route::view('/repairs/status', 'frontend.repair-status')->name('repair-status');
+
+// Other specialized pages
+Route::view('/insurance/contact', 'frontend.insurance-contact')->name('insurance-contact');
+Route::view('/packages/feedback', 'frontend.package-feedback')->name('package-feedback');
+Route::view('/service-packages', 'frontend.service-package')->name('service-packages');
+
+// Specific Detail Pages (using filenames as a base for clarity)
+Route::view('/insurance/detail', 'frontend.detail-Insurance')->name('insurance-detail');
+Route::view('/history-detail', 'frontend.history-detail')->name('history-detail');
+Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
+Route::view('/package-detail-s', 'frontend.package-detail-s')->name('package-detail-simple');
+Route::view('/package-detail', 'frontend.package-detail')->name('package-detail');
+Route::view('/product-detail', 'frontend.product-detail')->name('product-detail');
+Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
 
 // --- หน้า Login (ยังไม่ได้ล็อกอิน) ---
 Route::middleware('guest')->group(function() {
@@ -19,7 +57,8 @@ Route::middleware('guest')->group(function() {
 Route::middleware('auth')->group(function() {
     
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/home', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
     // 1. เมนูจัดการแจ้งซ่อม
     Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
@@ -52,11 +91,17 @@ Route::middleware('auth')->group(function() {
     Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
     Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store'); // 🌟 เพิ่มบรรทัดนี้
 
+    // จัดการคำสั่งซื้อ (Orders)
+    Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
+    Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
+    Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+
     // 3. เมนู CMS (จัดการแอป)
     Route::prefix('admin/cms')->name('admin.cms.')->group(function() {
         // --- ระบบแบนเนอร์ ---
         Route::get('/banners', [CmsAdminController::class, 'banners'])->name('banners');
         Route::post('/banners', [CmsAdminController::class, 'storeBanner'])->name('banners.store');
+        Route::post('/banners/{id}/update', [CmsAdminController::class, 'updateBanner'])->name('banners.update');
         Route::post('/banners/{id}/delete', [CmsAdminController::class, 'deleteBanner'])->name('banners.delete');
 
         // --- ระบบ FAQ ---
@@ -65,10 +110,19 @@ Route::middleware('auth')->group(function() {
         Route::post('/faqs/{id}/delete', [CmsAdminController::class, 'deleteFaq'])->name('faqs.delete');
         
         // --- ระบบสิทธิประโยชน์ (เตรียมไว้สเตปถัดไป) ---
+        // --- ระบบสิทธิประโยชน์ EASE CLUB ---
         Route::get('/ease-club', [CmsAdminController::class, 'easeClub'])->name('ease-club');
+        Route::post('/ease-club/rewards', [CmsAdminController::class, 'storeReward'])->name('ease-club.rewards.store');
+        Route::post('/ease-club/rewards/{id}/update', [CmsAdminController::class, 'updateReward'])->name('ease-club.rewards.update');
+        Route::post('/ease-club/rewards/{id}/delete', [CmsAdminController::class, 'deleteReward'])->name('ease-club.rewards.delete');
     });
 
 });
 
 Route::get('dark-mode-switcher', [DarkModeController::class, 'switch'])->name('dark-mode-switcher');
 Route::get('color-scheme-switcher/{color_scheme}', [ColorSchemeController::class, 'switch'])->name('color-scheme-switcher');
+
+Route::get('/run-link', function () {
+    Artisan::call('storage:link');
+    return "Storage link has been created.";
+});

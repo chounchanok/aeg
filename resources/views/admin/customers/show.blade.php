@@ -76,7 +76,7 @@
                         <select name="master_product_id" class="form-select" required>
                             <option value="">-- กรุณาเลือก --</option>
                             @foreach($masterProducts as $mp)
-                                <option value="{{ $mp->id }}">{{ $mp->name }}</option>
+                                <option value="{{ $mp->id }}">{{ $mp->name_th }} / {{ $mp->name_en }}</option>
                             @endforeach
                         </select>
                     </div>
