@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\StaffAdminController;
 use App\Http\Controllers\Admin\ProductAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\ServiceCategoryAdminController;
 use Illuminate\Support\Facades\Artisan;
 
 
@@ -95,6 +96,11 @@ Route::middleware('auth')->group(function() {
     Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
     Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
     Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+
+    Route::get('/admin/service-categories', [ServiceCategoryAdminController::class, 'index'])->name('admin.service-categories');
+    Route::post('/admin/service-categories', [ServiceCategoryAdminController::class, 'store'])->name('admin.service-categories.store');
+    Route::post('/admin/service-categories/{id}/update', [ServiceCategoryAdminController::class, 'update'])->name('admin.service-categories.update');
+    Route::post('/admin/service-categories/{id}/delete', [ServiceCategoryAdminController::class, 'destroy'])->name('admin.service-categories.delete');
 
     // 3. เมนู CMS (จัดการแอป)
     Route::prefix('admin/cms')->name('admin.cms.')->group(function() {

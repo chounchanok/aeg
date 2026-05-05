@@ -52,6 +52,12 @@ class AppServiceProvider extends ServiceProvider
                 'route_name' => 'admin.products',
                 'params' => []
             ],
+            'service-categories' => [
+                'icon' => 'grid', // ใช้ไอคอนตารางสี่เหลี่ยม
+                'title' => 'หมวดหมู่บริการ',
+                'route_name' => 'admin.service-categories',
+                'params' => []
+            ],
             'devider', // เส้นคั่นเมนู
             'cms' => [
                 'icon' => 'layout',

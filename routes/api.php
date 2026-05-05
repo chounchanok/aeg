@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\ServiceCategoryApiController;
 
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
@@ -19,6 +20,7 @@ Route::get('/faqs', [SupportController::class, 'getFaqs']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/social-login', [AuthController::class, 'socialLogin']);
+Route::get('/service-categories', [ServiceCategoryApiController::class, 'index']);
 
 Route::post('/login', function (\Illuminate\Http\Request $request) {
     $request->validate(['username' => 'required', 'password' => 'required']);
