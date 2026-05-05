@@ -38,7 +38,7 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         $imageUrl = '';
@@ -67,7 +67,7 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' // ไม่บังคับอัปโหลดรูปใหม่
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // ไม่บังคับอัปโหลดรูปใหม่
         ]);
 
         $banner = DB::table('banners')->where('id', $id)->first();
@@ -173,7 +173,7 @@ class CmsAdminController extends Controller
             'category_id' => 'required',
             'title_th' => 'required|string',
             'points_required' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
         $imageUrl = null;
@@ -204,7 +204,7 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'points_required' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
         $reward = DB::table('rewards')->where('id', $id)->first();

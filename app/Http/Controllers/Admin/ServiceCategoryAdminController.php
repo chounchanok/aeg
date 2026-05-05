@@ -28,7 +28,7 @@ class ServiceCategoryAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048'
         ]);
 
         $imageUrl = null;
@@ -54,7 +54,7 @@ class ServiceCategoryAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048'
         ]);
 
         $category = DB::table('service_categories')->where('id', $id)->first();
