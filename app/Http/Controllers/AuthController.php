@@ -14,45 +14,42 @@ class AuthController extends Controller
             'layout' => 'base', // ใช้ base layout เพราะหน้า login ไม่ต้องการเมนู sidebar
             'dark_mode' => false,
             'color_scheme' => 'default'
-        ]); 
+        ]);
     }
 
     public function login(Request $request)
     {
-        // ฝั่ง Frontend (Axios) ส่ง key มาชื่อ 'email' เราจะรับค่านี้มาตรวจสอบ
-        $request->validate([
-            'email' => 'required',
-            'password' => 'required',
-        ], [
-            'email.required' => 'กรุณากรอกชื่อผู้ใช้งานหรืออีเมล',
-            'password.required' => 'กรุณากรอกรหัสผ่าน'
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ]);
 
-        // ลองล็อกอินด้วย username ก่อน ถ้าไม่ได้ค่อยลองล็อกอินด้วย email
-        $loginSuccess = Auth::attempt(['username' => $request->email, 'password' => $request->password]) ||
-                        Auth::attempt(['email' => $request->email, 'password' => $request->password]);
-
-        if ($loginSuccess) {
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            // ตอบกลับเป็น JSON เพื่อให้ Axios ฝั่ง Frontend ทำงานต่อ (location.href = '/')
-            return response()->json(['message' => 'Logged in successfully.']);
+
+            // ตรวจสอบ Role ของผู้ใช้งานเพื่อแยกการ Redirect
+            if (Auth::user()->role === 'customer') {
+                return redirect()->intended('/'); // ลูกค้าไปหน้า Frontend
+            }
+
+            // ถ้าไม่ใช่ customer (เป็น admin/staff) ไปหน้า Backend
+            return redirect()->intended('/admin/dashboard');
         }
 
-        // ถ้าล็อกอินไม่ผ่าน ส่ง Error 422 กลับไปให้ Axios แสดงผลตัวแดง
-        return response()->json([
-            'message' => 'Wrong email or password.',
-            'errors' => [
-                'email' => 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
-                'password' => 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
-            ]
-        ], 422);
+        return back()->withErrors([
+            'email' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+        ])->onlyInput('email');
     }
 
     public function logout(Request $request)
     {
+        $role = Auth::user()->role ?? 'customer'; // เก็บ role ไว้ก่อน logout
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Redirect กลับไปหน้า Login
         return redirect('/login');
     }
 }

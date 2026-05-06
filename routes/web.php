@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Frontend\HomeController; // เรียกใช้ Frontend Controller
 use App\Http\Controllers\Admin\ServiceRequestAdminController;
 use App\Http\Controllers\Admin\CustomerAdminController;
 use App\Http\Controllers\Admin\CmsAdminController;
@@ -11,10 +13,9 @@ use App\Http\Controllers\Admin\ProductAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
-use Illuminate\Support\Facades\Artisan;
 
-
-Route::view('/', 'frontend.index')->name('home');
+// --- Frontend Routes ---
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Main Pages
 Route::view('/cart', 'frontend.cart')->name('cart');
@@ -22,9 +23,9 @@ Route::view('/faq', 'frontend.faq')->name('faq');
 Route::view('/insurance', 'frontend.insurance')->name('insurance');
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/my-account', 'frontend.my-account')->name('my-account');
-Route::view('/packages', 'frontend.packages')->name('packages');
+Route::view('/packages/{type}', 'frontend.packages')->name('packages');
 Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
-Route::view('/product-categories', 'frontend.product-catagry')->name('product-categories'); // Retained view typo
+Route::view('/product-categories', 'frontend.product-catagry')->name('product-categories');
 Route::view('/rewards', 'frontend.reward')->name('rewards');
 Route::view('/services', 'frontend.services')->name('services');
 Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
@@ -39,8 +40,8 @@ Route::view('/insurance/contact', 'frontend.insurance-contact')->name('insurance
 Route::view('/packages/feedback', 'frontend.package-feedback')->name('package-feedback');
 Route::view('/service-packages', 'frontend.service-package')->name('service-packages');
 
-// Specific Detail Pages (using filenames as a base for clarity)
-Route::view('/insurance/detail', 'frontend.detail-Insurance')->name('insurance-detail');
+// Specific Detail Pages
+Route::view('/insurance/detail', 'frontend.insurance-detail')->name('insurance-detail');
 Route::view('/history-detail', 'frontend.history-detail')->name('history-detail');
 Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
 Route::view('/package-detail-s', 'frontend.package-detail-s')->name('package-detail-simple');
@@ -48,81 +49,84 @@ Route::view('/package-detail', 'frontend.package-detail')->name('package-detail'
 Route::view('/product-detail', 'frontend.product-detail')->name('product-detail');
 Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
 
+Route::get('language-switch/{lang}', [DashboardController::class, 'switchLanguage'])->name('language.switch');
+
 // --- หน้า Login (ยังไม่ได้ล็อกอิน) ---
 Route::middleware('guest')->group(function() {
     Route::get('login', [AuthController::class, 'loginView'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.check');
 });
 
-// --- หน้า Admin Dashboard (ล็อกอินแล้ว) ---
+// --- Routes ที่ต้องล็อกอินก่อนถึงจะเข้าได้ (ทั้ง Customer และ Admin) ---
 Route::middleware('auth')->group(function() {
-    
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/home', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
-    Route::get('/admin/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
-    // 1. เมนูจัดการแจ้งซ่อม
-    Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
-    Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
-    // 🌟 ระบบอัปเดตสถานะ และ ส่งแชทของ Admin
-    Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');
-    Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
-    
-    // 2. เมนูจัดการลูกค้า
-    // จัดการลูกค้าและแพ็กเกจ (Customers & Customer Products)
-    Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
-    Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
-    Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
+    // ใช้ POST หรือ GET ก็ได้ตามที่ออกแบบไว้
+    Route::get('logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout.post');
 
-    // สินค้าหลัก
-    Route::get('/admin/products', [ProductAdminController::class, 'index'])->name('admin.products');
-    Route::resource('admin/products', ProductAdminController::class)->names([
-        'index'   => 'admin.products',
-        'create'  => 'admin.products.create',
-        'store'   => 'admin.products.store',
-        'edit'    => 'admin.products.edit',
-        'update'  => 'admin.products.update',
-        'destroy' => 'admin.products.destroy',
-    ]);
-    
-    // พนักงาน/ช่างซ่อม
-    Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
-    
-    // พนักงาน/ช่างซ่อม
-    Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
-    Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store'); // 🌟 เพิ่มบรรทัดนี้
+    // --- หน้า Admin Dashboard (ล็อกอินแล้ว + ต้องไม่ใช่ Customer) ---
+    // หมายเหตุ: ตรง 'admin' คือชื่อ Alias ของ Middleware CheckAdminRole ที่เราสร้างขึ้น
+    Route::middleware('admin')->group(function() {
 
-    // จัดการคำสั่งซื้อ (Orders)
-    Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
-    Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
-    Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+        Route::get('/home', [DashboardAdminController::class, 'index'])->name('admin.home');
+        Route::get('/admin/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
-    Route::get('/admin/service-categories', [ServiceCategoryAdminController::class, 'index'])->name('admin.service-categories');
-    Route::post('/admin/service-categories', [ServiceCategoryAdminController::class, 'store'])->name('admin.service-categories.store');
-    Route::post('/admin/service-categories/{id}/update', [ServiceCategoryAdminController::class, 'update'])->name('admin.service-categories.update');
-    Route::post('/admin/service-categories/{id}/delete', [ServiceCategoryAdminController::class, 'destroy'])->name('admin.service-categories.delete');
+        // 1. เมนูจัดการแจ้งซ่อม
+        Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
+        Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
+        Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');
+        Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
 
-    // 3. เมนู CMS (จัดการแอป)
-    Route::prefix('admin/cms')->name('admin.cms.')->group(function() {
-        // --- ระบบแบนเนอร์ ---
-        Route::get('/banners', [CmsAdminController::class, 'banners'])->name('banners');
-        Route::post('/banners', [CmsAdminController::class, 'storeBanner'])->name('banners.store');
-        Route::post('/banners/{id}/update', [CmsAdminController::class, 'updateBanner'])->name('banners.update');
-        Route::post('/banners/{id}/delete', [CmsAdminController::class, 'deleteBanner'])->name('banners.delete');
+        // 2. เมนูจัดการลูกค้า
+        Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
+        Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
+        Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
 
-        // --- ระบบ FAQ ---
-        Route::get('/faqs', [CmsAdminController::class, 'faqs'])->name('faqs');
-        Route::post('/faqs', [CmsAdminController::class, 'storeFaq'])->name('faqs.store');
-        Route::post('/faqs/{id}/delete', [CmsAdminController::class, 'deleteFaq'])->name('faqs.delete');
-        
-        // --- ระบบสิทธิประโยชน์ (เตรียมไว้สเตปถัดไป) ---
-        // --- ระบบสิทธิประโยชน์ EASE CLUB ---
-        Route::get('/ease-club', [CmsAdminController::class, 'easeClub'])->name('ease-club');
-        Route::post('/ease-club/rewards', [CmsAdminController::class, 'storeReward'])->name('ease-club.rewards.store');
-        Route::post('/ease-club/rewards/{id}/update', [CmsAdminController::class, 'updateReward'])->name('ease-club.rewards.update');
-        Route::post('/ease-club/rewards/{id}/delete', [CmsAdminController::class, 'deleteReward'])->name('ease-club.rewards.delete');
+        // สินค้าหลัก
+        Route::get('/admin/products', [ProductAdminController::class, 'index'])->name('admin.products');
+        Route::resource('admin/products', ProductAdminController::class)->names([
+            'index'   => 'admin.products',
+            'create'  => 'admin.products.create',
+            'store'   => 'admin.products.store',
+            'edit'    => 'admin.products.edit',
+            'update'  => 'admin.products.update',
+            'destroy' => 'admin.products.destroy',
+        ]);
+
+        // พนักงาน/ช่างซ่อม
+        Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
+        Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store');
+
+        // จัดการคำสั่งซื้อ (Orders)
+        Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
+        Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
+        Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+
+        Route::get('/admin/service-categories', [ServiceCategoryAdminController::class, 'index'])->name('admin.service-categories');
+        Route::post('/admin/service-categories', [ServiceCategoryAdminController::class, 'store'])->name('admin.service-categories.store');
+        Route::post('/admin/service-categories/{id}/update', [ServiceCategoryAdminController::class, 'update'])->name('admin.service-categories.update');
+        Route::post('/admin/service-categories/{id}/delete', [ServiceCategoryAdminController::class, 'destroy'])->name('admin.service-categories.delete');
+
+        // 3. เมนู CMS (จัดการแอป)
+        Route::prefix('admin/cms')->name('admin.cms.')->group(function() {
+            // --- ระบบแบนเนอร์ ---
+            Route::get('/banners', [CmsAdminController::class, 'banners'])->name('banners');
+            Route::post('/banners', [CmsAdminController::class, 'storeBanner'])->name('banners.store');
+            Route::post('/banners/{id}/update', [CmsAdminController::class, 'updateBanner'])->name('banners.update');
+            Route::post('/banners/{id}/delete', [CmsAdminController::class, 'deleteBanner'])->name('banners.delete');
+
+            // --- ระบบ FAQ ---
+            Route::get('/faqs', [CmsAdminController::class, 'faqs'])->name('faqs');
+            Route::post('/faqs', [CmsAdminController::class, 'storeFaq'])->name('faqs.store');
+            Route::post('/faqs/{id}/delete', [CmsAdminController::class, 'deleteFaq'])->name('faqs.delete');
+
+            // --- ระบบสิทธิประโยชน์ EASE CLUB ---
+            Route::get('/ease-club', [CmsAdminController::class, 'easeClub'])->name('ease-club');
+            Route::post('/ease-club/rewards', [CmsAdminController::class, 'storeReward'])->name('ease-club.rewards.store');
+            Route::post('/ease-club/rewards/{id}/update', [CmsAdminController::class, 'updateReward'])->name('ease-club.rewards.update');
+            Route::post('/ease-club/rewards/{id}/delete', [CmsAdminController::class, 'deleteReward'])->name('ease-club.rewards.delete');
+        });
     });
-
 });
 
 Route::get('dark-mode-switcher', [DarkModeController::class, 'switch'])->name('dark-mode-switcher');

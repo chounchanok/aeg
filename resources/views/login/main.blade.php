@@ -26,7 +26,7 @@
                         <form id="login-form">
                             <input id="email" type="text" class="intro-x login__input form-control py-3 px-4 block" placeholder="Email หรือ Username" value="admin@gmail.com">
                             <div id="error-email" class="login__input-error text-danger mt-2"></div>
-                            
+
                             <input id="password" type="password" class="intro-x login__input form-control py-3 px-4 block mt-4" placeholder="Password" value="password">
                             <div id="error-password" class="login__input-error text-danger mt-2"></div>
                         </form>
@@ -63,15 +63,15 @@
                     password: password
                 }).then(res => {
                     // ล็อกอินสำเร็จ พากลับไปหน้า Dashboard
-                    location.href = '/';
+                    location.href = '{{ route("home") }}';
                 }).catch(err => {
                     // คืนค่าปุ่มกลับมา
                     $('#btn-login').html('Login').prop('disabled', false);
-                    
+
                     if (err.response && err.response.data.errors) {
                         for (const [key, val] of Object.entries(err.response.data.errors)) {
                             $(`#${key}`).addClass('border-danger');
-                            $(`#error-${key}`).html(val); 
+                            $(`#error-${key}`).html(val);
                         }
                     } else if (err.response && err.response.data.message) {
                         $(`#password`).addClass('border-danger');

@@ -17,9 +17,18 @@ class DashboardController extends Controller
         return view('dashboard.index', [
             'stats' => $stats,
             // ส่งแค่ตัวแปรบอกว่าตอนนี้เมนูไหนกำลัง Active อยู่ (เพื่อให้เมนูมีสีสว่างขึ้น)
-            'first_level_active_index' => 'dashboard', 
+            'first_level_active_index' => 'dashboard',
             'second_level_active_index' => '',
             'third_level_active_index' => ''
         ]);
+    }
+
+    public function switchLanguage($lang)
+    {
+        // ตรวจสอบว่าภาษาที่ส่งมานั้นรองรับหรือไม่
+        if (in_array($lang, ['en', 'th'])) {
+            session(['app_locale' => $lang]);
+        }
+        return redirect()->back();
     }
 }

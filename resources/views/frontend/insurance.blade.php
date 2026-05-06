@@ -346,7 +346,7 @@
                 </div>
                 <div class="insurance-content">
                     <h2 class="insurance-title">ประกันภัยอัญมณี และทรัพย์สินมูลค่าสูง</h2>
-                    <a href="detail-Insurance" class="btn-details">ดูรายละเอียด</a>
+                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
                 </div>
             </div>
 
@@ -358,7 +358,7 @@
                 </div>
                 <div class="insurance-content">
                     <h2 class="insurance-title">ประกันวินาศภัยสิ่งปลูกสร้าง</h2>
-                    <a href="detail-Insurance" class="btn-details">ดูรายละเอียด</a>
+                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
                 </div>
             </div>
 
@@ -370,7 +370,7 @@
                 </div>
                 <div class="insurance-content">
                     <h2 class="insurance-title">ประกันวินาศภัยการขนส่งสินค้ามูลค่าสูง</h2>
-                    <a href="detail-Insurance" class="btn-details">ดูรายละเอียด</a>
+                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
                 </div>
             </div>
 

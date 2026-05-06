@@ -329,7 +329,7 @@
                 </div>
                 <div class="locker-content">
                     <h2 class="locker-title">AEG Smart Locker</h2>
-                    <a href="locker-detail" class="btn-view-details">ดูรายละเอียด</a>
+                    <a href="{{ route('locker-detail') }}" class="btn-view-details">ดูรายละเอียด</a>
                 </div>
             </div>
 
@@ -342,7 +342,7 @@
                 </div>
                 <div class="locker-content">
                     <h2 class="locker-title">บริการตู้เซฟนิรภัย</h2>
-                    <a href="safe-detail" class="btn-view-details">ดูรายละเอียด</a>
+                    <a href="{{ route('safe-detail') }}" class="btn-view-details">ดูรายละเอียด</a>
                 </div>
             </div>
 

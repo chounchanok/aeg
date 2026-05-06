@@ -9,9 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -87,7 +85,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             margin-top: 10px !important;
             z-index: 99 !important;
-            /* z-index 99 */
         }
 
         .header-dropdown .dropdown-item {
@@ -159,7 +156,6 @@
             font-size: 0.9rem;
         }
 
-        /* Hamburger Menu Icon: White SVG */
         .navbar-toggler {
             border: 1px solid rgba(255, 255, 255, 0.7) !important;
             padding: 4px 8px;
@@ -245,7 +241,8 @@
         .age-icon {
             width: 60px;
             height: 60px;
-            object-fit: contain;
+            object-fit: cover;
+            border-radius: 8px;
             margin-right: 15px;
         }
 
@@ -318,7 +315,6 @@
             padding: 0 20px;
         }
 
-        /* 2px divider for Footer */
         .footer-divider {
             border-right: 2px solid rgba(255, 255, 255, 0.3) !important;
         }
@@ -382,40 +378,55 @@
             <!-- Top Row -->
             <div class="navbar-top-row w-100">
                 <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
+                    <a href="{{ route('repair-status') }}" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
                     <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
 
                     <!-- My Account Dropdown -->
                     <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="fas fa-user"></i><span>ข้อมูลของฉัน</span>
+                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user"></i>
+                            <span>
+                                @if(Auth::user())
+                                    {{ Auth::user()->name }}
+                                @else
+                                    ข้อมูลของฉัน
+                                @endif
+                            </span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-id-card-alt me-2"></i>
-                                    ข้อมูลของฉัน</a></li>
-                            <li>
-                                <hr class="dropdown-divider border-secondary">
-                            </li>
-                            <li><a class="dropdown-item text-warning" href="#"><i class="fas fa-sign-out-alt me-2"></i>
-                                    ออกจากระบบ</a></li>
+                            @if(Auth::user())
+                                <li><a class="dropdown-item" href="{{ route('my-account') }}"><i class="fas fa-id-card-alt me-2"></i>ข้อมูลของฉัน</a></li>
+                                <li><a class="dropdown-item" href="{{ route('repair-history') }}"><i class="fas fa-tools me-2"></i>ประวัติการแจ้งซ่อม</a></li>
+                                <li>
+                                    <hr class="dropdown-divider border-secondary">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-warning" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <i class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ
+                                    </a>
+                                    <!-- ฟอร์มสำหรับ Logout (เนื่องจากระบบ Laravel การ Logout นิยมใช้ POST method) -->
+                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                        @csrf
+                                    </form>
+                                </li>
+                            @else
+                                <li><a class="dropdown-item" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ</a></li>
+                                <li><a class="dropdown-item" href="{{ route('register') }}"><i class="fas fa-user-plus me-2"></i>ลงทะเบียน</a></li>
+                            @endif
                         </ul>
                     </div>
 
                     <span style="color: rgba(255,255,255,0.5);">|</span>
 
-                    <!-- Language Dropdown -->
+                    <!-- Language Dropdown (ตัวอย่างแบบคงไว้ตามเดิม) -->
                     <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <img src="https://flagcdn.com/w20/th.png" alt="TH" width="20">
                             <span>TH</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/th.png" width="18"> Thai (TH)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/gb.png" width="18"> English (EN)</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img src="https://flagcdn.com/w20/th.png" width="18"> Thai (TH)</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img src="https://flagcdn.com/w20/gb.png" width="18"> English (EN)</a></li>
                         </ul>
                     </div>
                 </div>
@@ -423,16 +434,15 @@
 
             <!-- Bottom Row -->
             <div class="navbar-bottom-row w-100 mt-2">
-                <a class="navbar-brand" href="#"><img src="assets/image/logo.webp" alt="AEG Logo"></a>
+                <a class="navbar-brand" href="{{ url('/') }}"><img src="assets/image/logo.webp" alt="AEG Logo"></a>
                 <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
                     <input type="text" class="search-input" placeholder="ค้นหาบริการหรือสินค้า...">
                     <button class="search-btn"><i class="fas fa-search"></i></button>
                 </div>
                 <div class="cart-section">
-                    <a href="#" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="{{ route('cart') }}" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
                     <div class="points-badge shadow-sm"><i class="fas fa-coins" style="color: #f1c40f;"></i> 200</div>
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#mainMenuCollapse">
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenuCollapse">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                 </div>
@@ -445,105 +455,121 @@
         <div class="container">
             <div class="collapse navbar-collapse d-lg-block" id="mainMenuCollapse">
                 <ul class="navbar-nav d-flex flex-column flex-lg-row justify-content-center text-center">
-                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="#">หน้าหลัก</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">สินค้าพร้อมติดตั้ง</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">แพ็กเกจบริการ</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">บริการแนะนำ</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="{{ url('/') }}">หน้าหลัก</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="{{ route('packages', ['type' => 'equipment']) }}">สินค้าพร้อมติดตั้ง</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="{{ route('packages', ['type' => 'service']) }}">แพ็กเกจบริการ</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="{{ route('services') }}">บริการแนะนำ</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Slider -->
+    <!-- Slider (Dynamic Banners) -->
     <div class="container mt-4">
         <div id="heroCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active"><img src="assets/image/slider.webp" class="d-block w-100"
-                        alt="Banner 1"></div>
-                <div class="carousel-item"><img src="assets/image/slider.webp" class="d-block w-100" alt="Banner 2">
-                </div>
+                @if(isset($banners) && $banners->count() > 0)
+                    @foreach($banners as $index => $banner)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                            <!-- ใช้ image_url ตรงๆ จากตาราง Banners -->
+                            <img src="{{ $banner->image_url }}" class="d-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                        </div>
+                    @endforeach
+                @else
+                    <!-- รูป Default หากยังไม่มีข้อมูลแบนเนอร์ -->
+                    <div class="carousel-item active">
+                        <img src="assets/image/slider.webp" class="d-block w-100" alt="Default Banner">
+                    </div>
+                @endif
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel"
-                data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
-            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel"
-                data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
         </div>
     </div>
 
-    <!-- Category Grid -->
+    <!-- Category Grid (Static - ยึดตาม Route ของคุณ) -->
     <div class="container mt-5">
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
                 <div class="service-card"><img src="assets/image/g1.webp" alt="G1">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">สินค้าพร้อมติดตั้ง</h5><button
-                            class="btn btn-service mt-2">ดูเพิ่มเติม</button>
+                        <h5 class="fw-bold">สินค้าพร้อมติดตั้ง</h5>
+                        <a href="{{ route('packages', ['type' => 'equipment']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="service-card"><img src="assets/image/g2.webp" alt="G2">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">แพ็กเกจบริการ</h5><button class="btn btn-service mt-2">ดูเพิ่มเติม</button>
+                        <h5 class="fw-bold">แพ็กเกจบริการ</h5>
+                        <a href="{{ route('packages', ['type' => 'service']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="service-card"><img src="assets/image/g3.webp" alt="G3">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">ประกัน</h5><button class="btn btn-service mt-2">ดูเพิ่มเติม</button>
+                        <h5 class="fw-bold">ประกัน</h5>
+                        <a href="{{ route('insurance') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="service-card"><img src="assets/image/g4.webp" alt="G4">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">ตู้เซฟนิรภัย</h5><button class="btn btn-service mt-2">ดูเพิ่มเติม</button>
+                        <h5 class="fw-bold">ตู้เซฟนิรภัย</h5>
+                        <a href="{{ route('lockers') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Age Services -->
+    <!-- Service Categories (Dynamic - ลูปข้อมูลจาก $categories) -->
     <div class="container mt-5">
-        <h3 class="text-center fw-bold mb-4">บริการที่ใกล้เคียงหมวดอายุ</h3>
+        <h3 class="text-center fw-bold mb-4">หมวดหมู่บริการของเรา</h3>
         <div class="row g-3">
-            <div class="col-lg-6">
-                <div class="age-service-box shadow-sm">
-                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
-                    <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-1">ประกันทรัพย์สินมูลค่าสูง</h5>
-                        <p class="text-muted small mb-0">กรมธรรม์ชดเชยผลประโยชน์จากการโจรกรรม</p>
+            @if(isset($categories) && $categories->count() > 0)
+                @foreach($categories as $category)
+                    <div class="col-lg-6">
+                        <div class="age-service-box shadow-sm">
+                            <!-- ใช้ image_url ตรงๆ จากตาราง ServiceCategory -->
+                            <img src="{{ $category->image_url ?? 'assets/image/logo2.webp' }}" class="age-icon" alt="{{ $category->name }}">
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">{{ $category->name }}</h5>
+                                <p class="text-muted small mb-0">{{ $category->description ?? 'รายละเอียดหมวดหมู่' }}</p>
+                            </div>
+                            <div class="ms-3 text-end border-start ps-3">
+                                <a href="{{ route('services', ['category' => $category->id]) }}" class="btn btn-sm btn-outline-danger mt-2">ดูบริการ</a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="ms-3 text-end border-start ps-3">
-                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
+                @endforeach
+            @else
+                <!-- ข้อมูลตัวอย่างหากยังไม่มีหมวดหมู่ในฐานข้อมูล -->
+                <div class="col-lg-6">
+                    <div class="age-service-box shadow-sm">
+                        <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold mb-1">ยังไม่มีหมวดหมู่บริการ</h5>
+                            <p class="text-muted small mb-0">โปรดเพิ่มข้อมูลในระบบหลังบ้าน</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="age-service-box shadow-sm">
-                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
-                    <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-1">AEG Smart Locker</h5>
-                        <p class="text-muted small mb-0">ตู้ล็อกเกอร์ให้เช่า ขนาดเล็ก (Prime)</p>
-                    </div>
-                    <div class="ms-3 text-end border-start ps-3">
-                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                    </div>
-                </div>
-            </div>
+            @endif
         </div>
     </div>
 
-    <!-- Recommended Services Section (Clickable) -->
+    <!-- Recommended Services Section -->
     <div class="container mt-5">
         <h3 class="text-center fw-bold mb-4">บริการแนะนำ</h3>
         <div class="row g-4 mt-3">
             <div class="col-6 col-md-3">
-                <a href="product" class="text-decoration-none d-block">
+                <a href="{{ route('product-detail') }}" class="text-decoration-none d-block">
                     <div class="rec-card shadow-sm">
                         <img src="assets/image/img-zo1.webp" alt="Signal System">
                         <div class="rec-overlay">
@@ -553,7 +579,7 @@
                 </a>
             </div>
             <div class="col-6 col-md-3">
-                <a href="product" class="text-decoration-none d-block">
+                <a href="{{ route('product-detail') }}" class="text-decoration-none d-block">
                     <div class="rec-card shadow-sm">
                         <img src="assets/image/img-zo2.webp" alt="Smoke Alarm">
                         <div class="rec-overlay">
@@ -563,7 +589,7 @@
                 </a>
             </div>
             <div class="col-6 col-md-3">
-                <a href="product" class="text-decoration-none d-block">
+                <a href="{{ route('product-detail') }}" class="text-decoration-none d-block">
                     <div class="rec-card shadow-sm">
                         <img src="assets/image/img-zo3.webp" alt="Gold Cap Lock">
                         <div class="rec-overlay">
@@ -573,7 +599,7 @@
                 </a>
             </div>
             <div class="col-6 col-md-3">
-                <a href="product" class="text-decoration-none d-block">
+                <a href="{{ route('product-detail') }}" class="text-decoration-none d-block">
                     <div class="rec-card shadow-sm">
                         <img src="assets/image/img-zo4.webp" alt="Access Control">
                         <div class="rec-overlay">
@@ -585,17 +611,16 @@
         </div>
     </div>
 
-    <!-- Special Privileges Section (Clickable) -->
+    <!-- Special Privileges Section -->
     <div class="container mt-5 mb-5">
         <div class="privilege-section p-4 rounded-4 shadow">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold mb-0 text-white">สิทธิพิเศษแนะนำ</h2>
-                <a href="#" class="text-white fw-bold text-decoration-none">ดูทั้งหมด <i
-                        class="fas fa-arrow-right ms-1"></i></a>
+                <a href="{{ route('rewards') }}" class="text-white fw-bold text-decoration-none">ดูทั้งหมด <i class="fas fa-arrow-right ms-1"></i></a>
             </div>
             <div class="row g-4">
                 <div class="col-md-4">
-                    <a href="product" class="text-decoration-none d-block h-100">
+                    <a href="{{ route('product-detail') }}" class="text-decoration-none d-block h-100">
                         <div class="privilege-card shadow-sm">
                             <img src="assets/image/rew3.webp" alt="Diffuser">
                             <div class="service-card-body">
@@ -606,7 +631,7 @@
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a href="product" class="text-decoration-none d-block h-100">
+                    <a href="{{ route('product-detail') }}" class="text-decoration-none d-block h-100">
                         <div class="privilege-card shadow-sm">
                             <img src="assets/image/rew2.webp" alt="Robot Vacuum">
                             <div class="service-card-body">
@@ -617,7 +642,7 @@
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a href="product" class="text-decoration-none d-block h-100">
+                    <a href="{{ route('product-detail') }}" class="text-decoration-none d-block h-100">
                         <div class="privilege-card shadow-sm">
                             <img src="assets/image/rew1.webp" alt="Jewelry">
                             <div class="service-card-body">
@@ -638,15 +663,10 @@
                 <div class="col-md-4 text-center text-md-start">
                     <h6 class="fw-bold mb-3">ดาวน์โหลดแอปพลิเคชัน</h6>
                     <div class="d-flex justify-content-center justify-content-md-start gap-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=AEG-APP"
-                            class="bg-white p-1 rounded" alt="QR" width="80">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=AEG-APP" class="bg-white p-1 rounded" alt="QR" width="80">
                         <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="28"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="28"></a>
+                            <a href="#"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" height="28"></a>
+                            <a href="#"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" height="28"></a>
                         </div>
                     </div>
                 </div>
@@ -655,13 +675,12 @@
                     <div class="row">
                         <div class="col-6 footer-column footer-divider">
                             <h6 class="fw-bold mb-3">แพ็กเกจที่ใช้งาน</h6>
-                            <a href="#"
-                                class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
+                            <a href="{{ route('terms-conditions') }}" class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
                         </div>
                         <div class="col-6 footer-column">
                             <h6 class="fw-bold mb-3">ช่วยเหลือ</h6>
-                            <a href="#"
-                                class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
+                            <a href="{{ route('privacy-policy') }}" class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
+                            <a href="{{ route('faq') }}" class="d-block text-white-50 text-decoration-none small mb-2">คำถามที่พบบ่อย</a>
                         </div>
                     </div>
                 </div>

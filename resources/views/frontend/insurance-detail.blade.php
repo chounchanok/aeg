@@ -359,7 +359,7 @@
                             ที่เกิดจากการชิงทรัพย์ หรือปล้นทรัพย์ในสถานที่ที่เอาประกันภัย</li>
                     </ul>
 
-                    <a href="insurance-contact" class="btn-consult">ปรึกษาผู้เชี่ยวชาญ</a>
+                    <a href="{{ route('insurance-contact') }}" class="btn-consult">ปรึกษาผู้เชี่ยวชาญ</a>
                 </div>
             </div>
         </div>
