@@ -374,17 +374,20 @@
 
 <body>
 
-    <!-- Header Section (Original Width) -->
+    <!-- Header Section (ดึงข้อมูลให้ตรงกับไฟล์แรก) -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container navbar-container">
             <div class="navbar-top-row w-100">
                 <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
+                    <a href="{{ route('repair-status') }}" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
                     <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
+                    @auth
+                        <a href="{{ route('my-account') }}" class="nav-icon-item"><i class="fas fa-user"></i><span>{{ Auth::user()->name }}</span></a>
+                    @else
+                        <a href="{{ route('login') }}" class="nav-icon-item"><i class="fas fa-sign-in-alt"></i><span>เข้าสู่ระบบ</span></a>
+                    @endauth
                     <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector"
-                        style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85rem;">
+                    <div class="lang-selector" style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85rem;">
                         <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
                         <span>TH</span>
                         <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
@@ -393,9 +396,8 @@
             </div>
 
             <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
+                <a class="navbar-brand" href="{{ route('home') }}">
+                    <img src="{{ asset('assets/image/logo.webp') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
                 </a>
 
                 <div class="search-container mx-auto">
@@ -404,10 +406,9 @@
                 </div>
 
                 <div class="cart-section" style="display: flex; align-items: center; gap: 15px;">
-                    <a href="cart" style="color: white; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
+                    <a href="{{ route('cart') }}" style="color: white; font-size: 1.5rem;"><i class="fas fa-shopping-cart"></i></a>
                     <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
+                        <i class="fas fa-coins" style="color: #f1c40f;"></i> {{ Auth::check() ? (Auth::user()->points ?? 0) : 0 }}
                     </div>
                 </div>
             </div>
@@ -417,124 +418,72 @@
     <!-- Content Wrapper -->
     <main class="reward-content-wrapper">
 
-        <!-- Hero Section with Gradient (Inside 950px Container, Touches Navbar) -->
-        <section class="hero-gradient-box">
-            <div class="container-950">
-                <div class="hero-inner">
-                    <div class="reward-img-frame">
-                        <img src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80"
-                            alt="ACONATIC TV">
-                    </div>
-                    <div class="hero-text-side">
-                        <h1>ACONATIC :</h1>
-                        <h2>สมาร์ททีวี 43 นิ้ว<br>รุ่น 43HS701AN<br>มูลค่า 7,490 บาท</h2>
-
-                        <button type="button" class="btn-redeem-pill" data-bs-toggle="modal"
-                            data-bs-target="#redeemModal">
-                            <span class="lbl">รับสิทธิ์</span>
-                            <div class="pts">
-                                <i class="fas fa-coins" style="color: #edb314;"></i> 200
+        @if(isset($rewards) && $rewards->count() > 0)
+            @foreach($rewards as $reward)
+                <!-- Hero Section with Gradient -->
+                <section class="hero-gradient-box mt-4">
+                    <div class="container-950">
+                        <div class="hero-inner">
+                            <div class="reward-img-frame">
+                                <img src="{{ $reward->image_url }}" alt="{{ $reward->title }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
                             </div>
-                        </button>
+                            <div class="hero-text-side">
+                                <h1>{{ $reward->title }}</h1>
+                                <h2>{!! nl2br(e($reward->description)) !!}</h2>
+
+                                <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                    <span class="lbl">รับสิทธิ์</span>
+                                    <div class="pts">
+                                        <i class="fas fa-coins" style="color: #edb314;"></i> {{ number_format($reward->points_required) }}
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </section>
+
+                <!-- Detailed Info -->
+                <section class="reward-details-area mb-5">
+                    <div class="container-950">
+                        <h3 class="main-product-title">{{ $reward->title }}</h3>
+
+                        <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
+                        <p class="section-desc-text">*แลกใช้เพียง {{ number_format($reward->points_required) }} พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
+
+                        <h4 class="section-sub-title mt-4">เงื่อนไขการใช้สิทธิ์</h4>
+                        <div class="section-desc-text">
+                            <ul class="specs-list">
+                                <li>สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี</li>
+                                <li>บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว</li>
+                                <li>กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า</li>
+                            </ul>
+                        </div>
+                        <hr class="mt-5 mb-5">
+                    </div>
+                </section>
+            @endforeach
+        @else
+            <div class="container text-center mt-5 mb-5">
+                <h3 class="text-muted">ยังไม่มีสิทธิพิเศษในขณะนี้</h3>
             </div>
-        </section>
-
-        <!-- Detailed Info (Inside 950px Container, White Background) -->
-        <section class="reward-details-area">
-            <div class="container-950">
-                <!-- Gradient ends 0% opacity here -->
-                <h3 class="main-product-title">ACONATIC สมาร์ททีวี 43 นิ้ว รุ่น 43HS701AN ปี 2024</h3>
-
-                <ul class="specs-list">
-                    <li>ระบบภาพ: Full HD</li>
-                    <li>Resolution(Pixels): 1920 x 1080</li>
-                    <li>Features: Google TV</li>
-                    <li>HDR: Yes Cinema HDR</li>
-                    <li>ช่องต่อ: USB x1, HDMI x2</li>
-                    <li>Network: Lan, Wireless, Bluetooth 5.0</li>
-                    <li>Contrast Ratio: 5000:1</li>
-                    <li>Brightness(CD/M): 220</li>
-                    <li>ResponseTime(MS): 6.5</li>
-                    <li>มุมมองภาพ(องศา): 178</li>
-                    <li>มอก.(Yes/No): Yes 62368เล่ม1-2563</li>
-                </ul>
-
-                <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
-                <p class="section-desc-text">*แลกใช้เพียง 18,725 พอยท์ เพื่อแลกรับฟรี ACONATIC สมาร์ททีวี มูลค่า 7,490
-                    บาท โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
-
-                <h4 class="section-sub-title">ระยะเวลาโปรโมชั่น</h4>
-                <p class="section-desc-text">เริ่มตั้งแต่วันที่ 29/01/2025 จนถึง 29/01/2026 หรือจนกว่าสินค้าจะหมด</p>
-
-                <h4 class="section-sub-title">เงื่อนไขการใช้สิทธิ์</h4>
-                <div class="section-desc-text">
-                    <ul class="specs-list">
-                        <li>สามารถแลกรับสิทธิ์ได้ตั้งแต่วันที่ 29 ม.ค. 2025 - 29 ม.ค. 2026</li>
-                        <li>สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี</li>
-                        <li>บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว
-                        </li>
-                        <li>กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
+        @endif
 
     </main>
 
-    <!-- Footer Section (Original Width) -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="terms" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">คำถามที่พบบ่อย</h5>
-                            <a href="faq" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
+    <!-- (ใส่ Footer เดิมของคุณตรงนี้) -->
 
     <!-- Redeem Modal -->
     <div class="modal fade" id="redeemModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
             <div class="modal-content modal-qr-content">
                 <div class="modal-qr-blue-top">
-                    <span
-                        style="font-size: 0.8rem; opacity: 0.8; text-transform: uppercase;">ดำเนินการต่อบนแอปพลิเคชัน</span>
+                    <span style="font-size: 0.8rem; opacity: 0.8; text-transform: uppercase;">ดำเนินการต่อบนแอปพลิเคชัน</span>
                     <h5>สแกน Qr Code</h5>
                     <button type="button" class="btn-qr-close" data-bs-dismiss="modal">
                         <i class="fas fa-xmark"></i>
                     </button>
                     <div class="qr-frame">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=AEG-Redeem-Reward"
-                            alt="QR" class="w-100">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=AEG-Redeem-Reward" alt="QR" class="w-100">
                     </div>
                 </div>
                 <div class="modal-qr-footer">

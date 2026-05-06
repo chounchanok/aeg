@@ -13,12 +13,21 @@ use App\Http\Controllers\Admin\ProductAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
+use App\Http\Controllers\Frontend\ProfileController;
+use App\Http\Controllers\Frontend\RewardController;
+use App\Http\Controllers\Frontend\PackageController;
+use App\Http\Controllers\Frontend\CartController;
+
+// --- Routes สำหรับดูสิทธิพิเศษ (คนทั่วไปดูได้) ---
+Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
+Route::get('/my-packages', [PackageController::class, 'myPackages'])->name('packages.mine');
+Route::get('/packages/feedback/{id}', [PackageController::class, 'feedback'])->name('packages.feedback');
+// Route::view('/packages/{type}', [PackageController::class, 'index'])->name('packages');
 
 // --- Frontend Routes ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Main Pages
-Route::view('/cart', 'frontend.cart')->name('cart');
 Route::view('/faq', 'frontend.faq')->name('faq');
 Route::view('/insurance', 'frontend.insurance')->name('insurance');
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
@@ -63,6 +72,12 @@ Route::middleware('auth')->group(function() {
     // ใช้ POST หรือ GET ก็ได้ตามที่ออกแบบไว้
     Route::get('logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout.post');
+    Route::get('/cart', [CartController::class, 'index'])->name('cart');
+
+    //Frontend Pages ที่ต้องล็อกอิน
+    // จัดการข้อมูลส่วนตัว (My Account)
+    Route::get('/my-account', [ProfileController::class, 'index'])->name('my-account');
+    Route::post('/my-account/update', [ProfileController::class, 'update'])->name('my-account.update');
 
     // --- หน้า Admin Dashboard (ล็อกอินแล้ว + ต้องไม่ใช่ Customer) ---
     // หมายเหตุ: ตรง 'admin' คือชื่อ Alias ของ Middleware CheckAdminRole ที่เราสร้างขึ้น

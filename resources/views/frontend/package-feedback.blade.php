@@ -440,8 +440,7 @@
                 <div class="feedback-grid">
                     <div class="col-left">
                         <div class="pkg-img-box">
-                            <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                                alt="Burglary Alarm">
+                            <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="{{ $item->product_name }}">
                         </div>
                         <div class="rating-group">
                             <span class="rating-label">ให้คะแนนคุณภาพงานติดตั้งและบริการหลังการขาย</span>
@@ -465,15 +464,17 @@
                         </div>
                     </div>
                     <div class="col-right">
-                        <h1 class="pkg-title-main">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
-                        <span class="pkg-subtitle">แพ็กเกจการดูแลอุปกรณ์</span>
+                        <h1 class="pkg-title-main">{{ $item->product_name }}</h1>
+                        <span class="pkg-subtitle">แพ็กเกจการดูแลอุปกรณ์ (Order: {{ $item->order->order_number }})</span>
+                        
+                        <!-- ถ้าจะทำระบบบันทึกรีวิวให้ครอบ <form> ตรงนี้ -->
                         <div class="review-block">
                             <span class="review-label">เขียนรีวิว</span>
-                            <textarea class="custom-textarea"
-                                placeholder="เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ"></textarea>
+                            <textarea class="custom-textarea" name="review_text" placeholder="เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ"></textarea>
                         </div>
+                        
                         <div class="action-btns-row">
-                            <a href="packages" class="btn-navy-pill">ย้อนกลับ</a>
+                            <a href="{{ route('packages.mine') }}" class="btn-navy-pill">ย้อนกลับ</a>
                             <button class="btn-navy-pill" onclick="confirmReview()">ยืนยัน</button>
                         </div>
                     </div>

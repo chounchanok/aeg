@@ -420,149 +420,82 @@
             <!-- Tabs Navigation -->
             <div class="tab-nav-container">
                 <button class="tab-btn active" id="activeTabBtn" onclick="switchTab('active')">แพ็กเกจที่ใช้งาน</button>
-                <button class="tab-btn inactive" id="historyTabBtn"
-                    onclick="switchTab('history')">ประวัติการใช้งาน</button>
+                <button class="tab-btn inactive" id="historyTabBtn" onclick="switchTab('history')">ประวัติการใช้งาน</button>
             </div>
 
             <!-- Tab Content: Active Packages -->
             <div id="activeContent" class="tab-pane show">
-                <!-- Card 1: Burglary -->
-                <div class="package-card">
-                    <div class="package-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm">
-                    </div>
-                    <div class="package-info">
-                        <div class="package-header-flex">
-                            <h2 class="package-title">Burglary Alarm (ระบบสัญญาณกันขโมย)</h2>
-                            <span class="status-badge status-active">ใช้งาน</span>
-                        </div>
-                        <div class="date-info-grid">
-                            <div class="info-item">
-                                <label>วันที่เริ่มใช้บริการ</label>
-                                <span>01 ม.ค. 2025</span>
+                @if(isset($activeItems) && $activeItems->count() > 0)
+                    @foreach($activeItems as $item)
+                        <div class="package-card">
+                            <div class="package-img-box">
+                                <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="{{ $item->product_name }}">
                             </div>
-                            <div class="info-item">
-                                <label>ระยะเวลาคุ้มครอง :</label>
-                                <span class="val-dark">3 เดือน</span>
-                            </div>
-                            <div class="info-item">
-                                <label>วันที่สิ้นสุดบริการ</label>
-                                <span>31 มี.ค. 2025</span>
-                            </div>
-                            <div class="info-item">
-                                <label>ได้รับพอยท์</label>
-                                <div class="points-pill">ให้คะแนนพอยท์รับ 1 EASE Coins</div>
-                            </div>
-                        </div>
-                        <div class="card-btn-group">
-                            <a href="repair-request" class="btn-navy-small">แจ้งซ่อม</a>
-                            <a href="#" class="btn-navy-small">รายละเอียด</a>
-                        </div>
-                        <a href="#" class="btn-red-full">สถานะแจ้งซ่อม</a>
-                    </div>
-                </div>
-
-                <!-- Card 2: CCTV -->
-                <div class="package-card">
-                    <div class="package-img-box">
-                        <img src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"
-                            alt="CCTV Networks">
-                    </div>
-                    <div class="package-info">
-                        <div class="package-header-flex">
-                            <h2 class="package-title">CCTV Networks (ระบบกล้องวงจรปิด)</h2>
-                            <span class="status-badge status-active">ใช้งาน</span>
-                        </div>
-                        <div class="date-info-grid">
-                            <div class="info-item">
-                                <label>วันที่เริ่มใช้บริการ</label>
-                                <span>01 ม.ค. 2025</span>
-                            </div>
-                            <div class="info-item">
-                                <label>ระยะเวลาคุ้มครอง :</label>
-                                <span class="val-dark">3 เดือน</span>
-                            </div>
-                            <div class="info-item">
-                                <label>วันที่สิ้นสุดบริการ</label>
-                                <span>31 มี.ค. 2025</span>
-                            </div>
-                            <div class="info-item">
-                                <label>ได้รับพอยท์</label>
-                                <div class="points-pill">ให้คะแนนพอยท์รับ 1 EASE Coins</div>
+                            <div class="package-info">
+                                <div class="package-header-flex">
+                                    <h2 class="package-title">{{ $item->product_name }}</h2>
+                                    <span class="status-badge status-active">ใช้งาน</span>
+                                </div>
+                                <div class="date-info-grid">
+                                    <div class="info-item">
+                                        <label>วันที่เริ่มใช้บริการ</label>
+                                        <span>{{ $item->created_at->format('d M Y') }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>ระยะเวลาคุ้มครอง :</label>
+                                        <span class="val-dark">3 เดือน</span> <!-- สามารถปรับเป็นดึงจาก DB ได้ในอนาคต -->
+                                    </div>
+                                    <div class="info-item">
+                                        <label>วันที่สิ้นสุดบริการ</label>
+                                        <span>{{ $item->created_at->addMonths(3)->format('d M Y') }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>ได้รับพอยท์</label>
+                                        <div class="points-pill">รับ {{ $item->product ? $item->product->point_earn : 0 }} EASE Coins</div>
+                                    </div>
+                                </div>
+                                <div class="card-btn-group">
+                                    <a href="{{ route('repair-request') }}" class="btn-navy-small">แจ้งซ่อม</a>
+                                    <!-- ส่ง ID ไปหน้า Feedback ได้ -->
+                                    <a href="{{ route('packages.feedback', $item->id) }}" class="btn-navy-small">เขียนรีวิว</a> 
+                                </div>
+                                <a href="{{ route('repair-status') }}" class="btn-red-full">สถานะแจ้งซ่อม</a>
                             </div>
                         </div>
-                        <div class="card-btn-group">
-                            <a href="#" class="btn-navy-small">แจ้งซ่อม</a>
-                            <a href="#" class="btn-navy-small">รายละเอียด</a>
-                        </div>
-                    </div>
-                </div>
+                    @endforeach
+                @else
+                    <div class="text-center py-5 text-muted">ยังไม่มีแพ็กเกจที่กำลังใช้งาน</div>
+                @endif
             </div>
 
             <!-- Tab Content: History -->
             <div id="historyContent" class="tab-pane">
-                <!-- Expired Card 1 -->
-                <div class="package-card">
-                    <div class="package-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm">
-                    </div>
-                    <div class="package-info">
-                        <div class="package-header-flex">
-                            <h2 class="package-title">Burglary Alarm (ระบบสัญญาณกันขโมย)</h2>
-                            <span class="status-badge status-expired">หมดอายุ</span>
-                        </div>
-                        <div class="date-info-grid">
-                            <div class="info-item">
-                                <label>วันที่เริ่มใช้บริการ</label>
-                                <span>01 ม.ค. 2024</span>
+                @if(isset($historyItems) && $historyItems->count() > 0)
+                    @foreach($historyItems as $item)
+                        <div class="package-card">
+                            <div class="package-img-box">
+                                <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="{{ $item->product_name }}">
                             </div>
-                            <div class="info-item">
-                                <label>ระยะเวลาคุ้มครอง :</label>
-                                <span class="val-dark">3 เดือน</span>
-                            </div>
-                            <div class="info-item">
-                                <label>วันที่สิ้นสุดบริการ</label>
-                                <span>31 มี.ค. 2024</span>
+                            <div class="package-info">
+                                <div class="package-header-flex">
+                                    <h2 class="package-title">{{ $item->product_name }}</h2>
+                                    <span class="status-badge status-expired">หมดอายุ/เสร็จสิ้น</span>
+                                </div>
+                                <div class="date-info-grid">
+                                    <div class="info-item">
+                                        <label>วันที่สั่งซื้อ</label>
+                                        <span>{{ $item->created_at->format('d M Y') }}</span>
+                                    </div>
+                                </div>
+                                <div class="card-btn-group">
+                                    <a href="#" class="btn-navy-small" style="width: 100%;">รายละเอียด</a>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-btn-group">
-                            <a href="#" class="btn-navy-small" style="width: 100%;">รายละเอียด</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Expired Card 2 -->
-                <div class="package-card">
-                    <div class="package-img-box">
-                        <img src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"
-                            alt="CCTV Networks">
-                    </div>
-                    <div class="package-info">
-                        <div class="package-header-flex">
-                            <h2 class="package-title">CCTV Networks (ระบบกล้องวงจรปิด)</h2>
-                            <span class="status-badge status-expired">หมดอายุ</span>
-                        </div>
-                        <div class="date-info-grid">
-                            <div class="info-item">
-                                <label>วันที่เริ่มใช้บริการ</label>
-                                <span>01 ม.ค. 2024</span>
-                            </div>
-                            <div class="info-item">
-                                <label>ระยะเวลาคุ้มครอง :</label>
-                                <span class="val-dark">3 เดือน</span>
-                            </div>
-                            <div class="info-item">
-                                <label>วันที่สิ้นสุดบริการ</label>
-                                <span>31 มี.ค. 2024</span>
-                            </div>
-                        </div>
-                        <div class="card-btn-group">
-                            <a href="#" class="btn-navy-small" style="width: 100%;">รายละเอียด</a>
-                        </div>
-                    </div>
-                </div>
+                    @endforeach
+                @else
+                    <div class="text-center py-5 text-muted">ไม่มีประวัติการใช้งานแพ็กเกจ</div>
+                @endif
             </div>
 
         </div>

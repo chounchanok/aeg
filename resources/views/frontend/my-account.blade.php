@@ -446,29 +446,26 @@
 
 <body>
 
-    <!-- Updated Header from index -->
+    <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container navbar-container">
-            <!-- Top Row -->
             <div class="navbar-top-row w-100">
                 <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
+                    <a href="{{ route('repair-status') }}" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
                     <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
+                    <a href="{{ route('my-account') }}" class="nav-icon-item"><i class="fas fa-user"></i><span>{{ Auth::user()->name }}</span></a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
+                    
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="nav-icon-item text-warning">
+                        <i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span>
+                    </a>
+                    <form id="logout-form" action="{{ route('logout.post') }}" method="POST" class="d-none">@csrf</form>
                 </div>
             </div>
 
-            <!-- Bottom Row -->
             <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="#">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
+                <a class="navbar-brand" href="{{ route('home') }}">
+                    <img src="{{ asset('assets/image/logo.webp') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
                 </a>
 
                 <div class="search-container mx-auto">
@@ -477,14 +474,13 @@
                 </div>
 
                 <div class="cart-section">
-                    <a href="#" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="{{ route('cart') }}" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
                     <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
+                        <i class="fas fa-coins" style="color: #f1c40f;"></i> {{ Auth::user()->points ?? 0 }}
                     </div>
                 </div>
 
-                <button class="navbar-toggler d-lg-none ms-3" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav">
+                <button class="navbar-toggler d-lg-none ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
@@ -504,18 +500,30 @@
             <div class="row justify-content-center">
                 <div class="col-xl-10">
 
+                    <!-- แจ้งเตือนเมื่ออัปเดตข้อมูลสำเร็จหรือผิดพลาด -->
+                    @if(session('success'))
+                        <div class="alert alert-success mt-3">{{ session('success') }}</div>
+                    @endif
+                    @if ($errors->any())
+                        <div class="alert alert-danger mt-3">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <!-- Profile Card -->
-                    <div class="card-custom">
+                    <div class="card-custom mt-3">
                         <div class="row align-items-center">
                             <div class="col-lg-5 mb-4 mb-lg-0">
-                                <!-- Visual Membership Card -->
                                 <div class="member-card-visual">
                                     <div class="d-flex justify-content-between">
-                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center"
-                                            style="width: 30px; height: 30px;">
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
                                             <span style="color:#0a1931; font-weight: 800; font-size: 8px;">AEG</span>
                                         </div>
-                                        <div class="card-label-top">Advance Member</div>
+                                        <div class="card-label-top">{{ Auth::user()->tier ?? 'Standard Member' }}</div>
                                     </div>
                                     <div class="card-brand-main">
                                         <h2>EASE</h2>
@@ -534,38 +542,35 @@
                                 <div class="row">
                                     <div class="col-sm-6">
                                         <div class="info-label">ชื่อ</div>
-                                        <div class="info-value">คุณ noppawat</div>
+                                        <div class="info-value">คุณ {{ $user->name }}</div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="info-label">เบอร์โทรศัพท์มือถือ</div>
-                                        <div class="info-value">061-519-5974</div>
+                                        <div class="info-value">{{ $user->phone ?? '-' }}</div>
                                     </div>
                                     <div class="col-12">
                                         <div class="info-label">อีเมล</div>
-                                        <div class="info-value">noppawat.b@aeginc.co</div>
+                                        <div class="info-value">{{ $user->email }}</div>
                                     </div>
                                 </div>
                                 <div class="text-end mt-3">
-                                    <button class="btn btn-navy" data-bs-toggle="modal"
-                                        data-bs-target="#addressModal">แก้ไขข้อมูลส่วนตัว</button>
+                                    <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#profileModal">แก้ไขข้อมูลส่วนตัว</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- My Address Card -->
-                    <div class="card-custom">
+                    <!-- My Address Card (คงไว้ตามเดิม แต่ใส่ข้อมูลจำลองไปก่อน) -->
+                    <div class="card-custom mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h3 class="section-title mb-0">รายการที่อยู่ของฉัน</h3>
-                            <button class="btn btn-add-address" data-bs-toggle="modal"
-                                data-bs-target="#addressModal">เพิ่มที่อยู่ใหม่</button>
+                            <button class="btn btn-add-address" data-bs-toggle="modal" data-bs-target="#addressModal">เพิ่มที่อยู่ใหม่</button>
                         </div>
-
                         <div class="address-item">
                             <div>
                                 <div class="address-name">AEG CNX Branch</div>
                                 <div class="address-details">
-                                    เลขที่ 135 ถ.มหิดล ต.หายยา อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50100
+                                    {{ $user->address ?? 'เลขที่ 135 ถ.มหิดล ต.หายยา อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50100' }}
                                 </div>
                             </div>
                             <div>
@@ -579,91 +584,47 @@
         </div>
     </main>
 
-    <!-- Updated Footer from index -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 align-items-start">
-                        <!-- Placeholder QR -->
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column">
-                            <h5 class="fw-bold mb-3 text-center" style="font-size: 0.95rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="#" class="text-center footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column">
-                            <h5 class="fw-bold mb-3 text-center" style="font-size: 0.95rem;">คำถามที่พบบ่อย</h5>
-                            <a href="#" class="text-center footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-footer">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <!-- Right column space (can be used for additional logos) -->
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- (ใส่ Footer เดิมของคุณตรงนี้) -->
 
-    <!-- Modal: Address (As requested previously) -->
-    <div class="modal fade" id="addressModal" tabindex="-1" aria-hidden="true">
+    <!-- Modal: แก้ไขข้อมูลส่วนตัว (แก้ไขจาก Form เดิมเพื่อใช้บันทึกข้อมูล Profile) -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ที่อยู่</h5>
+                    <h5 class="modal-title">แก้ไขข้อมูลส่วนตัว</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <form>
+                <!-- กำหนด Form Action ไปที่ Route my-account.update -->
+                <form action="{{ route('my-account.update') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-6">
-                                <label for="modal-name">ชื่อ</label>
-                                <input type="text" class="form-control" id="modal-name">
+                                <label for="name">ชื่อ</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $user->name) }}" required>
                             </div>
                             <div class="col-6">
-                                <label for="modal-phone">เบอร์โทรศัพท์มือถือ</label>
-                                <input type="text" class="form-control" id="modal-phone">
+                                <label for="phone">เบอร์โทรศัพท์มือถือ</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" required>
                             </div>
                         </div>
+                        
+                        <hr>
+                        <h6 class="mb-3">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</h6>
                         <div class="mb-3">
-                            <label>จังหวัด, เขต/อำเภอ, แขวง/ตำบล, รหัสไปรษณีย์</label>
-                            <select class="form-select">
-                                <option selected disabled></option>
-                                <option value="1">กรุงเทพมหานคร, เขตปทุมวัน, แขวงลุมพินี, 10330</option>
-                                <option value="2">เชียงใหม่, อ.เมืองเชียงใหม่, ต.หายยา, 50100</option>
-                            </select>
+                            <label for="password">รหัสผ่านใหม่</label>
+                            <input type="password" class="form-control" id="password" name="password">
                         </div>
                         <div class="mb-3">
-                            <label for="modal-detail">บ้านเลขที่, ซอย, หมู่บ้าน, ถนน</label>
-                            <textarea class="form-control" id="modal-detail" rows="2"
-                                placeholder="กรุณากรอกรายละเอียด"></textarea>
+                            <label for="password_confirmation">ยืนยันรหัสผ่านใหม่</label>
+                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" class="btn btn-modal-confirm">ยืนยัน</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-modal-confirm">บันทึกข้อมูล</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -671,5 +632,6 @@
     <!-- Bootstrap 5.3.3 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 
 </html>
