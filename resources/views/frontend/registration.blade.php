@@ -180,13 +180,17 @@
         <h1 class="form-title">ลงทะเบียน</h1>
         <p class="form-subtitle">กรอกเบอร์มือถือของคุณเพื่อรับรหัส OTP</p>
 
-        <form>
+        <form method="POST" action="{{ route('register') }}">
+        @csrf
             <div class="phone-input-group">
                 <div class="country-code-box">
                     <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
                     <span class="fw-medium">+66</span>
                 </div>
-                <input type="tel" class="form-control phone-input-field" placeholder="เบอร์มือถือ" required>
+                <input type="tel" name="phone" class="form-control phone-input-field" value="{{ old('phone') }}" placeholder="เบอร์มือถือ" required>
+                @error('phone')
+                    <div class="text-danger mt-1 text-sm">{{ $message }}</div>
+                @enderror
             </div>
 
             <button type="submit" class="btn btn-otp-custom">ขอรหัส OTP</button>

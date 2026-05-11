@@ -210,7 +210,8 @@
         <h1 class="form-title">เข้าสู่ระบบ</h1>
         <p class="form-subtitle">ยินดีต้อนรับกลับมา! กรุณาเข้าสู่ระบบ</p>
 
-        <form>
+        <form method="POST" action="{{ route('login.check') }}">
+        @csrf
             <div class="mb-3">
                 <label class="input-label">เบอร์มือถือ</label>
                 <div class="phone-input-group">
@@ -218,24 +219,30 @@
                         <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
                         <span class="fw-medium">+66</span>
                     </div>
-                    <input type="tel" class="form-control input-field" placeholder="08x-xxx-xxxx" required>
+                    <input type="tel" name="phone" class="form-control input-field" value="{{ old('phone') }}" placeholder="08x-xxx-xxxx" required>
+                    @error('phone')
+                        <div class="text-danger mt-1 text-sm">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
 
             <div class="mb-2">
                 <label class="input-label">รหัสผ่าน</label>
-                <input type="password" class="form-control input-field" placeholder="กรอกรหัสผ่านของคุณ" required>
+                <input type="password" name="password" class="form-control input-field" placeholder="กรอกรหัสผ่านของคุณ" required>
+                @error('password')
+                    <div class="text-danger mt-1 text-sm">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="forgot-password">
-                <a href="#">ลืมรหัสผ่าน?</a>
+                <a href="{{ route('forgot-password') }}">ลืมรหัสผ่าน?</a>
             </div>
 
             <button type="submit" class="btn btn-login-custom">เข้าสู่ระบบ</button>
         </form>
 
         <div class="register-link">
-            ยังไม่มีบัญชี? <a href="registration.html">สมัครสมาชิก</a>
+            ยังไม่มีบัญชี? <a href="{{ route('register') }}">สมัครสมาชิก</a>
         </div>
 
         <div class="social-divider">

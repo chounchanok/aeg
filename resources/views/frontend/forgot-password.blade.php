@@ -161,7 +161,7 @@
                         <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
                         <span class="fw-medium">+66</span>
                     </div>
-                    <input type="tel" class="form-control input-field" placeholder="08x-xxx-xxxx" required>
+                    <input type="tel" name="phone" class="form-control input-field" placeholder="08x-xxx-xxxx" required>
                 </div>
             </div>
 
@@ -169,7 +169,7 @@
         </form>
 
         <div class="back-to-login">
-            <a href="login.html">
+            <a href="{{ route('login') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-arrow-left" viewBox="0 0 16 16">
                     <path fill-rule="evenodd"

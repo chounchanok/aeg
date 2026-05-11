@@ -63,6 +63,8 @@ Route::get('language-switch/{lang}', [DashboardController::class, 'switchLanguag
 // --- หน้า Login (ยังไม่ได้ล็อกอิน) ---
 Route::middleware('guest')->group(function() {
     Route::get('login', [AuthController::class, 'loginView'])->name('login');
+    Route::get('register', [AuthController::class, 'registerView'])->name('register');
+    Route::get('forgot-password', [AuthController::class, 'forgotPasswordView'])->name('forgot-password');
     Route::post('login', [AuthController::class, 'login'])->name('login.check');
 });
 
