@@ -22,7 +22,7 @@ use App\Http\Controllers\Frontend\CartController;
 Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
 Route::get('/my-packages', [PackageController::class, 'myPackages'])->name('packages.mine');
 Route::get('/packages/feedback/{id}', [PackageController::class, 'feedback'])->name('packages.feedback');
-// Route::view('/packages/{type}', [PackageController::class, 'index'])->name('packages');
+Route::view('/packages/{type}', [PackageController::class, 'index'])->name('packages');
 
 // --- Frontend Routes ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -32,7 +32,7 @@ Route::view('/faq', 'frontend.faq')->name('faq');
 Route::view('/insurance', 'frontend.insurance')->name('insurance');
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/my-account', 'frontend.my-account')->name('my-account');
-Route::view('/packages/{type}', 'frontend.packages')->name('packages');
+// Route::view('/packages/{type}', 'frontend.packages')->name('packages');
 Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
 Route::view('/product-categories', 'frontend.product-catagry')->name('product-categories');
 Route::view('/rewards', 'frontend.reward')->name('rewards');

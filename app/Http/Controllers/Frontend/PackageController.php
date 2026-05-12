@@ -10,10 +10,32 @@ use App\Models\OrderItem;
 class PackageController extends Controller
 {
 
-    // public function index()
-    // {
-    //     return view('frontend.packages');
-    // }
+    public function index($type)
+    {
+        $lang = $request->header('Accept-Language', 'th');
+        
+        $query = DB::table('products')->where('is_active', true);
+
+        // รองรับการกรองตามหมวดหมู่
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $products = $query->orderBy('created_at', 'desc')->get()->map(function ($p) use ($lang) {
+            return [
+                'id' => $p->id,
+                'name' => ($lang == 'en' && !empty($p->name_en)) ? $p->name_en : $p->name_th,
+                'description' => ($lang == 'en' && !empty($p->description_en)) ? $p->description_en : $p->description_th,
+                'type' => $p->type,
+                'price' => $p->price,
+                'compare_at_price' => $p->compare_at_price,
+                'image_url' => $p->image_url,
+                'point_earn' => $p->point_earn,
+            ];
+        });
+        return view('frontend.packages', compact('products'));
+    }
+
     // แสดงหน้า "แพ็กเกจของฉัน" (แยก Active และ History)
     public function myPackages()
     {

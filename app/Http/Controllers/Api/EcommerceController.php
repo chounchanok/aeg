@@ -15,9 +15,30 @@ class EcommerceController extends Controller
     // ==========================================
     // 1. สินค้า (Products)
     // ==========================================
-    public function getProducts()
+    public function getProducts(Request $request)
     {
-        $products = DB::table('products')->where('is_active', true)->get();
+        $lang = $request->header('Accept-Language', 'th');
+        
+        $query = DB::table('products')->where('is_active', true);
+
+        // รองรับการกรองตามหมวดหมู่
+        if ($request->has('category_id')) {
+            $query->where('type', $request->category_id);
+        }
+
+        $products = $query->orderBy('created_at', 'desc')->get()->map(function ($p) use ($lang) {
+            return [
+                'id' => $p->id,
+                'name' => ($lang == 'en' && !empty($p->name_en)) ? $p->name_en : $p->name_th,
+                'description' => ($lang == 'en' && !empty($p->description_en)) ? $p->description_en : $p->description_th,
+                'type' => $p->type,
+                'price' => $p->price,
+                'compare_at_price' => $p->compare_at_price,
+                'image_url' => $p->image_url,
+                'point_earn' => $p->point_earn,
+            ];
+        });
+
         return $this->successResponse($products, 'Products retrieved successfully');
     }
 
@@ -243,5 +264,70 @@ class EcommerceController extends Controller
         }
 
         return response()->json(['status' => 'ok']); // ตอบกลับ Gateway ว่ารับข้อมูลแล้ว
+    }
+
+    // 🌟 เพิ่มฟังก์ชันใหม่สำหรับการ "จอง/ซื้อเลย" (ข้ามตะกร้า)
+    public function buyNow(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|integer',
+            'quantity' => 'required|integer|min:1',
+            'address_id' => 'required|integer',
+            'payment_gateway' => 'required|string'
+        ]);
+
+        $user = $request->user();
+        $product = DB::table('products')->where('id', $request->product_id)->where('is_active', true)->first();
+        
+        if (!$product) {
+            return $this->errorResponse('Product not found or inactive', 404);
+        }
+
+        $subtotal = $product->price * $request->quantity;
+
+        DB::beginTransaction();
+        try {
+            // สร้างออเดอร์ทันที
+            $orderId = DB::table('orders')->insertGetId([
+                'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                'user_id' => $user->id,
+                'address_id' => $request->address_id,
+                'subtotal' => $subtotal,
+                'discount' => 0,
+                'total_amount' => $subtotal,
+                'status' => 'pending_payment',
+                'payment_gateway' => $request->payment_gateway,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // บันทึกรายการสินค้าลงใน Order Items
+            DB::table('order_items')->insert([
+                'order_id' => $orderId,
+                'product_id' => $product->id,
+                'product_name' => $product->name_th, 
+                'price' => $product->price,
+                'quantity' => $request->quantity,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            // ดึง order_number ออกมาส่งกลับให้แอป
+            $order = DB::table('orders')->where('id', $orderId)->first();
+            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+
+            return $this->successResponse([
+                'order_id' => $orderId,
+                'order_number' => $order->order_number,
+                'total_amount' => $subtotal,
+                'payment_url' => $paymentUrl
+            ], 'Order created successfully. Please proceed to payment.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('Checkout failed: ' . $e->getMessage(), 500);
+        }
     }
 }

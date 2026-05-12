@@ -14,15 +14,53 @@ class EaseClubController extends Controller
     {
         $user = $request->user();
         
-        // จอยข้อมูล Profile กับ Wallet เพื่อดึง Tier และ Points
+        // จอยข้อมูล Profile กับ Wallet เพื่อดึง ชื่อ, Tier, Points, Member ID และ วันหมดอายุ
         $userInfo = DB::table('users')
-            ->join('customer_wallets', 'users.id', '=', 'customer_wallets.user_id')
-            ->join('loyalty_tiers', 'customer_wallets.current_tier_id', '=', 'loyalty_tiers.id')
+            ->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')
+            ->leftJoin('customer_wallets', 'users.id', '=', 'customer_wallets.user_id')
+            ->leftJoin('loyalty_tiers', 'customer_wallets.current_tier_id', '=', 'loyalty_tiers.id')
             ->where('users.id', $user->id)
-            ->select('users.id', 'users.username', 'customer_wallets.current_points', 'loyalty_tiers.name as tier_name')
+            ->select(
+                'users.username', 
+                'customer_profiles.first_name', 
+                'customer_profiles.last_name',
+                'customer_profiles.profile_image_url',
+                'customer_wallets.current_points', 
+                'customer_wallets.member_id',
+                'customer_wallets.points_expiry_date',
+                'loyalty_tiers.name as tier_name'
+            )
             ->first();
 
-        return $this->successResponse($userInfo, 'User info retrieved');
+        if (!$userInfo) {
+            return $this->errorResponse('User info not found', 404);
+        }
+
+        // 1. จัดการชื่อ (ถ้าไม่มีชื่อ-นามสกุล ให้ใช้ username แทน)
+        $name = trim(($userInfo->first_name ?? '') . ' ' . ($userInfo->last_name ?? ''));
+        if (empty($name)) {
+            $name = $userInfo->username;
+        }
+
+        // 2. จัดการ Member ID (ถ้าใน DB ยังเป็น null ให้สร้างจำลองรูปแบบ AEG-00000X)
+        $memberId = $userInfo->member_id ?? 'AEG-' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+
+        // 3. จัดการวันหมดอายุคะแนน (ถ้าใน DB ยังเป็น null ให้ตั้งเป็นวันสิ้นปีนี้ของปีปัจจุบัน)
+        $expiryDate = $userInfo->points_expiry_date 
+            ? \Carbon\Carbon::parse($userInfo->points_expiry_date)->format('Y-m-d')
+            : \Carbon\Carbon::now()->endOfYear()->format('Y-m-d');
+
+        // 4. จัดเรียงข้อมูล Response ให้ Mobile App นำไปใช้ง่ายๆ
+        $data = [
+            'member_id' => $memberId,
+            'name' => $name,
+            'tier' => $userInfo->tier_name ?? 'Advance',
+            'current_points' => $userInfo->current_points ?? 0,
+            'points_expiry_date' => $expiryDate,
+            'profile_image_url' => $userInfo->profile_image_url ?? null,
+        ];
+
+        return $this->successResponse($data, 'User info retrieved successfully');
     }
 
     public function getBanners()

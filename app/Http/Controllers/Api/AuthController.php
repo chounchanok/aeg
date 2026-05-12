@@ -89,28 +89,53 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string',
+        // 1. จัดฟอร์แมตเบอร์โทร (เหมือนฝั่งเว็บ)
+        $phone = $request->input('phone');
+        if ($phone) {
+            $phone = preg_replace('/[^0-9+]/', '', $phone);
+            if (str_starts_with($phone, '+66')) {
+                $phone = '0' . substr($phone, 3);
+            } elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
+                $phone = '0' . substr($phone, 2);
+            }
+            if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) {
+                $phone = '0' . $phone;
+            }
+            $request->merge(['phone' => $phone]);
+        }
+
+        // 2. Validate ข้อมูล
+        $request->validate([
+            'phone' => 'required|string',
+            'password' => 'required'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        // 3. ตรวจสอบ User ในฐานข้อมูล
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง'
+            ], 401);
         }
 
-        $user = User::where('email', $request['email'])->first();
-
-        if (!$user || !Hash::check($request['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
+        // 4. สร้าง Token (Sanctum)
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => new UserResource($user) // ใช้ UserResource ในการตอบกลับ
+            'success' => true,
+            'message' => 'เข้าสู่ระบบสำเร็จ',
+            'data' => [
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'phone' => $user->phone,
+                    'role' => $user->role
+                ]
+            ]
         ]);
     }
 

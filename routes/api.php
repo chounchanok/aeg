@@ -22,17 +22,7 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/social-login', [AuthController::class, 'socialLogin']);
 Route::get('/service-categories', [ServiceCategoryApiController::class, 'index']);
 
-Route::post('/login', function (\Illuminate\Http\Request $request) {
-    $request->validate(['username' => 'required', 'password' => 'required']);
-    $user = User::where('username', $request->username)->first();
-    
-    if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json(['message' => 'Unauthorized'], 401);
-    }
-    // สร้าง Token 
-    $token = $user->createToken('auth_token')->plainTextToken;
-    return response()->json(['access_token' => $token, 'token_type' => 'Bearer']);
-});
+Route::post('/login', [AuthController::class, 'login']);
 
 // --- E-Commerce Public Routes ---
 Route::prefix('ecommerce')->group(function () {
@@ -57,6 +47,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
 
     // ระบบ Checkout และ Payment
     Route::post('/checkout', [EcommerceController::class, 'checkout']);
+    Route::post('/buy-now', [EcommerceController::class, 'buyNow']); // 🌟 เพิ่มตรงนี้
     Route::get('/orders', [EcommerceController::class, 'getMyOrders']);
 });
 
