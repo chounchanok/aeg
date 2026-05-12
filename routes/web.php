@@ -17,7 +17,16 @@ use App\Http\Controllers\Frontend\ProfileController;
 use App\Http\Controllers\Frontend\RewardController;
 use App\Http\Controllers\Frontend\PackageController;
 use App\Http\Controllers\Frontend\CartController;
+// --- นำไปใส่ไว้ในส่วนของ Public (ไม่ต้องล็อกอินก็ดูสินค้าได้) ---
+use App\Http\Controllers\Frontend\ProductController;
 
+Route::get('/products', [ProductController::class, 'index'])->name('product-categories');
+Route::get('/products/{id}', [ProductController::class, 'show'])->name('product-detail');
+
+// --- นำไปใส่ไว้ในกลุ่ม Route::middleware('auth') (ต้องล็อกอินถึงจะจัดการตะกร้าได้) ---
+Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
+Route::post('/cart/remove/{id}', [CartController::class, 'removeFromCart'])->name('cart.remove');
+// (ส่วน Route::get('/cart' เดิมที่คุณมีอยู่แล้ว ให้เก็บไว้ได้เลยครับ)
 // --- Routes สำหรับดูสิทธิพิเศษ (คนทั่วไปดูได้) ---
 Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
 Route::get('/my-packages', [PackageController::class, 'myPackages'])->name('packages.mine');
@@ -32,10 +41,8 @@ Route::view('/faq', 'frontend.faq')->name('faq');
 Route::view('/insurance', 'frontend.insurance')->name('insurance');
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/my-account', 'frontend.my-account')->name('my-account');
-// Route::view('/packages/{type}', 'frontend.packages')->name('packages');
 Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
 Route::view('/product-categories', 'frontend.product-catagry')->name('product-categories');
-Route::view('/rewards', 'frontend.reward')->name('rewards');
 Route::view('/services', 'frontend.services')->name('services');
 Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
 
@@ -60,12 +67,25 @@ Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
 
 Route::get('language-switch/{lang}', [DashboardController::class, 'switchLanguage'])->name('language.switch');
 
-// --- หน้า Login (ยังไม่ได้ล็อกอิน) ---
+// --- หน้าที่ยังไม่ได้ล็อกอิน (Guest) ---
 Route::middleware('guest')->group(function() {
+    // เข้าสู่ระบบ
     Route::get('login', [AuthController::class, 'loginView'])->name('login');
-    Route::get('register', [AuthController::class, 'registerView'])->name('register');
-    Route::get('forgot-password', [AuthController::class, 'forgotPasswordView'])->name('forgot-password');
     Route::post('login', [AuthController::class, 'login'])->name('login.check');
+
+    // สมัครสมาชิก
+    Route::get('register', [AuthController::class, 'registerView'])->name('register');
+    Route::post('register', [AuthController::class, 'registerSubmit'])->name('register.submit');
+
+    // ยืนยัน OTP
+    Route::get('verify-otp', [AuthController::class, 'verifyOtpView'])->name('verify-otp');
+    Route::post('verify-otp', [AuthController::class, 'verifyOtpSubmit'])->name('verify-otp.submit');
+
+    // ลืมรหัสผ่าน
+    Route::get('forgot-password', [AuthController::class, 'forgotPasswordView'])->name('forgot-password');
+    Route::post('forgot-password', [AuthController::class, 'forgotPasswordSubmit'])->name('forgot-password.submit');
+    Route::get('reset-password/{token}', [AuthController::class, 'resetPasswordView'])->name('password.reset');
+    Route::post('reset-password', [AuthController::class, 'resetPasswordSubmit'])->name('password.update');
 });
 
 // --- Routes ที่ต้องล็อกอินก่อนถึงจะเข้าได้ (ทั้ง Customer และ Admin) ---

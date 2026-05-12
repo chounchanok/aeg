@@ -8,7 +8,7 @@
     <main class="cart-main">
         <div class="container">
 
-            @if(isset($cart) && $cart->items->count() > 0)
+            @if(isset($cartItems) && $cartItems->items->count() > 0)
                 <!-- Select All Header -->
                 <div class="cart-header" onclick="toggleAll()">
                     <span class="custom-radio radio-active" id="allSelector"></span>
@@ -16,21 +16,23 @@
                 </div>
 
                 <!-- Loop Cart Items -->
-                @foreach($cart->items as $item)
-                    <div class="cart-item-card" onclick="toggleItem({{ $item->id }})">
-                        <div class="item-info-group">
-                            <div class="item-image-box">
-                                <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/300' }}" alt="{{ $item->product->name_th ?? 'Product' }}">
-                            </div>
-                            <div class="item-details">
-                                <h3 class="item-title">{{ $item->product->type == 'service' ? 'แพ็กเกจบริการ' : 'สินค้าพร้อมติดตั้ง' }}</h3>
-                                <p class="item-subtitle">{{ $item->product->name_th ?? 'ไม่พบชื่อสินค้า' }}</p>
-                                <p class="text-danger fw-bold mb-0 mt-1">฿ {{ number_format($item->product->price ?? 0, 2) }} <span class="text-muted small fw-normal">(จำนวน: {{ $item->quantity }})</span></p>
-                            </div>
-                        </div>
-                        <div class="custom-radio radio-active item-radio" id="itemRadio-{{ $item->id }}"></div>
+                @foreach($cartItems as $item)
+                    <div class="cart-item">
+                        <img src="{{ $item->image_url }}" alt="{{ $item->name }}">
+                        <h4>{{ $item->name }}</h4>
+                        <p>ราคา: {{ number_format($item->price, 2) }} ฿</p>
+                        <p>จำนวน: {{ $item->quantity }}</p>
+                        
+                        <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                        </form>
                     </div>
                 @endforeach
+
+                <div class="total">
+                    <h3>ยอดรวมทั้งหมด: {{ number_format($totalAmount, 2) }} ฿</h3>
+                </div>
 
                 <!-- Action Buttons -->
                 <div class="cart-actions">

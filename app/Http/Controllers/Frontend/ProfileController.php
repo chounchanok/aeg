@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -12,7 +14,10 @@ class ProfileController extends Controller
     public function index()
     {
         $user = Auth::user();
-        return view('frontend.my-account', compact('user'));
+        
+        // ดึงข้อมูล Profile เพิ่มเติมจากตาราง customer_profiles แบบที่ API ทำ
+        $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
+        return view('frontend.my-account', compact('user', 'profile'));
     }
 
     // อัปเดตข้อมูลผู้ใช้
@@ -20,22 +25,47 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        // Validate ข้อมูลให้ตรงกับ Database
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            // อนุญาตให้แก้ไขรหัสผ่านได้ (ถ้ากรอกมา)
-            'password' => 'nullable|string|min:8|confirmed', 
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'nullable|string|max:255',
+            'phone'      => 'required|string|max:20',
+            'password'   => 'nullable|string|min:6|confirmed', 
         ]);
 
-        $user->name = $validated['name'];
-        $user->phone = $validated['phone'];
+        DB::beginTransaction();
+        try {
+            // 1. อัปเดตข้อมูลในตาราง users (รหัสผ่าน และ เบอร์โทรหลัก)
+            $updateUserData = [
+                'phone' => $validated['phone'],
+                // อัปเดตฟิลด์ name ใน users ให้เป็น ชื่อ-นามสกุล รวมกัน เผื่อนำไปใช้ง่ายๆ
+                'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? ''))
+            ];
 
-        if ($request->filled('password')) {
-            $user->password = bcrypt($validated['password']);
+            if ($request->filled('password')) {
+                $updateUserData['password'] = Hash::make($validated['password']);
+            }
+            
+            DB::table('users')->where('id', $user->id)->update($updateUserData);
+
+            // 2. อัปเดตข้อมูลในตาราง customer_profiles (ชื่อ และ นามสกุล แยกกัน)
+            DB::table('customer_profiles')
+                ->updateOrInsert(
+                    ['user_id' => $user->id],
+                    [
+                        'first_name' => $validated['first_name'],
+                        'last_name'  => $validated['last_name'],
+                        'phone'      => $validated['phone'],
+                        'updated_at' => now()
+                    ]
+                );
+
+            DB::commit();
+            return back()->with('success', 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage()]);
         }
-
-        $user->save();
-
-        return back()->with('success', 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว');
     }
 }
