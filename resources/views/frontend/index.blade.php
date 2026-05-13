@@ -37,7 +37,7 @@
                 <div class="service-card"><img src="{{ asset('assets/image/g1.webp') }}" alt="สินค้าพร้อมติดตั้ง">
                     <div class="service-card-body">
                         <h5 class="fw-bold">สินค้าพร้อมติดตั้ง</h5>
-                        <a href="{{ route('packages', ['type' => 'equipment']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <a href="{{ route('products', ['type' => '1']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>
@@ -45,7 +45,7 @@
                 <div class="service-card"><img src="{{ asset('assets/image/g2.webp') }}" alt="แพ็กเกจบริการ">
                     <div class="service-card-body">
                         <h5 class="fw-bold">แพ็กเกจบริการ</h5>
-                        <a href="{{ route('packages', ['type' => 'service']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <a href="{{ route('products', ['type' => '2']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>

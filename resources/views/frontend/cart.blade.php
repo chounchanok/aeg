@@ -8,7 +8,7 @@
     <main class="cart-main">
         <div class="container">
 
-            @if(isset($cartItems) && $cartItems->items->count() > 0)
+            @if(isset($cartItems) && $cartItems->count() > 0)
                 <!-- Select All Header -->
                 <div class="cart-header" onclick="toggleAll()">
                     <span class="custom-radio radio-active" id="allSelector"></span>
@@ -22,7 +22,7 @@
                         <h4>{{ $item->name }}</h4>
                         <p>ราคา: {{ number_format($item->price, 2) }} ฿</p>
                         <p>จำนวน: {{ $item->quantity }}</p>
-                        
+
                         <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST">
                             @csrf
                             <button type="submit" class="btn btn-danger btn-sm">ลบ</button>

@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\DB;
 class CartController extends Controller
 {
     // แสดงหน้าตะกร้าสินค้า
+    // แสดงหน้าตะกร้าสินค้า
     public function index()
     {
         $user = Auth::user();
         $cart = DB::table('carts')->where('user_id', $user->id)->first();
-        
+
         $cartItems = collect();
         $totalAmount = 0;
 
@@ -22,8 +23,22 @@ class CartController extends Controller
             $cartItems = DB::table('cart_items')
                 ->join('products', 'cart_items.product_id', '=', 'products.id')
                 ->where('cart_items.cart_id', $cart->id)
-                ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name', 'products.price', 'cart_items.quantity', 'products.image_url')
-                ->get();
+                // เปลี่ยนจาก products.name เป็น name_th และ name_en
+                ->select(
+                    'cart_items.id as cart_item_id',
+                    'products.id as product_id',
+                    'products.name_th',
+                    'products.name_en',
+                    'products.price',
+                    'cart_items.quantity',
+                    'products.image_url'
+                )
+                ->get()
+                ->map(function ($item) {
+                    // สร้างตัวแปร name หลอกๆ ให้หน้า Blade นำไปใช้งานได้
+                    $item->name = $item->name_th ?? $item->name_en ?? 'ไม่มีชื่อสินค้า';
+                    return $item;
+                });
 
             $totalAmount = $cartItems->sum(function ($item) {
                 return $item->price * $item->quantity;
@@ -43,7 +58,7 @@ class CartController extends Controller
 
         $user = Auth::user();
         $product = DB::table('products')->where('id', $request->product_id)->first();
-        
+
         if (!$product) return back()->withErrors(['error' => 'ไม่พบสินค้า']);
 
         // 1. หาตะกร้าของ User นี้

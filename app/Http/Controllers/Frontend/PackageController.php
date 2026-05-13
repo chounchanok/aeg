@@ -13,7 +13,6 @@ class PackageController extends Controller
     // เพิ่ม Request $request เข้ามาในพารามิเตอร์
     public function index(Request $request, $type)
     {
-        dd($type); // ใช้ dd() เพื่อตรวจสอบข้อมูลที่ดึงมาได้ก่อนส่งไปยัง view
         // 1. ตรวจสอบก่อนว่าตาราง products ของคุณมีคอลัมน์ is_active หรือไม่
         // ถ้าไม่มีให้เอา ->where('is_active', true) ออก
         $query = DB::table('products')->where('is_active', true);
@@ -34,7 +33,6 @@ class PackageController extends Controller
                 'image_url' => $p->image_url ?? null,
             ];
         });
-
 
         return view('frontend.packages', compact('products'));
     }
