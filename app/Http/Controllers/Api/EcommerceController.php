@@ -18,7 +18,7 @@ class EcommerceController extends Controller
     public function getProducts(Request $request)
     {
         $lang = $request->header('Accept-Language', 'th');
-        
+
         $query = DB::table('products')->where('is_active', true);
 
         // รองรับการกรองตามหมวดหมู่
@@ -56,7 +56,7 @@ class EcommerceController extends Controller
     {
         $user = $request->user();
         $cart = DB::table('carts')->where('user_id', $user->id)->first();
-        
+
         if (!$cart) {
             return $this->successResponse(['items' => [], 'summary' => ['total' => 0]], 'Cart is empty');
         }
@@ -64,7 +64,7 @@ class EcommerceController extends Controller
         $items = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
             ->where('cart_items.cart_id', $cart->id)
-            ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name', 'products.price', 'cart_items.quantity', 'products.image_url')
+            ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name_th', 'products.price', 'cart_items.quantity', 'products.image_url')
             ->get();
 
         $total = $items->sum(function ($item) {
@@ -222,7 +222,7 @@ class EcommerceController extends Controller
 
             DB::commit();
 
-            // TODO: เชื่อมต่อ API ของ Payment Gateway ตรงนี้ 
+            // TODO: เชื่อมต่อ API ของ Payment Gateway ตรงนี้
             // ตัวอย่าง: โยน $totalAmount และ $orderId ไปสร้าง Payment Link ของ Omise/GBPrime
             $paymentUrl = "https://placeholder-gateway.com/pay/" . $orderId;
 
@@ -248,7 +248,7 @@ class EcommerceController extends Controller
     public function paymentWebhook(Request $request)
     {
         // TODO: ตรวจสอบ Signature จาก Gateway ว่าเป็นของจริงหรือไม่
-        
+
         $orderNumber = $request->input('ref_no'); // สมมติ Field ที่ Gateway ส่งกลับมา
         $status = $request->input('status'); // 'success' หรือ 'failed'
 
@@ -278,7 +278,7 @@ class EcommerceController extends Controller
 
         $user = $request->user();
         $product = DB::table('products')->where('id', $request->product_id)->where('is_active', true)->first();
-        
+
         if (!$product) {
             return $this->errorResponse('Product not found or inactive', 404);
         }
@@ -305,7 +305,7 @@ class EcommerceController extends Controller
             DB::table('order_items')->insert([
                 'order_id' => $orderId,
                 'product_id' => $product->id,
-                'product_name' => $product->name_th, 
+                'product_name' => $product->name_th,
                 'price' => $product->price,
                 'quantity' => $request->quantity,
                 'created_at' => now(),

@@ -13,7 +13,7 @@ class EaseClubController extends Controller
     public function getUserInfo(Request $request)
     {
         $user = $request->user();
-        
+
         // จอยข้อมูล Profile กับ Wallet เพื่อดึง ชื่อ, Tier, Points, Member ID และ วันหมดอายุ
         $userInfo = DB::table('users')
             ->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')
@@ -21,11 +21,11 @@ class EaseClubController extends Controller
             ->leftJoin('loyalty_tiers', 'customer_wallets.current_tier_id', '=', 'loyalty_tiers.id')
             ->where('users.id', $user->id)
             ->select(
-                'users.username', 
-                'customer_profiles.first_name', 
+                'users.username',
+                'customer_profiles.first_name',
                 'customer_profiles.last_name',
                 'customer_profiles.profile_image_url',
-                'customer_wallets.current_points', 
+                'customer_wallets.current_points',
                 'customer_wallets.member_id',
                 'customer_wallets.points_expiry_date',
                 'loyalty_tiers.name as tier_name'
@@ -46,7 +46,7 @@ class EaseClubController extends Controller
         $memberId = $userInfo->member_id ?? 'AEG-' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
 
         // 3. จัดการวันหมดอายุคะแนน (ถ้าใน DB ยังเป็น null ให้ตั้งเป็นวันสิ้นปีนี้ของปีปัจจุบัน)
-        $expiryDate = $userInfo->points_expiry_date 
+        $expiryDate = $userInfo->points_expiry_date
             ? \Carbon\Carbon::parse($userInfo->points_expiry_date)->format('Y-m-d')
             : \Carbon\Carbon::now()->endOfYear()->format('Y-m-d');
 
@@ -80,16 +80,59 @@ class EaseClubController extends Controller
         ], 'Overview retrieved');
     }
 
-    public function getRewardsByCategory($categoryId)
+    public function getRewardsByCategory(Request $request, $categoryId)
     {
+        // 1. ดึง Rewards ทั้งหมดใน Category นี้ออกมา
         $rewards = DB::table('rewards')->where('category_id', $categoryId)->get();
+
+        // 2. ตรวจสอบว่ามีการ Login อยู่หรือไม่
+        $userId = $request->user() ? $request->user()->id : null;
+
+        if ($userId) {
+            // ดึง ID ของสินค้าที่ User คนนี้เคยกด Favorite ไว้ทั้งหมดมาเป็น Array
+            // (เพื่อป้องกันปัญหา N+1 Query ที่ต้องยิง DB ซ้ำๆ ในลูป)
+            $favoritedIds = DB::table('favorites')
+                ->where('user_id', $userId)
+                ->pluck('product_id')
+                ->toArray();
+
+            // เอา Array ของ IDs มาเช็คและแนบค่า is_favorited กลับไป
+            $rewards->map(function ($reward) use ($favoritedIds) {
+                $reward->is_favorited = in_array($reward->id, $favoritedIds);
+                return $reward;
+            });
+        } else {
+            // ถ้าไม่ได้ Login ให้ is_favorited เป็น false ทั้งหมด
+            $rewards->map(function ($reward) {
+                $reward->is_favorited = false;
+                return $reward;
+            });
+        }
+
         return $this->successResponse($rewards, 'Rewards retrieved successfully');
     }
 
-    public function getRewardDetail($rewardId)
+    public function getRewardDetail(Request $request, $rewardId)
     {
         $reward = DB::table('rewards')->where('id', $rewardId)->first();
-        if (!$reward) return $this->errorResponse('Reward not found', 404);
+
+        if (!$reward) {
+            return $this->errorResponse('Reward not found', 404);
+        }
+
+        // ตรวจสอบสถานะ Favorite สำหรับหน้า Detail
+        $userId = $request->user() ? $request->user()->id : null;
+
+        if ($userId) {
+            $isFavorited = DB::table('favorites')
+                ->where('user_id', $userId)
+                ->where('product_id', $reward->id)
+                ->exists(); // ใช้ exists() จะไวกว่า first() เพราะคืนค่า true/false ทันที
+
+            $reward->is_favorited = $isFavorited;
+        } else {
+            $reward->is_favorited = false;
+        }
 
         return $this->successResponse($reward, 'Reward detail retrieved');
     }
@@ -112,7 +155,7 @@ class EaseClubController extends Controller
         DB::transaction(function () use ($user, $wallet, $reward) {
             // หักพอยท์
             DB::table('customer_wallets')->where('id', $wallet->id)->decrement('current_points', $reward->points_required);
-            
+
             // ลดสต็อก
             DB::table('rewards')->where('id', $reward->id)->decrement('stock_quantity', 1);
 
@@ -125,7 +168,7 @@ class EaseClubController extends Controller
                 'updated_at' => now()
             ]);
 
-            // บันทึก Point Transaction 
+            // บันทึก Point Transaction
             DB::table('point_transactions')->insert([
                 'user_id' => $user->id,
                 'amount' => -$reward->points_required,

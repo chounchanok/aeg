@@ -53,7 +53,7 @@ Route::view('/repairs/status', 'frontend.repair-status')->name('repair-status');
 
 // Other specialized pages
 Route::view('/insurance/contact', 'frontend.insurance-contact')->name('insurance-contact');
-Route::view('/packages/feedback', 'frontend.package-feedback')->name('package-feedback');
+// Route::view('/packages/feedback', 'frontend.package-feedback')->name('package-feedback');
 Route::view('/service-packages', 'frontend.service-package')->name('service-packages');
 
 // Specific Detail Pages
