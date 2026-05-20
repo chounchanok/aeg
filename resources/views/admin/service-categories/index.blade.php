@@ -108,6 +108,15 @@
                 @csrf
                 <div class="modal-header"><h2 class="font-medium text-base mr-auto">แก้ไขหมวดหมู่บริการ</h2></div>
                 <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                    <div class="col-span-12">
+                        <label class="form-label">กลุ่มของหมวดหมู่นี้ (Group Type)</label>
+                        <select name="group" class="form-select" required>
+                            <option value="equipment">สินค้า / อุปกรณ์ทั่วไป (Equipment)</option>
+                            <option value="package">แพ็กเกจดูแลรักษารายปี (Package)</option>
+                            <option value="service">บริการทั่วไป / เรียกช่างหน้างาน (Service)</option>
+                        </select>
+                        <small class="text-slate-500 block mt-1">ช่วยแยกประเภทให้ระบบรู้ว่าหมวดหมู่นี้เป็นของกลุ่มสินค้าตัวไหน</small>
+                    </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ชื่อหมวดหมู่ (TH) <span class="text-danger">*</span></label>
                         <input name="title_th" id="edit_title_th" type="text" class="form-control" required>

@@ -57,6 +57,7 @@ class ProductAdminController extends Controller
             'compare_at_price' => $request->compare_at_price,
             'point_earn' => $request->point_earn ?? 0,
             'image_url' => $imageUrl,
+            'is_contact_only' => $request->has('is_contact_only'),
             'is_active' => $request->has('is_active'),
             'created_at' => now(),
             'updated_at' => now()
@@ -106,6 +107,7 @@ class ProductAdminController extends Controller
             'compare_at_price' => $request->compare_at_price,
             'point_earn' => $request->point_earn ?? 0,
             'image_url' => $imageUrl,
+            'is_contact_only' => $request->has('is_contact_only'),
             'is_active' => $request->has('is_active'),
             'updated_at' => now()
         ]);

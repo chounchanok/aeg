@@ -38,6 +38,7 @@ class ServiceCategoryAdminController extends Controller
         }
 
         DB::table('service_categories')->insert([
+            'group' => $request->group,
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
@@ -67,6 +68,7 @@ class ServiceCategoryAdminController extends Controller
         }
 
         DB::table('service_categories')->where('id', $id)->update([
+            'group' => $request->group,
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,

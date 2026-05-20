@@ -12,6 +12,14 @@ use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ServiceCategoryApiController;
+use App\Http\Controllers\Api\SmartLockerController;
+
+// --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
+Route::prefix('smart-lockers')->group(function () {
+    // ฝั่งที่ไม่ต้องล็อกอิน (โชว์รายการตู้)
+    Route::get('/', [SmartLockerController::class, 'index']);
+    Route::get('/{id}', [SmartLockerController::class, 'show']);
+});
 
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
@@ -44,11 +52,18 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     // ระบบที่อยู่
     Route::get('/addresses', [EcommerceController::class, 'getAddresses']);
     Route::post('/addresses', [EcommerceController::class, 'createAddress']);
+    
+    // 🌟 เพิ่ม 2 เส้นนี้สำหรับการแสดงข้อมูลและการแก้ไข
+    Route::get('/addresses/{id}', [EcommerceController::class, 'getAddressDetail']);
+    Route::post('/addresses/{id}/update', [EcommerceController::class, 'updateAddress']);
 
     // ระบบ Checkout และ Payment
     Route::post('/checkout', [EcommerceController::class, 'checkout']);
     Route::post('/buy-now', [EcommerceController::class, 'buyNow']); // 🌟 เพิ่มตรงนี้
     Route::get('/orders', [EcommerceController::class, 'getMyOrders']);
+
+    // ระบบยืนยันการชำระเงินสำเร็จ
+    Route::post('/payment-success', [EcommerceController::class, 'paymentSuccess']);
 });
 
 // --- Public Routes (ไม่ต้องล็อกอิน) ---
@@ -111,4 +126,9 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
     
     // ติดตามสถานะงานซ่อม
     Route::get('/{id}/tracking', [SupportController::class, 'getTrackingLogs']);
+});
+
+// ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
+Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
+    Route::post('/book', [SmartLockerController::class, 'book']);
 });

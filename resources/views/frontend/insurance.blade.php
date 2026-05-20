@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ประกันภัย - AEG EASE CLUB</title>
+@extends('frontend.layouts.main')
+
+@section('title', 'ประกันภัย - AEG EASE CLUB')
+
+@push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -279,156 +278,32 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
 
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section">
-                    <a href="cart" class="cart-icon" style="color: white; text-decoration: none;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
-                    </div>
-                </div>
-
-                <button class="navbar-toggler d-lg-none ms-3" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Sub Header Bar -->
-    <div class="breadcrumb-bar">
-        <div class="container">
-            <span>ประกัน</span>
-        </div>
-    </div>
-
-    <!-- Insurance Cards List -->
     <main class="insurance-section">
         <div class="container">
 
-            <!-- Insurance Card 1 -->
-            <div class="insurance-card">
-                <div class="insurance-image-box">
-                    <img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80"
-                        alt="ประกันภัยอัญมณี">
+            @forelse($insurances as $item)
+                <div class="insurance-card">
+                    <div class="insurance-image-box">
+                        <img src="{{ $item->image_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}"
+                            alt="{{ $item->title_th }}">
+                    </div>
+                    <div class="insurance-content">
+                        <h2 class="insurance-title">{{ $item->title_th }}</h2>
+                        <a href="{{ route('insurance-detail', $item->id) }}" class="btn-details">ดูรายละเอียด</a>
+                    </div>
                 </div>
-                <div class="insurance-content">
-                    <h2 class="insurance-title">ประกันภัยอัญมณี และทรัพย์สินมูลค่าสูง</h2>
-                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
+            @empty
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-shield-alt fa-4x mb-3" style="opacity: 0.5;"></i>
+                    <h4>ยังไม่มีข้อมูลประกันภัยในขณะนี้</h4>
                 </div>
-            </div>
-
-            <!-- Insurance Card 2 -->
-            <div class="insurance-card">
-                <div class="insurance-image-box">
-                    <img src="https://images.unsplash.com/photo-1542362567-b04400281656?auto=format&fit=crop&w=1200&q=80"
-                        alt="ประกันวินาศภัยสิ่งปลูกสร้าง">
-                </div>
-                <div class="insurance-content">
-                    <h2 class="insurance-title">ประกันวินาศภัยสิ่งปลูกสร้าง</h2>
-                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
-                </div>
-            </div>
-
-            <!-- Insurance Card 3 -->
-            <div class="insurance-card">
-                <div class="insurance-image-box">
-                    <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80"
-                        alt="ประกันวินาศภัยการขนส่ง">
-                </div>
-                <div class="insurance-content">
-                    <h2 class="insurance-title">ประกันวินาศภัยการขนส่งสินค้ามูลค่าสูง</h2>
-                    <a href="{{ route('insurance-detail') }}" class="btn-details">ดูรายละเอียด</a>
-                </div>
-            </div>
+            @endforelse
 
         </div>
     </main>
 
-    <!-- Floating Chat -->
-    <div class="floating-chat">
-        <div class="chat-circle">
-            <i class="fas fa-comment-dots text-danger fs-3"></i>
-        </div>
-    </div>
-
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="#" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">คำถามที่พบบ่อย</h5>
-                            <a href="#" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
+@endsection

@@ -18,15 +18,38 @@ class EcommerceController extends Controller
     public function getProducts(Request $request)
     {
         $lang = $request->header('Accept-Language', 'th');
-
         $query = DB::table('products')->where('is_active', true);
+
+        // รองรับการกรองตามประเภท (service, package, equipment)
+        if ($request->has('type')) {
+            $query->where('type', $request->type);
+        }
 
         // รองรับการกรองตามหมวดหมู่
         if ($request->has('category_id')) {
-            $query->where('type', $request->category_id);
+            $query->where('service_category_id', $request->category_id);
         }
 
-        $products = $query->orderBy('created_at', 'desc')->get()->map(function ($p) use ($lang) {
+        // ดึงข้อมูลสินค้าออกมาก่อน
+        $rawProducts = $query->orderBy('created_at', 'desc')->get();
+
+        // 🌟 ดึงรูปภาพทั้งหมดของสินค้าที่อยู่ใน list (เทคนิคแก้ปัญหาเว็บช้า N+1 Query)
+        $productIds = $rawProducts->pluck('id');
+        $allImages = DB::table('product_images')
+            ->whereIn('product_id', $productIds)
+            ->orderBy('sort_order', 'asc')
+            ->get()
+            ->groupBy('product_id');
+
+        $products = $rawProducts->map(function ($p) use ($lang, $allImages) {
+            // จัดการรูปภาพให้เป็น Array
+            $images = isset($allImages[$p->id]) ? $allImages[$p->id]->pluck('image_url')->toArray() : [];
+            
+            // Fallback: ถ้าตารางใหม่ไม่มีรูป ให้ดึงจากคอลัมน์เก่ามาโชว์แก้ขัด
+            if (empty($images) && !empty($p->image_url)) {
+                $images = [$p->image_url];
+            }
+
             return [
                 'id' => $p->id,
                 'name' => ($lang == 'en' && !empty($p->name_en)) ? $p->name_en : $p->name_th,
@@ -34,8 +57,10 @@ class EcommerceController extends Controller
                 'type' => $p->type,
                 'price' => $p->price,
                 'compare_at_price' => $p->compare_at_price,
-                'image_url' => $p->image_url,
+                'image_url' => count($images) > 0 ? $images[0] : null, // รูปหน้าปก
+                'images' => $images, // 🌟 เพิ่มรูปสไลด์ทั้งหมด (Array)
                 'point_earn' => $p->point_earn,
+                'is_contact_only' => (bool) $p->is_contact_only,
             ];
         });
 
@@ -44,9 +69,38 @@ class EcommerceController extends Controller
 
     public function getProductDetail($id)
     {
+        $lang = request()->header('Accept-Language', 'th');
+        
         $product = DB::table('products')->where('id', $id)->where('is_active', true)->first();
         if (!$product) return $this->errorResponse('Product not found', 404);
-        return $this->successResponse($product, 'Product detail retrieved');
+
+        // 🌟 ดึงรูปภาพทั้งหมดของสินค้านี้
+        $images = DB::table('product_images')
+            ->where('product_id', $id)
+            ->orderBy('sort_order', 'asc')
+            ->pluck('image_url')
+            ->toArray();
+
+        // Fallback รูปภาพ
+        if (empty($images) && !empty($product->image_url)) {
+            $images = [$product->image_url];
+        }
+
+        // จัด Format ข้อมูลที่จะส่งกลับ
+        $data = [
+            'id' => $product->id,
+            'name' => ($lang == 'en' && !empty($product->name_en)) ? $product->name_en : $product->name_th,
+            'description' => ($lang == 'en' && !empty($product->description_en)) ? $product->description_en : $product->description_th,
+            'type' => $product->type,
+            'price' => $product->price,
+            'compare_at_price' => $product->compare_at_price,
+            'image_url' => count($images) > 0 ? $images[0] : null,
+            'images' => $images, // 🌟 ส่ง Array กลับไป
+            'point_earn' => $product->point_earn,
+            'is_contact_only' => (bool) $product->is_contact_only,
+        ];
+
+        return $this->successResponse($data, 'Product detail retrieved');
     }
 
     // ==========================================
@@ -135,10 +189,27 @@ class EcommerceController extends Controller
     // ==========================================
     public function getAddresses(Request $request)
     {
-        $addresses = DB::table('customer_addresses')->where('user_id', $request->user()->id)->get();
+        $addresses = DB::table('customer_addresses')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
         return $this->successResponse($addresses, 'Addresses retrieved');
     }
 
+    // 🌟 1. ดึงรายละเอียดที่อยู่แบบเจาะจง (เพื่อเอาไปโชว์ในหน้าแก้ไข)
+    public function getAddressDetail(Request $request, $id)
+    {
+        $address = DB::table('customer_addresses')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
+
+        return $this->successResponse($address, 'Address detail retrieved');
+    }
+
+    // 🌟 2. อัปเดตฟังก์ชันสร้างที่อยู่ให้รับ พิกัด (Lat/Long) ได้
     public function createAddress(Request $request)
     {
         $request->validate([
@@ -149,26 +220,75 @@ class EcommerceController extends Controller
             'province' => 'required|string',
             'district' => 'required|string',
             'subdistrict' => 'required|string',
-            'zipcode' => 'required|string'
+            'zipcode' => 'required|string',
+            'latitude' => 'nullable|numeric',  // เพิ่มพิกัด
+            'longitude' => 'nullable|numeric'  // เพิ่มพิกัด
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'title', 'contact_name', 'contact_phone', 'address_line', 
+            'province', 'district', 'subdistrict', 'zipcode', 'latitude', 'longitude'
+        ]);
+        
         $data['user_id'] = $request->user()->id;
         $data['created_at'] = now();
         $data['updated_at'] = now();
 
-        DB::table('customer_addresses')->insert($data);
-        return $this->successResponse(null, 'Address created successfully');
+        $addressId = DB::table('customer_addresses')->insertGetId($data);
+        
+        $newAddress = DB::table('customer_addresses')->where('id', $addressId)->first();
+
+        return $this->successResponse($newAddress, 'บันทึกที่อยู่ใหม่สำเร็จ');
+    }
+
+    // 🌟 3. ฟังก์ชันอัปเดตที่อยู่เดิม
+    public function updateAddress(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|string',
+            'contact_name' => 'required|string',
+            'contact_phone' => 'required|string',
+            'address_line' => 'required|string',
+            'province' => 'required|string',
+            'district' => 'required|string',
+            'subdistrict' => 'required|string',
+            'zipcode' => 'required|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric'
+        ]);
+
+        $address = DB::table('customer_addresses')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
+
+        $updateData = $request->only([
+            'title', 'contact_name', 'contact_phone', 'address_line', 
+            'province', 'district', 'subdistrict', 'zipcode', 'latitude', 'longitude'
+        ]);
+        $updateData['updated_at'] = now();
+
+        DB::table('customer_addresses')->where('id', $id)->update($updateData);
+
+        $updatedAddress = DB::table('customer_addresses')->where('id', $id)->first();
+
+        return $this->successResponse($updatedAddress, 'อัปเดตข้อมูลที่อยู่สำเร็จ');
     }
 
     // ==========================================
-    // 4. Checkout & Payment (สั่งซื้อ)
+    // 4. Checkout & Payment (สั่งซื้อจากตะกร้า)
     // ==========================================
     public function checkout(Request $request)
     {
         $request->validate([
             'address_id' => 'required|integer',
-            'payment_gateway' => 'required|string' // เช่น 'omise', 'promptpay'
+            'payment_gateway' => 'required|string',
+            'preferred_date' => 'nullable|date',
+            'note' => 'nullable|string',
+            'coupon_code' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240' // รับรูปหรือวิดีโอ (สูงสุด 10MB)
         ]);
 
         $user = $request->user();
@@ -178,7 +298,7 @@ class EcommerceController extends Controller
         $cartItems = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
             ->where('cart_items.cart_id', $cart->id)
-            ->select('products.id', 'products.name', 'products.price', 'cart_items.quantity')
+            ->select('products.id', 'products.name_th as name', 'products.price', 'cart_items.quantity')
             ->get();
 
         if ($cartItems->isEmpty()) return $this->errorResponse('Cart is empty', 400);
@@ -187,17 +307,29 @@ class EcommerceController extends Controller
             return $item->price * $item->quantity;
         });
 
+        // จัดการอัปโหลดไฟล์ (ถ้ามีส่งมา)
+        $attachmentUrl = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('order_attachments', 'public');
+            $attachmentUrl = url('storage/' . $path);
+        }
+
         DB::beginTransaction();
         try {
-            // 1. สร้าง Order
+            // 1. สร้าง Order พร้อมข้อมูลใหม่
             $orderId = DB::table('orders')->insertGetId([
-                'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(Str::random(6)),
+                'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,
                 'address_id' => $request->address_id,
                 'subtotal' => $totalAmount,
+                'discount' => 0, // TODO: ถ้าระบบคูปองเสร็จ สามารถคำนวณส่วนลดตรงนี้ได้
                 'total_amount' => $totalAmount,
                 'status' => 'pending_payment',
                 'payment_gateway' => $request->payment_gateway,
+                'preferred_date' => $request->preferred_date,
+                'note' => $request->note,
+                'coupon_code' => $request->coupon_code,
+                'attachment_url' => $attachmentUrl,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -222,14 +354,95 @@ class EcommerceController extends Controller
 
             DB::commit();
 
-            // TODO: เชื่อมต่อ API ของ Payment Gateway ตรงนี้
-            // ตัวอย่าง: โยน $totalAmount และ $orderId ไปสร้าง Payment Link ของ Omise/GBPrime
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $orderId;
+            $order = DB::table('orders')->where('id', $orderId)->first();
+            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
 
             return $this->successResponse([
                 'order_id' => $orderId,
+                'order_number' => $order->order_number,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl // ส่ง Link ให้แอป Mobile เปิดหน้าจ่ายเงิน
+                'payment_url' => $paymentUrl
+            ], 'Order created successfully. Please proceed to payment.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('Checkout failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ==========================================
+    // 5. Buy Now (ซื้อเลยข้ามตะกร้า)
+    // ==========================================
+    public function buyNow(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|integer',
+            'quantity' => 'required|integer|min:1',
+            'address_id' => 'required|integer',
+            'payment_gateway' => 'required|string',
+            'preferred_date' => 'nullable|date',
+            'note' => 'nullable|string',
+            'coupon_code' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
+        ]);
+
+        $user = $request->user();
+        $product = DB::table('products')->where('id', $request->product_id)->where('is_active', true)->first();
+        
+        if (!$product) {
+            return $this->errorResponse('Product not found or inactive', 404);
+        }
+
+        $subtotal = $product->price * $request->quantity;
+
+        // จัดการอัปโหลดไฟล์ (ถ้ามีส่งมา)
+        $attachmentUrl = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('order_attachments', 'public');
+            $attachmentUrl = url('storage/' . $path);
+        }
+
+        DB::beginTransaction();
+        try {
+            // สร้างออเดอร์ทันที
+            $orderId = DB::table('orders')->insertGetId([
+                'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                'user_id' => $user->id,
+                'address_id' => $request->address_id,
+                'subtotal' => $subtotal,
+                'discount' => 0,
+                'total_amount' => $subtotal,
+                'status' => 'pending_payment',
+                'payment_gateway' => $request->payment_gateway,
+                'preferred_date' => $request->preferred_date,
+                'note' => $request->note,
+                'coupon_code' => $request->coupon_code,
+                'attachment_url' => $attachmentUrl,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // บันทึกรายการสินค้าลงใน Order Items
+            DB::table('order_items')->insert([
+                'order_id' => $orderId,
+                'product_id' => $product->id,
+                'product_name' => $product->name_th, 
+                'price' => $product->price,
+                'quantity' => $request->quantity,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            $order = DB::table('orders')->where('id', $orderId)->first();
+            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+
+            return $this->successResponse([
+                'order_id' => $orderId,
+                'order_number' => $order->order_number,
+                'total_amount' => $subtotal,
+                'payment_url' => $paymentUrl
             ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
@@ -266,68 +479,72 @@ class EcommerceController extends Controller
         return response()->json(['status' => 'ok']); // ตอบกลับ Gateway ว่ารับข้อมูลแล้ว
     }
 
-    // 🌟 เพิ่มฟังก์ชันใหม่สำหรับการ "จอง/ซื้อเลย" (ข้ามตะกร้า)
-    public function buyNow(Request $request)
+    // ==========================================
+    // 6. ยืนยันการชำระเงินสำเร็จ (Payment Success Callback)
+    // ==========================================
+    public function paymentSuccess(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1',
-            'address_id' => 'required|integer',
-            'payment_gateway' => 'required|string'
+            'order_number' => 'required|string',
+            // สามารถรับ transaction_id หรือค่าอื่นๆ จาก Payment Gateway เพิ่มได้
         ]);
 
-        $user = $request->user();
-        $product = DB::table('products')->where('id', $request->product_id)->where('is_active', true)->first();
+        $order = DB::table('orders')->where('order_number', $request->order_number)->first();
 
-        if (!$product) {
-            return $this->errorResponse('Product not found or inactive', 404);
+        if (!$order) {
+            return $this->errorResponse('ไม่พบข้อมูลคำสั่งซื้อนี้', 404);
         }
 
-        $subtotal = $product->price * $request->quantity;
+        // เช็คว่าถ้าออเดอร์นี้เคยเปลี่ยนสถานะและแจกของไปแล้ว ให้ return กลับไปเลย ป้องกันการแจกของเบิ้ล
+        if ($order->status === 'completed') {
+            return $this->successResponse(null, 'คำสั่งซื้อนี้ได้รับการยืนยันและแจกแพ็กเกจเรียบร้อยแล้ว');
+        }
 
         DB::beginTransaction();
         try {
-            // สร้างออเดอร์ทันที
-            $orderId = DB::table('orders')->insertGetId([
-                'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
-                'user_id' => $user->id,
-                'address_id' => $request->address_id,
-                'subtotal' => $subtotal,
-                'discount' => 0,
-                'total_amount' => $subtotal,
-                'status' => 'pending_payment',
-                'payment_gateway' => $request->payment_gateway,
-                'created_at' => now(),
+            // 1. อัปเดตสถานะ Order เป็น "ชำระเงินแล้ว (completed)"
+            DB::table('orders')->where('id', $order->id)->update([
+                'status' => 'completed',
                 'updated_at' => now()
             ]);
 
-            // บันทึกรายการสินค้าลงใน Order Items
-            DB::table('order_items')->insert([
-                'order_id' => $orderId,
-                'product_id' => $product->id,
-                'product_name' => $product->name_th,
-                'price' => $product->price,
-                'quantity' => $request->quantity,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // 2. ดึงรายการสินค้าทั้งหมดในบิลนี้
+            $orderItems = DB::table('order_items')->where('order_id', $order->id)->get();
+
+            // 3. 🌟 นำ Logic การแจกของมาไว้ตรงนี้! (นำเข้าตาราง customer_products)
+            foreach ($orderItems as $item) {
+                // หารูปภาพหน้าปก
+                $coverImage = DB::table('product_images')
+                                ->where('product_id', $item->product_id)
+                                ->orderBy('sort_order', 'asc')
+                                ->value('image_url');
+
+                // แจกแพ็กเกจตามจำนวนชิ้นที่ลูกค้าซื้อ
+                for ($i = 0; $i < $item->quantity; $i++) {
+                    DB::table('customer_products')->insert([
+                        'customer_id' => $order->user_id,
+                        'product_name' => $item->product_name,
+                        'serial_number' => 'PKG-' . strtoupper(\Illuminate\Support\Str::random(8)),
+                        'warranty_expire_date' => \Carbon\Carbon::now()->addYear(), // หมดอายุใน 1 ปี
+                        'status' => 'active',
+                        'total_service_count' => 4, // โควต้าเรียกช่าง (สามารถดึงจาก DB สินค้าจริงได้ถ้ามี)
+                        'used_service_count' => 0,
+                        'image_url' => $coverImage,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
 
             DB::commit();
-
-            // ดึง order_number ออกมาส่งกลับให้แอป
-            $order = DB::table('orders')->where('id', $orderId)->first();
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
-
             return $this->successResponse([
-                'order_id' => $orderId,
                 'order_number' => $order->order_number,
-                'total_amount' => $subtotal,
-                'payment_url' => $paymentUrl
-            ], 'Order created successfully. Please proceed to payment.');
+                'status' => 'completed'
+            ], 'ยืนยันการชำระเงินสำเร็จ และเพิ่มแพ็กเกจให้ลูกค้าเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse('Checkout failed: ' . $e->getMessage(), 500);
+            return $this->errorResponse('เกิดข้อผิดพลาดในการยืนยันชำระเงิน: ' . $e->getMessage(), 500);
         }
     }
 }

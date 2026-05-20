@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดประกันภัยอัญมณี - AEG EASE CLUB</title>
+@extends('frontend.layouts.main')
+
+@section('title', 'รายละเอียดประกันภัย - AEG EASE CLUB')
+
+@push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -281,143 +280,29 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
 
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section">
-                    <a href="cart" class="cart-icon" style="color: white; text-decoration: none;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Detail Content -->
     <main class="detail-wrapper">
         <div class="container">
             <div class="insurance-detail-card">
-                <!-- Header Collage Image -->
-                <img src="assets/image/insurance-banner-jewelry.webp" alt="ประกันภัยอัญมณี" class="banner-image"
-                    onerror="this.src='https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80'">
+                <img src="{{ $insurance->image_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}" 
+                    alt="{{ $insurance->title_th }}" class="banner-image">
 
                 <div class="detail-body">
                     <h1 class="detail-header-title">
-                        ประกันภัยเพชร ทอง อัญมณี<br>และทรัพย์สินมูลค่าสูง
+                        {{ $insurance->title_th }}
                     </h1>
 
-                    <p class="detail-intro">
-                        แผนประกันเฉพาะทางสำหรับร้านทอง ร้านจิวเวลรี่ ผู้ค้าอัญมณี โรงรับจำนำ และนักสะสมศิลปะ
-                        ครอบคลุมก่อน — ระหว่าง — หลังเหตุการณ์ ด้วยประสบการณ์กว่า 40 ปี
-                    </p>
+                    <div class="detail-description mb-5">
+                        {!! $insurance->description_th !!}
+                    </div>
 
-                    <p class="detail-description">
-                        AEG พร้อมดูแลเพื่อความอุ่นใจและลดความกังวลเกี่ยวกับเหตุการณ์วิ่งราวทรัพย์ การโจรกรรม
-                        หรืออุปสรรคทางความปลอดภัยอื่นๆ ที่ส่งผลต่อธุรกิจ
-                        ด้วยแผนประกันทรัพย์สินมูลค่าสูงแบบไม่จำกัดวงเงินร่วมกับระบบรักษาความปลอดภัยประสิทธิภาพสูง
-                    </p>
-
-                    <ul class="coverage-list">
-                        <li>คุ้มครองทรัพย์สินมูลค่าสูง เช่น ทองคำ อัญมณี เครื่องประดับ หรือผลงานศิลปะจากการโจรกรรม
-                            ชิงทรัพย์ ปล้นทรัพย์</li>
-                        <li>คุ้มครองตัวอาคาร ตู้นิรภัย กระจก เฟอร์นิเจอร์ และเครื่องใช้ไฟฟ้าต่างๆ
-                            ในสถานที่ที่เอาประกันภัยกรณีชิงทรัพย์ หรือปล้นทรัพย์</li>
-                        <li>คุ้มครองสินค้ามูลค่าขณะนำไปจัดแสดงในนิทรรศการ</li>
-                        <li>คุ้มครองค่ารักษาพยาบาลและเงินชดเชยผลประโยชน์ของเจ้าของร้าน บุคคลในครอบครัว ลูกจ้าง
-                            หรือพนักงานรักษาความปลอดภัย จากการเสียชีวิต สูญเสียอวัยวะ หรือทุพพลภาพถาวร
-                            ที่เกิดจากการชิงทรัพย์ หรือปล้นทรัพย์ในสถานที่ที่เอาประกันภัย</li>
-                    </ul>
-
-                    <a href="{{ route('insurance-contact') }}" class="btn-consult">ปรึกษาผู้เชี่ยวชาญ</a>
+                    <a href="{{ route('insurance-contact', $insurance->id) }}" class="btn-consult">ปรึกษาผู้เชี่ยวชาญ</a>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Floating Chat -->
-    <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
-        <div class="chat-circle"
-            style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
-            <i class="fas fa-comment-dots text-danger fs-3"></i>
-        </div>
-    </div>
-
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="#" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">คำถามที่พบบ่อย</h5>
-                            <a href="#" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
+@endsection

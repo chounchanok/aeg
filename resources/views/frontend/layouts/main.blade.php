@@ -17,7 +17,6 @@
     @stack('styles')
 </head>
 <body class="d-flex flex-column min-vh-100">
-
     <!-- เรียกใช้ Header -->
     @include('frontend.layouts.header')
     

@@ -14,6 +14,7 @@ use App\Http\Controllers\Frontend\RewardController;
 use App\Http\Controllers\Frontend\PackageController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProductController;
+use App\Http\Controllers\Frontend\InsuranceController;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\ServiceRequestAdminController;
@@ -24,7 +25,10 @@ use App\Http\Controllers\Admin\ProductAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
+use App\Http\Controllers\Admin\InsuranceAdminController;
 
+Route::get('dark-mode-switcher', function() { return back(); })->name('dark-mode-switcher');
+Route::get('color-scheme-switcher', function() { return back(); })->name('color-scheme-switcher');
 
 // ==========================================
 // 1. PUBLIC ROUTES (ไม่ต้องล็อกอินก็เข้าได้)
@@ -36,11 +40,14 @@ Route::get('/run-link', function () {
     return "Storage link has been created.";
 });
 
+// ระบบประกันภัย
+Route::get('/insurance', [InsuranceController::class, 'index'])->name('insurance');
+Route::get('/insurance/{id}', [InsuranceController::class, 'show'])->where('id', '[0-9]+')->name('insurance-detail');
+Route::get('/insurance/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('insurance-contact');
+
+
 // --- Static Pages (หน้าทั่วไป) ---
 Route::view('/faq', 'frontend.faq')->name('faq');
-Route::view('/insurance', 'frontend.insurance')->name('insurance');
-Route::view('/insurance/contact', 'frontend.insurance-contact')->name('insurance-contact');
-Route::view('/insurance/detail', 'frontend.insurance-detail')->name('insurance-detail');
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
 Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
@@ -49,9 +56,14 @@ Route::view('/services', 'frontend.services')->name('services');
 Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
 
 // --- E-Commerce & Packages (ดูสินค้าและแพ็กเกจได้) ---
+// 1. หน้าสินค้าทั้งหมด
 Route::get('/products', [ProductController::class, 'index'])->name('product-categories');
+// 2. หน้ารายละเอียดสินค้า (ล็อก {id} ให้เป็นตัวเลขเท่านั้น เพื่อป้องกันการชนกับชื่อ group)
 Route::get('/products/{id}', [ProductController::class, 'show'])->where('id', '[0-9]+')->name('product-detail');
-Route::get('/products/{type}', [ProductController::class, 'index'])->name('products');
+// 3. หน้าสินค้าแบ่งตามกลุ่ม และ หมวดหมู่ย่อย (🌟 ยุบรวมเหลือบรรทัดเดียว และเติม ? หลัง categoryId)
+Route::get('/products/{group}/{categoryId?}', [ProductController::class, 'index'])->name('products');
+
+// ----------------------------------------------------
 
 Route::get('/packages/{type}', [PackageController::class, 'index'])->name('packages');
 Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
@@ -166,5 +178,23 @@ Route::middleware('auth')->group(function() {
             Route::post('/ease-club/rewards/{id}/update', [CmsAdminController::class, 'updateReward'])->name('ease-club.rewards.update');
             Route::post('/ease-club/rewards/{id}/delete', [CmsAdminController::class, 'deleteReward'])->name('ease-club.rewards.delete');
         });
+
+        // จัดการตู้เซฟ (Smart Lockers)
+        Route::get('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'index'])->name('admin.smart-lockers.index');
+        Route::post('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'store'])->name('admin.smart-lockers.store');
+        Route::post('/admin/smart-lockers/{id}/update', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'update'])->name('admin.smart-lockers.update');
+        Route::post('/admin/smart-lockers/{id}/delete', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'destroy'])->name('admin.smart-lockers.delete');
+        
+        // 🌟 ย้ายมาวางตรงนี้ครับ (ให้ระบบมันสร้าง prefix คำว่า admin ให้อัตโนมัติ)
+        Route::resource('admin/insurances', InsuranceAdminController::class)->names([
+            'index'   => 'admin.insurances.index',
+            'create'  => 'admin.insurances.create',
+            'store'   => 'admin.insurances.store',
+            'edit'    => 'admin.insurances.edit',
+            'update'  => 'admin.insurances.update',
+            'destroy' => 'admin.insurances.destroy',
+        ]);
+        
     });
+
 });

@@ -1,0 +1,494 @@
+{
+  "info": {
+    "_postman_id": "991038ab-206a-475b-96c2-7036e1fb818a",
+    "name": "AEG EASE CLUB - Latest Updates",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22643747"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login (Phone & Password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"0635163197\",\n    \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Main & General",
+      "item": [
+        {
+          "name": "Get Service Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "th"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/service-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "service-categories"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Addresses (ระบบที่อยู่ + พิกัด)",
+      "item": [
+        {
+          "name": "Get All Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "addresses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Address (สร้างที่อยู่ใหม่)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"บ้าน\",\n    \"contact_name\": \"สมชาย ใจดี\",\n    \"contact_phone\": \"0812345678\",\n    \"address_line\": \"123/45 หมู่ 1\",\n    \"province\": \"กรุงเทพมหานคร\",\n    \"district\": \"เขตปทุมวัน\",\n    \"subdistrict\": \"วังใหม่\",\n    \"zipcode\": \"10330\",\n    \"latitude\": 13.736717,\n    \"longitude\": 100.523186\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "addresses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Address Detail (ดึงข้อมูลเพื่อแก้ไข)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/addresses/5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "addresses",
+                "5"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address (บันทึกแก้ไขที่อยู่)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"บ้าน (แก้ไข)\",\n    \"contact_name\": \"สมชาย ใจดี\",\n    \"contact_phone\": \"0812345678\",\n    \"address_line\": \"123/45 หมู่ 1 ซอย 2\",\n    \"province\": \"กรุงเทพมหานคร\",\n    \"district\": \"เขตปทุมวัน\",\n    \"subdistrict\": \"วังใหม่\",\n    \"zipcode\": \"10330\",\n    \"latitude\": 13.736717,\n    \"longitude\": 100.523186\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/addresses/5/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "addresses",
+                "5",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. E-Commerce & Checkout",
+      "item": [
+        {
+          "name": "Get Products (Filterable)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "th"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/products?type=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buy Now (ซื้อเลยข้ามตะกร้า + แนบไฟล์)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "product_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "quantity",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "address_id",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_gateway",
+                  "value": "omise",
+                  "type": "text"
+                },
+                {
+                  "key": "preferred_date",
+                  "value": "2026-06-01",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "ติดตั้งวันที่ 01-06-2026",
+                  "type": "text"
+                },
+                {
+                  "key": "attachment",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/buy-now",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "buy-now"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (สั่งซื้อจากตะกร้า + แนบไฟล์)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "address_id",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_gateway",
+                  "value": "omise",
+                  "type": "text"
+                },
+                {
+                  "key": "preferred_date",
+                  "value": "2026-06-01",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "ติดต่อก่อนเข้ามานะครับ",
+                  "type": "text"
+                },
+                {
+                  "key": "attachment",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ecommerce/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ecommerce",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Smart Lockers (ตู้เซฟ)",
+      "item": [
+        {
+          "name": "Get Smart Lockers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/smart-lockers?type=PRIME",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "smart-lockers"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PRIME"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Book Smart Locker (จองตู้)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"smart_locker_id\": 3,\n    \"payment_gateway\": \"omise\",\n    \"duration_months\": 6\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/smart-lockers/book",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "smart-lockers",
+                "book"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Profile & My Packages",
+      "item": [
+        {
+          "name": "Get My Packages (ประวัติการใช้งาน)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user/my-packages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "my-packages"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://aeg.champagne.orangeworkshop.info/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "ใส่_Token_ที่ได้จาก_Login",
+      "type": "string"
+    }
+  ]
+}

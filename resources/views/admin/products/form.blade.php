@@ -36,6 +36,11 @@
                         </select>
                     </div>
 
+                    <div class="col-span-12 mt-3 flex items-center">
+                        <input name="is_contact_only" type="checkbox" class="form-check-input border mr-2" value="1">
+                        <label class="font-medium text-danger">ตั้งค่าเป็นบริการที่ต้องติดต่อฝ่ายขายเท่านั้น (ไม่สามารถกดซื้อผ่านแอปได้)</label>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="form-label font-medium">ราคาขายจริง (Price) <span class="text-danger">*</span></label>

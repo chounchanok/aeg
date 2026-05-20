@@ -78,8 +78,8 @@
         <div class="collapse navbar-collapse d-lg-block" id="mainMenuCollapse">
             <ul class="navbar-nav d-flex flex-column flex-lg-row justify-content-center text-center">
                 <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">หน้าหลัก</a></li>
-                <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->is('packages/equipment') ? 'active' : '' }}" href="{{ route('packages', 'equipment') }}">สินค้าพร้อมติดตั้ง</a></li>
-                <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->is('packages/service') ? 'active' : '' }}" href="{{ route('packages', 'service') }}">แพ็กเกจบริการ</a></li>
+                <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->is('products/equipment') ? 'active' : '' }}" href="{{ route('products', 'equipment') }}">สินค้าพร้อมติดตั้ง</a></li>
+                <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->is('products/package') ? 'active' : '' }}" href="{{ route('products', 'package') }}">แพ็กเกจบริการ</a></li>
                 <li class="nav-item"><a class="nav-link nav-link-custom {{ request()->routeIs('services') ? 'active' : '' }}" href="{{ route('services') }}">บริการแนะนำ</a></li>
             </ul>
         </div>

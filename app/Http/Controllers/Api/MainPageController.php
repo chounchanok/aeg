@@ -23,14 +23,19 @@ class MainPageController extends Controller
 
     public function getExpiringServices(Request $request)
     {
-        // ดึงบริการที่ใกล้หมดอายุภายใน 30 วันของ User นั้น
+        // ดึงบริการที่ใกล้หมดอายุโดยตรง (ไม่ Join ตาราง products)
         $expiring = DB::table('customer_products')
             ->where('customer_id', $request->user()->id)
             ->where('status', 'active')
-            ->whereBetween('warranty_expire_date', [Carbon::now()->subDays(30), Carbon::now()])
-            ->get();
+            ->whereBetween('warranty_expire_date', [now(), now()->addDays(30)])
+            ->get()
+            ->map(function ($item) {
+                // จัด Format ป้องกันตัวแปรหาย
+                $item->image_url = $item->image_url ?? null; 
+                return $item;
+            });
 
-        return $this->successResponse($expiring, 'Expiring services retrieved');
+        return $this->successResponse($expiring, 'Expiring services retrieved successfully');
     }
 
     public function getRecommendedPrivileges()
@@ -49,5 +54,28 @@ class MainPageController extends Controller
             ->limit(4)->get();
             
         return $this->successResponse($services, 'Recommended services retrieved');
+    }
+
+    public function getServiceCategories(Request $request)
+    {
+        $lang = $request->header('Accept-Language', 'th');
+        
+        $query = DB::table('service_categories')->where('is_active', true);
+
+        // 🌟 เพิ่มเติม: ถ้าน้องโอมส่ง ?group=equipment มา ให้กรองเอาเฉพาะกลุ่มนั้นๆ
+        if ($request->has('group')) {
+            $query->where('group', $request->group);
+        }
+
+        $categories = $query->orderBy('sort_order', 'asc')->get()->map(function ($cat) use ($lang) {
+            return [
+                'id' => $cat->id,
+                'name' => ($lang == 'en' && !empty($cat->name_en)) ? $cat->name_en : $cat->name_th,
+                'group' => $cat->group, // 🌟 ส่งค่ากลุ่ม (equipment/package/service) กลับไปด้วย
+                'icon_url' => $cat->icon_url
+            ];
+        });
+
+        return $this->successResponse($categories, 'Service categories retrieved successfully');
     }
 }

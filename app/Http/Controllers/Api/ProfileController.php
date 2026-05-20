@@ -63,12 +63,88 @@ class ProfileController extends Controller
     // ==========================================
     public function getMyPackages(Request $request)
     {
-        // อ้างอิงจากตาราง customer_products ที่สร้างไว้ในเฟส 1
-        $packages = DB::table('customer_products')
-            ->where('customer_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        // 1. ดึงข้อมูลจาก customer_products โดยตรง (เอา Join ออก)
+        $rawPackages = DB::table('customer_products')
+            ->where('customer_id', $userId)
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        return $this->successResponse($packages, 'My packages retrieved');
+        // 2. ดึงประวัติการเรียกช่างทั้งหมดของลูกค้านี้มาเตรียมไว้
+        $serviceRequests = DB::table('service_requests')
+            ->where('customer_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('customer_product_id');
+
+        $activePackages = [];
+        $historyPackages = [];
+
+        foreach ($rawPackages as $pkg) {
+            // คำนวณวันหมดอายุและระยะเวลาคงเหลือ
+            $expireDate = \Carbon\Carbon::parse($pkg->warranty_expire_date);
+            $now = \Carbon\Carbon::now();
+            $isExpired = $expireDate->isPast();
+            
+            $remainingText = 'หมดอายุแล้ว';
+            if (!$isExpired) {
+                $diff = $now->diff($expireDate);
+                $remainingMonths = $diff->m + ($diff->y * 12);
+                $remainingDays = $diff->d;
+                
+                if ($remainingMonths > 0) {
+                    $remainingText = "เหลือเวลา $remainingMonths เดือน $remainingDays วัน";
+                } else {
+                    $remainingText = "เหลือเวลา $remainingDays วัน";
+                }
+            }
+
+            // คำนวณโควต้าจำนวนครั้งคงเหลือ (ป้องกันค่า null)
+            $totalCount = $pkg->total_service_count ?? 0;
+            $usedCount = $pkg->used_service_count ?? 0;
+            $remainingServices = max(0, $totalCount - $usedCount);
+
+            // ดึงประวัติการเรียกช่างของแพ็กเกจนี้มาเรียงลำดับ
+            $requests = isset($serviceRequests[$pkg->id]) ? $serviceRequests[$pkg->id] : collect([]);
+            $history = $requests->map(function($req, $index) use ($requests) {
+                $count = $requests->count() - $index;
+                return [
+                    'id' => $req->id,
+                    'ticket_number' => $req->ticket_number,
+                    'title' => "บริการครั้งที่ $count",
+                    'problem_description' => $req->problem_description,
+                    'status' => $req->status,
+                    'preferred_date' => $req->preferred_date,
+                    'created_at' => $req->created_at
+                ];
+            })->toArray();
+
+            // ประกอบร่างข้อมูล
+            $formattedPackage = [
+                'id' => $pkg->id,
+                'product_name' => $pkg->product_name ?? 'ไม่ระบุชื่อ', // ดึงชื่อจากตารางเดิมเลย
+                'serial_number' => $pkg->serial_number ?? '-',
+                'image_url' => $pkg->image_url ?? null, // ถ้าไม่มีรูปก็จะส่ง null ให้แอปโชว์รูป Default แทน
+                'warranty_expire_date' => $expireDate->format('Y-m-d'),
+                'remaining_text' => $remainingText,
+                'total_service_count' => $totalCount,
+                'used_service_count' => $usedCount,
+                'remaining_services' => $remainingServices,
+                'service_history' => $history
+            ];
+
+            if (($pkg->status ?? 'active') === 'active' && !$isExpired) {
+                $activePackages[] = $formattedPackage;
+            } else {
+                $historyPackages[] = $formattedPackage;
+            }
+        }
+
+        return $this->successResponse([
+            'active' => $activePackages,
+            'history' => $historyPackages
+        ], 'My packages retrieved successfully');
     }
 
     // ==========================================

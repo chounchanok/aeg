@@ -23,6 +23,7 @@ class ServiceCategoryApiController extends Controller
                 // คืนค่า JSON กลับไปให้แอป ตามภาษาที่ร้องขอ
                 return [
                     'id' => $cat->id,
+                    'group' => $cat->group,
                     'title' => ($lang == 'en' && !empty($cat->title_en)) ? $cat->title_en : $cat->title_th,
                     'image_url' => $cat->image_url,
                 ];

@@ -1,0 +1,527 @@
+{
+  "info": {
+    "_postman_id": "b6715e20-476f-443c-aca6-ffa6aa3e812d",
+    "name": "AEG EASE CLUB - Final Flow (With /api Path Fix)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22643747"
+  },
+  "item": [
+    {
+      "name": "1. Auth & Categories",
+      "item": [
+        {
+          "name": "Login (เบอร์โทร & รหัสผ่าน)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"0635163197\",\n    \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Service Categories (หมวดหมู่หน้าแรก)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "th"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-categories"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Addresses (ระบบที่อยู่ + พิกัด)",
+      "item": [
+        {
+          "name": "Get All Addresses (รายการที่อยู่ทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Address (สร้างที่อยู่ใหม่ + ส่ง Lat/Long)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"บ้านพักส่วนตัว\",\n    \"contact_name\": \"สมชาย ใจดี\",\n    \"contact_phone\": \"0812345678\",\n    \"address_line\": \"123/45 หมู่ 1 ซอยสุขุมวิท 23\",\n    \"province\": \"กรุงเทพมหานคร\",\n    \"district\": \"เขตวัฒนา\",\n    \"subdistrict\": \"คลองเตยเหนือ\",\n    \"zipcode\": \"10110\",\n    \"latitude\": 13.736717,\n    \"longitude\": 100.523186\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Address Detail (ดึงข้อมูลแก้ไข)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses/5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses",
+                "5"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address (บันทึกการแก้ไขข้อมูลที่อยู่)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"บ้านพักส่วนตัว (แก้ไขแล้ว)\",\n    \"contact_name\": \"สมชาย ใจดี\",\n    \"contact_phone\": \"0812345678\",\n    \"address_line\": \"123/45 หมู่ 1 ซอยสุขุมวิท 23 อาคารสิงห์\",\n    \"province\": \"กรุงเทพมหานคร\",\n    \"district\": \"เขตวัฒนา\",\n    \"subdistrict\": \"คลองเตยเหนือ\",\n    \"zipcode\": \"10110\",\n    \"latitude\": 13.736717,\n    \"longitude\": 100.523186\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses/5/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses",
+                "5",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. E-Commerce & Checkout",
+      "item": [
+        {
+          "name": "Get Products (รายการสินค้า + รูปสไลด์)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "th"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/products?type=3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buy Now (ซื้อเลยข้ามตะกร้า)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "product_id",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "quantity",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "address_id",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_gateway",
+                  "value": "omise",
+                  "type": "text"
+                },
+                {
+                  "key": "preferred_date",
+                  "value": "2026-06-01",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "ฝากนัดช่างเข้าเช็คสัญญาณด้วยครับ",
+                  "type": "text"
+                },
+                {
+                  "key": "coupon_code",
+                  "value": "AEGNEW10",
+                  "type": "text"
+                },
+                {
+                  "key": "attachment",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ecommerce/buy-now",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "buy-now"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (สั่งซื้อจากตะกร้าสินค้า)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "address_id",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_gateway",
+                  "value": "omise",
+                  "type": "text"
+                },
+                {
+                  "key": "preferred_date",
+                  "value": "2026-06-05",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "โทรแจ้งก่อนเข้าบริการ 1 ชั่วโมง",
+                  "type": "text"
+                },
+                {
+                  "key": "coupon_code",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "attachment",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ecommerce/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Payment Webhook (ยืนยันจ่ายเงินสำเร็จ)",
+      "item": [
+        {
+          "name": "Confirm Payment Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"order_number\": \"ORD-202605-ZDIPER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ecommerce/payment-success",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "payment-success"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Smart Lockers (ตู้เซฟ)",
+      "item": [
+        {
+          "name": "Get Smart Lockers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/smart-lockers?type=PRIME",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "smart-lockers"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PRIME"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Book Smart Locker (จองตู้)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"smart_locker_id\": 1,\n    \"payment_gateway\": \"omise\",\n    \"duration_months\": 6\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/smart-lockers/book",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "smart-lockers",
+                "book"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Profile & Packages",
+      "item": [
+        {
+          "name": "Get My Packages (แสดงรายการคูปอง/บริการและประวัติ)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/my-packages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "my-packages"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://aeg.champagne.orangeworkshop.info/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "ใส่_Token_ที่ได้จาก_Login_ตรงนี้",
+      "type": "string"
+    }
+  ]
+}

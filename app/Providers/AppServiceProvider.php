@@ -58,6 +58,18 @@ class AppServiceProvider extends ServiceProvider
                 'route_name' => 'admin.service-categories',
                 'params' => []
             ],
+            'smart-lockers' => [
+                'icon' => 'lock', // ใช้ไอคอนรูปแม่กุญแจ
+                'title' => 'ตู้เซฟนิรภัย (Smart Lockers)',
+                'route_name' => 'admin.smart-lockers.index',
+                'params' => []
+            ],
+            'insurances' => [
+                'icon' => 'shield', // ใช้ไอคอนรูปโล่
+                'title' => 'จัดการข้อมูลประกันภัย',
+                'route_name' => 'admin.insurances.index',
+                'params' => []
+            ],
             'devider', // เส้นคั่นเมนู
             'cms' => [
                 'icon' => 'layout',

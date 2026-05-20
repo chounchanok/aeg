@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดแลกของรางวัล - AEG EASE CLUB</title>
+@section('title', 'รายละเอียดแลกของรางวัล - AEG EASE CLUB')
+
+@push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -370,51 +368,9 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <!-- Header Section (ดึงข้อมูลให้ตรงกับไฟล์แรก) -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="{{ route('repair-status') }}" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    @auth
-                        <a href="{{ route('my-account') }}" class="nav-icon-item"><i class="fas fa-user"></i><span>{{ Auth::user()->name }}</span></a>
-                    @else
-                        <a href="{{ route('login') }}" class="nav-icon-item"><i class="fas fa-sign-in-alt"></i><span>เข้าสู่ระบบ</span></a>
-                    @endauth
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector" style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85rem;">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="{{ route('home') }}">
-                    <img src="{{ asset('assets/image/logo.webp') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section" style="display: flex; align-items: center; gap: 15px;">
-                    <a href="{{ route('cart') }}" style="color: white; font-size: 1.5rem;"><i class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> {{ Auth::check() ? (Auth::user()->points ?? 0) : 0 }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
+@section('content')
     <!-- Content Wrapper -->
     <main class="reward-content-wrapper">
 
@@ -428,8 +384,8 @@
                                 <img src="{{ $reward->image_url }}" alt="{{ $reward->title }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
                             </div>
                             <div class="hero-text-side">
-                                <h1>{{ $reward->title }}</h1>
-                                <h2>{!! nl2br(e($reward->description)) !!}</h2>
+                                <h1>{{ $reward->title_th }}</h1>
+                                <h2>{!! nl2br(e($reward->description_th)) !!}</h2>
 
                                 <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
                                     <span class="lbl">รับสิทธิ์</span>
@@ -445,7 +401,7 @@
                 <!-- Detailed Info -->
                 <section class="reward-details-area mb-5">
                     <div class="container-950">
-                        <h3 class="main-product-title">{{ $reward->title }}</h3>
+                        <h3 class="main-product-title">{{ $reward->title_th }}</h3>
 
                         <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
                         <p class="section-desc-text">*แลกใช้เพียง {{ number_format($reward->points_required) }} พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
@@ -492,9 +448,4 @@
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
+@endsection

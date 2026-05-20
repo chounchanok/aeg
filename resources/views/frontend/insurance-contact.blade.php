@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ติดต่อผู้เชี่ยวชาญ - AEG EASE CLUB</title>
+@section('title', 'ติดต่อผู้เชี่ยวชาญ - AEG EASE CLUB')
+
+@push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -308,55 +306,19 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
 
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <!-- Row 1 -->
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 2 -->
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section">
-                    <a href="cart" class="cart-icon" style="color: white; text-decoration: none;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Contact Form Main Content -->
     <main class="contact-wrapper">
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
+                <p class="text-center mb-4 text-muted">เรื่อง: {{ $insurance->title_th }}</p>
 
                 <form id="contactForm">
+                    <input type="hidden" name="insurance_id" value="{{ $insurance->id }}">
+
                     <div class="row">
                         <div class="col-12">
                             <input type="text" class="form-control form-control-custom" placeholder="• ชื่อผู้ติดต่อ"
@@ -385,15 +347,14 @@
                     </div>
 
                     <div class="btn-container">
-                        <a href="detail-Insurance" class="btn-gradient">ย้อนกลับ</a>
-                        <button type="submit" class="btn-gradient">ส่งข้อความถึงเรา</button>
+                        <button type="button" onclick="history.back();" class="btn-gradient border-0">ย้อนกลับ</button>
+                        <button type="submit" class="btn-gradient border-0">ส่งข้อความถึงเรา</button>
                     </div>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Success Modal (Match Insurance-Contact 2.jpg) -->
     <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content modal-success-content">
@@ -401,66 +362,13 @@
                     <p class="success-text-en">Your request has been submitted</p>
                     <p class="success-text-en">We will contact you as soon as possible.</p>
                     <p class="success-text-th">ระบบได้รับคำขอของคุณแล้ว ทางบริษัทของเราจะติดต่อกลับโดยเร็วที่สุด</p>
-                    <a href="index" class="btn-back-home">กลับสู่หน้าหลัก</a>
+                    <a href="{{ url('/') }}" class="btn-back-home">กลับสู่หน้าหลัก</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Floating Chat Icon -->
-    <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
-        <div class="chat-circle"
-            style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
-            <i class="fas fa-comment-dots text-danger fs-3"></i>
-        </div>
-    </div>
-
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="#" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">คำถามที่พบบ่อย</h5>
-                            <a href="#" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+@push('scripts')
     <script>
         // Handle form submission to show success modal
         document.getElementById('contactForm').addEventListener('submit', function (e) {
@@ -470,6 +378,6 @@
             successModal.show();
         });
     </script>
-</body>
+@endpush
 
-</html>
+@endsection
