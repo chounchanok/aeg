@@ -147,7 +147,7 @@ class AuthController extends Controller
             // 3. สร้างค่าจำลองสำหรับฟิลด์ที่บังคับใน Database
             $dummyUsername = 'user_' . $request->phone;
             $dummyName = 'Guest_' . substr($request->phone, -4); // เช่น Guest_4567
-            $randomPassword = Str::random(12); // สุ่มรหัสผ่านไปก่อน เพราะเราล็อกอินด้วย OTP
+            $randomPassword = 'password'; // สุ่มรหัสผ่านไปก่อน เพราะเราล็อกอินด้วย OTP
 
             // สร้าง User
             $user_data = [
@@ -202,37 +202,58 @@ class AuthController extends Controller
 
     public function verifyOtpSubmit(Request $request)
     {
-        $request->validate([
-            'phone' => 'required|string',
-            'code' => 'required|string',
-        ]);
+        // 1. ดึงเบอร์โทรจาก Session (ปลอดภัยกว่าการส่งผ่าน input hidden)
+        // หมายเหตุ: อย่าลืมใส่ session(['verify_phone' => $request->phone]); ไว้ในฟังก์ชัน Register/Login ก่อนหน้านี้นะครับ
+        $phone = session('verify_phone');
 
-        $otp = DB::table('otp_codes')
-            ->where('phone', $request->phone)
-            ->where('code', $request->code)
-            ->where('expires_at', '>', Carbon::now())
-            ->first();
-
-        if (!$otp) {
-            return back()->withErrors(['code' => 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ']);
+        // หากเซสชันหาย หรือไม่มีการทำรายการมาก่อน ให้เด้งกลับไปหน้าล็อกอิน
+        if (!$phone) {
+            return redirect()->route('login')->with('error', 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
         }
 
-        $user = User::where('phone', $request->phone)->first();
+        // 2. เปลี่ยนมา validate รับค่า 'otp' ตาม <input name="otp"> ในหน้าฟอร์ม
+        $request->validate([
+            'otp' => 'required|string|size:6',
+        ], [
+            'otp.required' => 'กรุณากรอกรหัส OTP',
+            'otp.size' => 'รหัส OTP ต้องมี 6 หลักพอดี'
+        ]);
+
+        // 3. ตรวจสอบ OTP ในระบบ
+        $otpRecord = DB::table('otp_codes')
+            ->where('phone', $phone)
+            ->where('code', $request->otp) // เปลี่ยนเป็นรับค่าจาก $request->otp
+            ->where('expires_at', '>', \Carbon\Carbon::now())
+            ->first();
+
+        // 4. กรณี OTP ผิด หรือ หมดอายุ (โยน error กลับไปที่ช่อง otp)
+        if (!$otpRecord) {
+            return back()->withErrors(['otp' => 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ']);
+        }
+
+        // 5. กรณี OTP ถูกต้อง ดำเนินการอัปเดต User
+        $user = \App\Models\User::where('phone', $phone)->first();
         if ($user) {
             $user->update([
-                'is_active' => true,
+                'password' => Hash::make('password'), // สุ่มรหัสผ่านใหม่ (เพราะล็อกอินด้วย OTP)
+                'is_active' => 1,
                 'phone_verified_at' => now()
             ]);
             
-            DB::table('otp_codes')->where('phone', $request->phone)->delete();
+            // ลบข้อมูล OTP ที่ใช้แล้วทิ้ง
+            DB::table('otp_codes')->where('phone', $phone)->delete();
+            
+            // ล้าง session เบอร์โทรทิ้ง เพื่อความปลอดภัย
+            session()->forget('verify_phone');
 
             // แทนที่จะออก Token ให้สร้าง Session Login ฝั่ง Web
-            Auth::login($user);
+            \Illuminate\Support\Facades\Auth::login($user);
 
             return redirect()->route('home')->with('success', 'ยืนยันตัวตนและเข้าสู่ระบบสำเร็จ');
         }
 
-        return back()->withErrors(['error' => 'ไม่พบข้อมูลผู้ใช้งาน']);
+        // กรณีหา User ไม่เจอ (โยน error กลับไปเป็น session('error') ตามที่ดักไว้ด้านบนของฟอร์ม)
+        return back()->with('error', 'ไม่พบข้อมูลผู้ใช้งานในระบบ');
     }
 
     // ==========================================
