@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="col-md-4 text-center text-md-end">
-                    <img src="assets/image/logo.webp" alt="Logo" height="40">
+                    <img src="{{ asset('assets/image/logo.webp') }}" alt="Logo" height="40">
                 </div>
             </div>
 
