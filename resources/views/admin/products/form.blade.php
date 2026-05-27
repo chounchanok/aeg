@@ -8,13 +8,13 @@
     <div class="intro-y flex items-center mt-8">
         <h2 class="text-lg font-medium mr-auto">{{ isset($product) ? 'แก้ไขข้อมูลสินค้า/บริการ' : 'เพิ่มสินค้า/บริการใหม่' }}</h2>
     </div>
-    
+
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 lg:col-span-8">
             <form action="{{ isset($product) ? route('admin.products.update', $product->id) : route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @if(isset($product)) @method('PUT') @endif
-                
+
                 <div class="intro-y box p-5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -30,9 +30,9 @@
                     <div class="mt-4">
                         <label class="form-label font-medium">ประเภท (Type) <span class="text-danger">*</span></label>
                         <select name="type" class="form-select">
-                            <option value="service" {{ (isset($product) && $product->type == 'service') ? 'selected' : '' }}>บริการ (Service)</option>
-                            <option value="package" {{ (isset($product) && $product->type == 'package') ? 'selected' : '' }}>แพ็กเกจ (Package)</option>
-                            <option value="equipment" {{ (isset($product) && $product->type == 'equipment') ? 'selected' : '' }}>อุปกรณ์/ฮาร์ดแวร์ (Equipment)</option>
+                            <option value="1" {{ (isset($product) && $product->type == '1') ? 'selected' : '' }}>บริการ (Service)</option>
+                            <option value="2" {{ (isset($product) && $product->type == '2') ? 'selected' : '' }}>แพ็กเกจ (Package)</option>
+                            <option value="3" {{ (isset($product) && $product->type == '3') ? 'selected' : '' }}>อุปกรณ์/ฮาร์ดแวร์ (Equipment)</option>
                         </select>
                     </div>
 
@@ -67,7 +67,7 @@
                             @endif
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="form-label font-medium">รายละเอียดเพิ่มเติม (ภาษาไทย)</label>

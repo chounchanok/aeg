@@ -61,4 +61,10 @@ class PackageController extends Controller
         $item = OrderItem::with('product')->findOrFail($id);
         return view('frontend.package-feedback', compact('item'));
     }
+
+    public function packagesServices()
+    {
+        $products = DB::table('products')->where('type', 5)->get();
+        return view('frontend.service-package', compact('products'));
+    }
 }

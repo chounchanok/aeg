@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แพ็กเกจดูแลอุปกรณ์ - AEG EASE CLUB</title>
+@section('title', 'แพ็กเกจดูแลอุปกรณ์ - AEG EASE CLUB')
+
+@push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -305,44 +303,9 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-user"></i><span>เข้าสู่ระบบ</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="#">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section">
-                    <a href="#" class="cart-icon" style="color: white; text-decoration: none;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                </div>
-            </div>
-        </div>
-    </nav>
+@section('content')
 
     <!-- Main Content Section -->
     <main class="service-main">
@@ -354,159 +317,86 @@
                 <label class="selection-label">ประเภทอุปกรณ์</label>
                 <select class="custom-select" id="serviceSelector" onchange="updateServiceInfo()">
                     <option value="" selected>- เลือกบริการ -</option>
-                    <option value="burglary">ระบบสัญญาณกันขโมย</option>
-                    <option value="fire">ระบบสัญญาณเตือนอัคคีภัย</option>
-                    <option value="cctv">ระบบกล้องวงจรปิด</option>
+                    @if(!empty($products))
+                        @foreach($products as $product)
+                            <option value="service-{{ $product->id }}">{{ $product->name_th }}</option>
+                        @endforeach
+                    @endif
                 </select>
             </div>
 
-            <!-- Detailed Content (Dynamic - 900px) -->
-            <div id="serviceDetails">
-                <div class="row align-items-center">
-                    <div class="col-lg-6">
-                        <div class="detail-image-box">
-                            <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80"
-                                id="serviceImage" alt="Service Image">
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="detail-info-text">
-                            <h2 class="info-header">รายละเอียด</h2>
-                            <ul class="info-list" id="servicePoints">
-                                <!-- Points will be inserted here -->
-                            </ul>
-                            <div class="price-section">
-                                <p class="price-info">ดูแลรักษาเบื้องต้น 1 จุด</p>
-                                <p class="price-info">ราคาเริ่มต้นรวมจุดละ <span class="fw-bold">500 บาท</span></p>
-                                <p class="price-warning">หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน
-                                    เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ</p>
-                                <p class="price-warning">*
-                                    บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม</p>
+            @if(!empty($products))
+                <form action="{{ route('cart.add') }}" method="post" id="addToCartForm">
+                    @csrf
+                    @foreach($products as $product)
+                        <div class="service-detail-block" style="display: none;" data-service="service-{{ $product->id }}">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="detail-image-box">
+                                    <img src="{{ $product->image_url }}" alt="{{ $product->name_th }}"
+                                        onerror="this.src='https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80'">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="detail-info-text">
+                                        <h2 class="info-header">รายละเอียด</h2>
+                                        <ul class="info-list">
+                                            @foreach(explode("\n", $product->description_th) as $point)
+                                                <li>{{ trim($point) }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <div class="price-section">
+                                            <p class="price-info">ดูแลรักษาเบื้องต้น 1 จุด</p>
+                                            <p class="price-info">ราคาเริ่มต้นรวมจุดละ <span class="fw-bold">{{ number_format($product->price) }} บาท</span></p>
+                                            <p class="price-warning">หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน
+                                                เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ</p>
+                                            <p class="price-warning">*
+                                                บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="btn-action-group">
+                                <input type="hidden" name="product_id" value="{{ $product->id }}" class="product-id-input" disabled>
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="button" onclick="history.back();" class="btn-custom border-0">ย้อนกลับ</button>
+                                <button type="submit" class="btn-custom border-0">เพิ่มลงตะกร้า</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="btn-action-group">
-                <a href="index" class="btn-custom">ย้อนกลับ</a>
-                <a href="#" class="btn-custom">เพิ่มลงตะกร้า</a>
-            </div>
+                    @endforeach
+                </form>
+            @endif
         </div>
     </main>
 
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded"
-                            style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="#" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.9rem;">คำถามที่พบบ่อย</h5>
-                            <a href="#" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Script for Dynamic Selection Logic -->
+@endsection
+@push('scripts')
     <script>
-        const serviceData = {
-            burglary: {
-                img: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80",
-                points: [
-                    "1. ตรวจสอบ Motion Sensor, Door Contact, Panic Switch",
-                    "2. ทดสอบการทำงานของสัญญาณเตือน",
-                    "3. เช็ก Battery Backup / Power Supply",
-                    "4. ตรวจสอบแผงควบคุม และการเชื่อมต่อ",
-                    "5. แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด",
-                    "6. ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม"
-                ]
-            },
-            fire: {
-                img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=800&q=80",
-                points: [
-                    "1. ตรวจสอบอุปกรณ์ตรวจจับควันและรังสี",
-                    "2. ทดสอบระบบกระดิ่งเตือนภัย",
-                    "3. เช็กสถานะสวิตช์แจ้งเหตุแบบมือกด",
-                    "4. ตรวจสอบแรงดันไฟระบบสำรอง",
-                    "5. ทำความสะอาดสิ่งสกปรกบนหัวเซ็นเซอร์"
-                ]
-            },
-            cctv: {
-                img: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=800&q=80",
-                points: [
-                    "1. ตรวจสอบความคมชัดของภาพกล้องทุกจุด",
-                    "2. เช็กความจุและการบันทึกของ Hard Drive",
-                    "3. ทำความสะอาดเลนส์และกระจกหน้ากล้อง",
-                    "4. ตรวจสอบระบบจ่ายไฟ POE/Adapter",
-                    "5. อัปเดตซอฟต์แวร์เครื่องบันทึก (ถ้ามี)"
-                ]
-            }
-        };
-
         function updateServiceInfo() {
-            const selector = document.getElementById('serviceSelector');
-            const detailsDiv = document.getElementById('serviceDetails');
-            const imgElement = document.getElementById('serviceImage');
-            const pointsList = document.getElementById('servicePoints');
+            // ดึงค่า ID บริการที่ถูกเลือกจาก Dropdown
+            const selectedService = document.getElementById('serviceSelector').value;
 
-            const selectedValue = selector.value;
+            // ดึงบล็อกบริการทั้งหมดที่มี (อ้างอิงผ่าน class แทน id)
+            const serviceBlocks = document.querySelectorAll('.service-detail-block');
 
-            if (selectedValue && serviceData[selectedValue]) {
-                const data = serviceData[selectedValue];
+            // วนลูปเช็คเพื่อเปิด/ปิดการแสดงผล
+            serviceBlocks.forEach(function(block) {
+                const serviceId = block.getAttribute('data-service');
+                const productInput = block.querySelector('.product-id-input');
 
-                // Update Image
-                imgElement.src = data.img;
-
-                // Update Points
-                pointsList.innerHTML = '';
-                data.points.forEach(point => {
-                    const li = document.createElement('li');
-                    li.textContent = point;
-                    pointsList.appendChild(li);
-                });
-
-                // Show Details
-                detailsDiv.style.display = 'block';
-            } else {
-                detailsDiv.style.display = 'none';
-            }
+                if (serviceId === selectedService && selectedService !== "") {
+                    // โชว์บล็อกที่ตรงกัน
+                    block.style.display = 'block';
+                    // 🌟 เปิดให้ input ของสินค้านี้ทำงาน เพื่อที่จะส่งค่าเข้าตะกร้าได้
+                    if (productInput) productInput.disabled = false;
+                } else {
+                    // ซ่อนบล็อกอื่นๆ
+                    block.style.display = 'none';
+                    // 🌟 ปิด input อื่นๆ ป้องกันการส่งค่าทับกัน
+                    if (productInput) productInput.disabled = true;
+                }
+            });
         }
     </script>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
+@endpush

@@ -31,14 +31,14 @@ class HomeController extends Controller
         // 4. ดึงข้อมูล บริการแนะนำ / สินค้าแนะนำ
         // หมายเหตุ: ใน API เดิมไปดึงจากตาราง rewards ซึ่งอาจจะผิด ผมเลยปรับให้ดึงจาก products แทนครับ
         $recommendedServices = DB::table('products')
-                                 ->where('is_recommended', true) // ถ้าไม่มีฟิลด์นี้ให้ลบออก
+                                 ->inRandomOrder()
                                  ->limit(4)
                                  ->get();
 
         return view('frontend.index', compact(
-            'banners', 
-            'categories', 
-            'recommendedPrivileges', 
+            'banners',
+            'categories',
+            'recommendedPrivileges',
             'recommendedServices'
         ));
     }

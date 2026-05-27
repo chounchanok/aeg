@@ -52,7 +52,6 @@ Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
 Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
 Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
-Route::view('/services', 'frontend.services')->name('services');
 Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
 
 // --- E-Commerce & Packages (ดูสินค้าและแพ็กเกจได้) ---
@@ -66,6 +65,8 @@ Route::get('/products/{group}/{categoryId?}', [ProductController::class, 'index'
 // ----------------------------------------------------
 
 Route::get('/packages/{type}', [PackageController::class, 'index'])->name('packages');
+Route::get('/services', [PackageController::class, 'packagesServices'])->name('services');
+Route::get('/rewards-detail/{id}', [RewardController::class, 'show'])->name('rewards-detail');
 Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
 
 
@@ -184,7 +185,7 @@ Route::middleware('auth')->group(function() {
         Route::post('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'store'])->name('admin.smart-lockers.store');
         Route::post('/admin/smart-lockers/{id}/update', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'update'])->name('admin.smart-lockers.update');
         Route::post('/admin/smart-lockers/{id}/delete', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'destroy'])->name('admin.smart-lockers.delete');
-        
+
         // 🌟 ย้ายมาวางตรงนี้ครับ (ให้ระบบมันสร้าง prefix คำว่า admin ให้อัตโนมัติ)
         Route::resource('admin/insurances', InsuranceAdminController::class)->names([
             'index'   => 'admin.insurances.index',
@@ -194,7 +195,7 @@ Route::middleware('auth')->group(function() {
             'update'  => 'admin.insurances.update',
             'destroy' => 'admin.insurances.destroy',
         ]);
-        
+
     });
 
 });

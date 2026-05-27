@@ -430,37 +430,36 @@
         </div>
     </div>
 
-    <!-- Service Categories (Dynamic - ลูปข้อมูลจาก $categories) -->
+    <!-- Age Services -->
     <div class="container mt-5">
-        <h3 class="text-center fw-bold mb-4">หมวดหมู่บริการของเรา</h3>
+        <h3 class="text-center fw-bold mb-4">บริการที่ใกล้หมดอายุ</h3>
         <div class="row g-3">
-            @if(isset($categories) && $categories->count() > 0)
-                @foreach($categories as $category)
-                    <div class="col-lg-6">
-                        <div class="age-service-box shadow-sm">
-                            <img src="{{ $category->image_url ?? asset('assets/image/logo2.webp') }}" class="age-icon" alt="{{ $category->name }}">
-                            <div class="flex-grow-1">
-                                <h5 class="fw-bold mb-1">{{ $category->name }}</h5>
-                                <p class="text-muted small mb-0">{{ $category->description ?? 'รายละเอียดหมวดหมู่' }}</p>
-                            </div>
-                            <div class="ms-3 text-end border-start ps-3">
-                                <a href="{{ route('products', ['group' => $category->group, 'category' => $category->id]) }}" class="btn btn-sm btn-outline-danger mt-2">ดูบริการ</a>
-                            </div>
-                        </div>
+            <div class="col-lg-6">
+                <div class="age-service-box shadow-sm">
+                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1">ประกันทรัพย์สินมูลค่าสูง</h5>
+                        <p class="text-muted small mb-0">กรมธรรม์ชดเชยผลประโยชน์จากการโจรกรรม</p>
                     </div>
-                @endforeach
-            @else
-                <!-- ข้อมูลตัวอย่างหากยังไม่มีหมวดหมู่ในฐานข้อมูล -->
-                <div class="col-lg-6">
-                    <div class="age-service-box shadow-sm">
-                        <img src="{{ asset('assets/image/logo2.webp') }}" class="age-icon" alt="Logo">
-                        <div class="flex-grow-1">
-                            <h5 class="fw-bold mb-1">ยังไม่มีหมวดหมู่บริการ</h5>
-                            <p class="text-muted small mb-0">โปรดเพิ่มข้อมูลในระบบหลังบ้าน</p>
-                        </div>
+                    <div class="ms-3 text-end border-start ps-3">
+                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
+                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
                     </div>
                 </div>
-            @endif
+            </div>
+            <div class="col-lg-6">
+                <div class="age-service-box shadow-sm">
+                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1">AEG Smart Locker</h5>
+                        <p class="text-muted small mb-0">ตู้ล็อกเกอร์ให้เช่า ขนาดเล็ก (Prime)</p>
+                    </div>
+                    <div class="ms-3 text-end border-start ps-3">
+                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
+                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -475,7 +474,7 @@
                         <div class="rec-card shadow-sm">
                             <img src="{{ $service->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ $service->name ?? 'Service' }}">
                             <div class="rec-overlay">
-                                <h5 class="fw-bold text-white">{{ $service->name ?? 'ไม่มีชื่อ' }}</h5>
+                                <h5 class="fw-bold text-white">{{ $service->name_th ?? 'ไม่มีชื่อ' }}</h5>
                             </div>
                         </div>
                     </a>
@@ -500,7 +499,7 @@
                 @if(isset($recommendedPrivileges) && $recommendedPrivileges->count() > 0)
                     @foreach($recommendedPrivileges as $privilege)
                     <div class="col-md-4">
-                        <a href="{{ route('rewards') }}" class="text-decoration-none d-block h-100">
+                        <a href="{{ route('rewards-detail', $privilege->id ?? 0) }}" class="text-decoration-none d-block h-100">
                             <div class="privilege-card shadow-sm">
                                 <img src="{{ $privilege->image_url ?? asset('assets/image/rew3.webp') }}" alt="{{ $privilege->title ?? 'Privilege' }}">
                                 <div class="service-card-body">
@@ -523,4 +522,3 @@
     </div>
 
 @endsection
- 

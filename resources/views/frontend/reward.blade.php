@@ -375,49 +375,47 @@
     <main class="reward-content-wrapper">
 
         @if(isset($rewards) && $rewards->count() > 0)
-            @foreach($rewards as $reward)
-                <!-- Hero Section with Gradient -->
-                <section class="hero-gradient-box mt-4">
-                    <div class="container-950">
-                        <div class="hero-inner">
-                            <div class="reward-img-frame">
-                                <img src="{{ $reward->image_url }}" alt="{{ $reward->title }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
-                            </div>
-                            <div class="hero-text-side">
-                                <h1>{{ $reward->title_th }}</h1>
-                                <h2>{!! nl2br(e($reward->description_th)) !!}</h2>
+            <!-- Hero Section with Gradient -->
+            <section class="hero-gradient-box mt-4">
+                <div class="container-950">
+                    <div class="hero-inner">
+                        <div class="reward-img-frame">
+                            <img src="{{ $rewards->image_url }}" alt="{{ $rewards->title }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
+                        </div>
+                        <div class="hero-text-side">
+                            <h1>{{ $rewards->title_th }}</h1>
+                            <h2>{!! nl2br(e($rewards->description_th)) !!}</h2>
 
-                                <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
-                                    <span class="lbl">รับสิทธิ์</span>
-                                    <div class="pts">
-                                        <i class="fas fa-coins" style="color: #edb314;"></i> {{ number_format($reward->points_required) }}
-                                    </div>
-                                </button>
-                            </div>
+                            <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                <span class="lbl">รับสิทธิ์</span>
+                                <div class="pts">
+                                    <i class="fas fa-coins" style="color: #edb314;"></i> {{ number_format($rewards->points_required) }}
+                                </div>
+                            </button>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- Detailed Info -->
-                <section class="reward-details-area mb-5">
-                    <div class="container-950">
-                        <h3 class="main-product-title">{{ $reward->title_th }}</h3>
+            <!-- Detailed Info -->
+            <section class="reward-details-area mb-5">
+                <div class="container-950">
+                    <h3 class="main-product-title">{{ $rewards->title_th }}</h3>
 
-                        <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
-                        <p class="section-desc-text">*แลกใช้เพียง {{ number_format($reward->points_required) }} พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
+                    <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
+                    <p class="section-desc-text">*แลกใช้เพียง {{ number_format($rewards->points_required) }} พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
 
-                        <h4 class="section-sub-title mt-4">เงื่อนไขการใช้สิทธิ์</h4>
-                        <div class="section-desc-text">
-                            <ul class="specs-list">
-                                <li>สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี</li>
-                                <li>บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว</li>
-                                <li>กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า</li>
-                            </ul>
-                        </div>
-                        <hr class="mt-5 mb-5">
+                    <h4 class="section-sub-title mt-4">เงื่อนไขการใช้สิทธิ์</h4>
+                    <div class="section-desc-text">
+                        <ul class="specs-list">
+                            <li>สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี</li>
+                            <li>บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว</li>
+                            <li>กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า</li>
+                        </ul>
                     </div>
-                </section>
-            @endforeach
+                    <hr class="mt-5 mb-5">
+                </div>
+            </section>
         @else
             <div class="container text-center mt-5 mb-5">
                 <h3 class="text-muted">ยังไม่มีสิทธิพิเศษในขณะนี้</h3>

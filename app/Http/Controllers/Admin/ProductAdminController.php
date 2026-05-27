@@ -38,7 +38,7 @@ class ProductAdminController extends Controller
             'description_en' => 'nullable|string',
             'type' => 'required|in:service,package,equipment',
             'price' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480'
         ]);
 
         $imageUrl = null;
