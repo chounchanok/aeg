@@ -44,7 +44,7 @@ class EcommerceController extends Controller
         $products = $rawProducts->map(function ($p) use ($lang, $allImages) {
             // จัดการรูปภาพให้เป็น Array
             $images = isset($allImages[$p->id]) ? $allImages[$p->id]->pluck('image_url')->toArray() : [];
-            
+
             // Fallback: ถ้าตารางใหม่ไม่มีรูป ให้ดึงจากคอลัมน์เก่ามาโชว์แก้ขัด
             if (empty($images) && !empty($p->image_url)) {
                 $images = [$p->image_url];
@@ -70,7 +70,7 @@ class EcommerceController extends Controller
     public function getProductDetail($id)
     {
         $lang = request()->header('Accept-Language', 'th');
-        
+
         $product = DB::table('products')->where('id', $id)->where('is_active', true)->first();
         if (!$product) return $this->errorResponse('Product not found', 404);
 
@@ -226,16 +226,16 @@ class EcommerceController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'contact_name', 'contact_phone', 'address_line', 
+            'title', 'contact_name', 'contact_phone', 'address_line',
             'province', 'district', 'subdistrict', 'zipcode', 'latitude', 'longitude'
         ]);
-        
+
         $data['user_id'] = $request->user()->id;
         $data['created_at'] = now();
         $data['updated_at'] = now();
 
         $addressId = DB::table('customer_addresses')->insertGetId($data);
-        
+
         $newAddress = DB::table('customer_addresses')->where('id', $addressId)->first();
 
         return $this->successResponse($newAddress, 'บันทึกที่อยู่ใหม่สำเร็จ');
@@ -265,7 +265,7 @@ class EcommerceController extends Controller
         if (!$address) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
 
         $updateData = $request->only([
-            'title', 'contact_name', 'contact_phone', 'address_line', 
+            'title', 'contact_name', 'contact_phone', 'address_line',
             'province', 'district', 'subdistrict', 'zipcode', 'latitude', 'longitude'
         ]);
         $updateData['updated_at'] = now();
@@ -388,7 +388,7 @@ class EcommerceController extends Controller
 
         $user = $request->user();
         $product = DB::table('products')->where('id', $request->product_id)->where('is_active', true)->first();
-        
+
         if (!$product) {
             return $this->errorResponse('Product not found or inactive', 404);
         }
@@ -426,7 +426,7 @@ class EcommerceController extends Controller
             DB::table('order_items')->insert([
                 'order_id' => $orderId,
                 'product_id' => $product->id,
-                'product_name' => $product->name_th, 
+                'product_name' => $product->name_th,
                 'price' => $product->price,
                 'quantity' => $request->quantity,
                 'created_at' => now(),
@@ -495,23 +495,47 @@ class EcommerceController extends Controller
             return $this->errorResponse('ไม่พบข้อมูลคำสั่งซื้อนี้', 404);
         }
 
-        // เช็คว่าถ้าออเดอร์นี้เคยเปลี่ยนสถานะและแจกของไปแล้ว ให้ return กลับไปเลย ป้องกันการแจกของเบิ้ล
+        // 1. ดึงรายการสินค้าทั้งหมดในบิลนี้ (ย้ายมาไว้ด้านบนเพื่อดึงไปแสดงผล Response ได้ทันที)
+        $orderItems = DB::table('order_items')->where('order_id', $order->id)->get();
+
+        // 2. เตรียมข้อมูล Items ให้เป็น Array สำหรับแสดงบนหน้าจอ
+        $itemsList = $orderItems->map(function($item) {
+            return [
+                'name' => $item->product_name,
+                'quantity' => $item->quantity
+            ];
+        });
+
+        // 3. เตรียมชุดข้อมูล Response ให้ตรงกับภาพ UI ที่ต้องการ
+        $responseData = [
+            'order_number' => $order->order_number,
+            'status_text' => 'สำเร็จ',
+            'status_message' => 'คุณชำระเงินสำเร็จแล้ว',
+            // แปลงรูปแบบเวลาให้เป็นแบบ 25 Jul 2025 - 10:23 น
+            'payment_date' => \Carbon\Carbon::parse($order->updated_at ?? now())->locale('en')->isoFormat('DD MMM YYYY - HH:mm น'),
+            'items' => $itemsList,
+            // 💡 หมายเหตุ: สมมติว่าตาราง orders มีคอลัมน์ total_amount และ payment_method
+            'total_amount' => number_format($order->total_amount ?? 0, 0),
+            'payment_method' => $order->payment_method ?? 'QR พร้อมเพย์'
+        ];
+
+        // 4. เช็คว่าถ้าออเดอร์นี้เคยเปลี่ยนสถานะและแจกของไปแล้ว ให้ return ข้อมูลบิลกลับไปเลย ป้องกันแจกเบิ้ล
         if ($order->status === 'completed') {
-            return $this->successResponse(null, 'คำสั่งซื้อนี้ได้รับการยืนยันและแจกแพ็กเกจเรียบร้อยแล้ว');
+            return $this->successResponse($responseData, 'คำสั่งซื้อนี้ได้รับการยืนยันและแจกแพ็กเกจเรียบร้อยแล้ว');
         }
 
         DB::beginTransaction();
         try {
-            // 1. อัปเดตสถานะ Order เป็น "ชำระเงินแล้ว (completed)"
+            // อัปเดตสถานะ Order เป็น "ชำระเงินแล้ว (completed)"
             DB::table('orders')->where('id', $order->id)->update([
                 'status' => 'completed',
                 'updated_at' => now()
             ]);
 
-            // 2. ดึงรายการสินค้าทั้งหมดในบิลนี้
-            $orderItems = DB::table('order_items')->where('order_id', $order->id)->get();
+            // อัปเดตเวลาชำระเงินใน Payload ให้เป็นเวลาปัจจุบันที่เพิ่งบันทึกสำเร็จ
+            $responseData['payment_date'] = \Carbon\Carbon::now()->locale('en')->isoFormat('DD MMM YYYY - HH:mm น');
 
-            // 3. 🌟 นำ Logic การแจกของมาไว้ตรงนี้! (นำเข้าตาราง customer_products)
+            // 5. 🌟 นำ Logic การแจกของมาไว้ตรงนี้! (นำเข้าตาราง customer_products)
             foreach ($orderItems as $item) {
                 // หารูปภาพหน้าปก
                 $coverImage = DB::table('product_images')
@@ -527,7 +551,7 @@ class EcommerceController extends Controller
                         'serial_number' => 'PKG-' . strtoupper(\Illuminate\Support\Str::random(8)),
                         'warranty_expire_date' => \Carbon\Carbon::now()->addYear(), // หมดอายุใน 1 ปี
                         'status' => 'active',
-                        'total_service_count' => 4, // โควต้าเรียกช่าง (สามารถดึงจาก DB สินค้าจริงได้ถ้ามี)
+                        'total_service_count' => 4, // โควต้าเรียกช่าง
                         'used_service_count' => 0,
                         'image_url' => $coverImage,
                         'created_at' => now(),
@@ -537,10 +561,9 @@ class EcommerceController extends Controller
             }
 
             DB::commit();
-            return $this->successResponse([
-                'order_number' => $order->order_number,
-                'status' => 'completed'
-            ], 'ยืนยันการชำระเงินสำเร็จ และเพิ่มแพ็กเกจให้ลูกค้าเรียบร้อยแล้ว');
+
+            // 🌟 ส่ง $responseData กลับไปให้แอปพลิเคชันเพื่อนำไปวาดหน้า UI ตามภาพ
+            return $this->successResponse($responseData, 'ยืนยันการชำระเงินสำเร็จ และเพิ่มแพ็กเกจให้ลูกค้าเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
             DB::rollBack();
