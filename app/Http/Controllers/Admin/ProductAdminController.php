@@ -22,7 +22,9 @@ class ProductAdminController extends Controller
 
     public function create()
     {
+        $categories = DB::table('service_categories')->orderBy('created_at', 'desc')->get();
         return view('admin.products.form', [
+            'categories' => $categories,
             'first_level_active_index' => 'products',
             'second_level_active_index' => '',
             'third_level_active_index' => ''
@@ -36,7 +38,7 @@ class ProductAdminController extends Controller
             'name_en' => 'required|string',
             'description_th' => 'nullable|string',
             'description_en' => 'nullable|string',
-            'type' => 'required|in:service,package,equipment',
+            'type' => 'required|numeric',
             'price' => 'required|numeric',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480'
         ]);
@@ -69,8 +71,11 @@ class ProductAdminController extends Controller
     public function edit($id)
     {
         $product = DB::table('products')->where('id', $id)->first();
+        $categories = DB::table('service_categories')->orderBy('created_at', 'desc')->get();
+
         return view('admin.products.form', [
             'product' => $product,
+            'categories' => $categories,
             'first_level_active_index' => 'products',
             'second_level_active_index' => '',
             'third_level_active_index' => ''
@@ -79,39 +84,45 @@ class ProductAdminController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name_th' => 'required|string',
-            'name_en' => 'required|string',
-            'description_th' => 'nullable|string',
-            'description_en' => 'nullable|string',
-            'type' => 'required|in:service,package,equipment',
-            'price' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
-        ]);
+        
+        try{
+            $request->validate([
+                'name_th' => 'required|string',
+                'name_en' => 'required|string',
+                'description_th' => 'nullable|string',
+                'description_en' => 'nullable|string',
+                'type' => 'required|numeric',
+                'price' => 'required|numeric',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480'
+            ]);
 
-        $product = DB::table('products')->where('id', $id)->first();
-        $imageUrl = $product->image_url;
+            $product = DB::table('products')->where('id', $id)->first();
+            $imageUrl = $product->image_url;
 
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $imageUrl = url('storage/' . $path);
+            if ($request->hasFile('image')) {
+                $path = $request->file('image')->store('products', 'public');
+                $imageUrl = url('storage/' . $path);
+            }
+
+            DB::table('products')->where('id', $id)->update([
+                'name_th' => $request->name_th,
+                'name_en' => $request->name_en,
+                'description_th' => $request->description_th,
+                'description_en' => $request->description_en,
+                'type' => $request->type,
+                'price' => $request->price,
+                'compare_at_price' => $request->compare_at_price,
+                'point_earn' => $request->point_earn ?? 0,
+                'image_url' => $imageUrl,
+                'is_contact_only' => $request->has('is_contact_only'),
+                'is_active' => $request->has('is_active'),
+                'updated_at' => now()
+            ]);
+
+            return redirect()->route('admin.products')->with('success', 'อัปเดตข้อมูลสำเร็จ');
+        }catch(\Exception $e){
+            dd($e);
+            return redirect()->back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
         }
-
-        DB::table('products')->where('id', $id)->update([
-            'name_th' => $request->name_th,
-            'name_en' => $request->name_en,
-            'description_th' => $request->description_th,
-            'description_en' => $request->description_en,
-            'type' => $request->type,
-            'price' => $request->price,
-            'compare_at_price' => $request->compare_at_price,
-            'point_earn' => $request->point_earn ?? 0,
-            'image_url' => $imageUrl,
-            'is_contact_only' => $request->has('is_contact_only'),
-            'is_active' => $request->has('is_active'),
-            'updated_at' => now()
-        ]);
-
-        return redirect()->route('admin.products')->with('success', 'อัปเดตข้อมูลสำเร็จ');
     }
 }

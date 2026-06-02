@@ -28,11 +28,15 @@
                     </div>
 
                     <div class="mt-4">
-                        <label class="form-label font-medium">ประเภท (Type) <span class="text-danger">*</span></label>
+                        <label class="form-label font-medium">หมวดสินค้า (Category) <span class="text-danger">*</span></label>
                         <select name="type" class="form-select">
-                            <option value="1" {{ (isset($product) && $product->type == '1') ? 'selected' : '' }}>บริการ (Service)</option>
-                            <option value="2" {{ (isset($product) && $product->type == '2') ? 'selected' : '' }}>แพ็กเกจ (Package)</option>
-                            <option value="3" {{ (isset($product) && $product->type == '3') ? 'selected' : '' }}>อุปกรณ์/ฮาร์ดแวร์ (Equipment)</option>
+                            @if(!empty($categories))
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ (isset($product) && $product->type == $cat->id) ? 'selected' : '' }}>
+                                        {{ $cat->title_th }} ({{ ucfirst($cat->group) }})
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
 
