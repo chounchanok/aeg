@@ -20,7 +20,7 @@ class SupportController extends Controller
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->get();
-            
+
         return $this->successResponse($faqs, 'FAQs retrieved');
     }
 
@@ -89,5 +89,36 @@ class SupportController extends Controller
             ->get();
 
         return $this->successResponse($logs, 'Tracking logs retrieved');
+    }
+
+    public function sendContactEmail(Request $request)
+    {
+        $request->validate([
+            'topic' => 'required|string',
+            'name' => 'required|string',
+            'phone' => 'required|string',
+            'email' => 'required|email',
+            'preferred_time' => 'required|string',
+            'message' => 'nullable|string'
+        ]);
+
+        // บันทึกลง Database ให้แอดมินดูย้อนหลังได้
+        DB::table('contact_inquiries')->insert([
+            'topic' => $request->topic,
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'email' => $request->email,
+            'preferred_time' => $request->preferred_time,
+            'message' => $request->message,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        // 💡 ถ้าอนาคตจะเชื่อม Email ให้เขียน \Illuminate\Support\Facades\Mail::to(...)->send(...) ตรงนี้ครับ
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'ส่งข้อความติดต่อแอดมินสำเร็จ ทีมงานจะติดต่อกลับโดยเร็วที่สุด'
+        ]);
     }
 }

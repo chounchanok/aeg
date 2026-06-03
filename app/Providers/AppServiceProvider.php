@@ -92,7 +92,13 @@ class AppServiceProvider extends ServiceProvider
                         'title' => 'คำถามที่พบบ่อย (FAQ)',
                         'route_name' => 'admin.cms.faqs',
                         'params' => []
-                    ]
+                    ],
+                    'reviews' => [
+                        'icon' => 'star',
+                        'title' => 'รีวิวจากลูกค้า',
+                        'route_name' => 'admin.reviews',
+                        'params' => []
+                    ],
                 ]
             ],
             'settings' => [
@@ -108,7 +114,7 @@ class AppServiceProvider extends ServiceProvider
                 ]
             ]
         ];
-        
+
         View::share('side_menu', $side_menu);
     }
 }

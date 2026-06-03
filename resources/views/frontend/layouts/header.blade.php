@@ -3,9 +3,8 @@
         <!-- Top Row -->
         <div class="navbar-top-row w-100">
             <div class="nav-icons ms-auto">
-                <a href="{{ route('repair-status') }}" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
                 <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                
+
                 <!-- เช็คสถานะล็อกอิน -->
                 <div class="dropdown header-dropdown">
                     <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

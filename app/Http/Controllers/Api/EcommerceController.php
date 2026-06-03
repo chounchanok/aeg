@@ -133,49 +133,57 @@ class EcommerceController extends Controller
 
     public function addToCart(Request $request)
     {
+        // 1. รับค่าที่แอปส่งมา (รวมถึง duration_months สำหรับแพ็กเกจ)
         $request->validate([
             'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'required|integer|min:1',
+            'duration_months' => 'nullable|integer|in:1,3,6,12' // 🌟 รับระยะเวลาแพ็กเกจ (ถ้ามี)
         ]);
 
         $user = $request->user();
         $product = DB::table('products')->where('id', $request->product_id)->first();
+
         if (!$product) return $this->errorResponse('Product not found', 404);
 
-        // 1. หาตะกร้าของ User นี้
-        $cart = DB::table('carts')->where('user_id', $user->id)->first();
+        // 2. 🌟 คำนวณราคา: ถ้าระบุเดือนมา เอาไปคูณราคาตั้งต้น (สำหรับ type = 5)
+        $duration = $request->duration_months ?? 1; // ถ้าไม่ได้ส่งมาให้ถือว่าเป็น 1
+        $unitPrice = $product->price * $duration;
 
-        // 2. ถ้ายังไม่มีตะกร้า ให้สร้างใหม่
+        // 3. หาตะกร้าของ User (ถ้ายังไม่มีให้สร้าง)
+        $cart = DB::table('carts')->where('user_id', $user->id)->first();
         if (!$cart) {
-            $cartId = DB::table('carts')->insertGetId([
-                'user_id' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-            // ดึงข้อมูลตะกร้าที่เพิ่งสร้างขึ้นมา
-            $cart = DB::table('carts')->where('id', $cartId)->first();
+            $cartId = DB::table('carts')->insertGetId(['user_id' => $user->id, 'created_at' => now()]);
+        } else {
+            $cartId = $cart->id;
         }
 
-        // เช็คว่ามีสินค้านี้ในตะกร้าหรือยัง ถ้ามีให้บวกเพิ่ม
-        $existingItem = DB::table('cart_items')
-            ->where('cart_id', $cart->id)
+        // 4. เช็คว่ามีสินค้านี้ในตะกร้า "ด้วยระยะเวลาเดียวกัน" หรือไม่
+        $cartItem = DB::table('cart_items')
+            ->where('cart_id', $cartId)
             ->where('product_id', $product->id)
+            ->where('duration_months', $request->duration_months) // แยกรายการตามเดือน
             ->first();
 
-        if ($existingItem) {
-            DB::table('cart_items')->where('id', $existingItem->id)
-                ->increment('quantity', $request->quantity);
+        if ($cartItem) {
+            // มีอยู่แล้ว อัปเดตแค่จำนวน
+            DB::table('cart_items')->where('id', $cartItem->id)->update([
+                'quantity' => $cartItem->quantity + $request->quantity,
+                'updated_at' => now()
+            ]);
         } else {
+            // ยังไม่มี เพิ่มเข้าไปใหม่
             DB::table('cart_items')->insert([
-                'cart_id' => $cart->id,
+                'cart_id' => $cartId,
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
+                'price' => $unitPrice, // 🌟 เก็บราคาต่อหน่วยที่คูณจำนวนเดือนแล้ว
+                'duration_months' => $request->duration_months, // 🌟 เก็บรายละเอียดเดือน
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
         }
 
-        return $this->successResponse(null, 'Added to cart successfully');
+        return $this->successResponse(null, 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
     }
 
     public function removeFromCart($cartItemId)
@@ -337,17 +345,17 @@ class EcommerceController extends Controller
             // 2. ย้ายของจาก Cart ไป Order Items
             $orderItemsData = [];
             foreach ($cartItems as $item) {
-                $orderItemsData[] = [
+                DB::table('order_items')->insert([
                     'order_id' => $orderId,
-                    'product_id' => $item->id,
-                    'product_name' => $item->name,
-                    'price' => $item->price,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name, // ดึงจาก Join ที่คุณมี
                     'quantity' => $item->quantity,
+                    'price' => $item->price, // ราคานี้คูณเดือนมาจากตะกร้าแล้ว
+                    'duration_months' => $item->duration_months, // 🌟 ย้ายข้อมูลเดือนมาเก็บในบิล
                     'created_at' => now(),
                     'updated_at' => now()
-                ];
+                ]);
             }
-            DB::table('order_items')->insert($orderItemsData);
 
             // 3. ล้างตะกร้า
             DB::table('cart_items')->where('cart_id', $cart->id)->delete();
@@ -569,5 +577,62 @@ class EcommerceController extends Controller
             DB::rollBack();
             return $this->errorResponse('เกิดข้อผิดพลาดในการยืนยันชำระเงิน: ' . $e->getMessage(), 500);
         }
+    }
+
+    // ==========================================
+    // ดึงข้อมูลแพ็กเกจดูแลอุปกรณ์ (Products Type = 5)
+    // ==========================================
+    public function getPackages()
+    {
+        // 1. ดึงรายการประเภทอุปกรณ์ (Products Type = 5)
+        $packages = DB::table('products')
+            ->where('type', 5)
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name_th,
+                    'description' => $product->description_th,
+                    // ตัดแยกบรรทัดรายละเอียดด้วย \n เพื่อให้ App นำไปทำ List Bullet ได้ง่าย
+                    'details_list' => array_filter(array_map('trim', explode("\n", $product->description_th))),
+                    'base_price' => (float)$product->price, // ราคาต่อ 1 เดือน ต่อ 1 อุปกรณ์
+                    'image_url' => $product->image_url,
+                ];
+            });
+
+        // 2. กำหนดประเภทการดูแล (ระยะเวลาที่ Fix ไว้)
+        $durations = [
+            [
+                'id' => 1,
+                'label' => '1 ครั้ง (1 เดือน)',
+                'multiplier' => 1 // ตัวคูณเดือน
+            ],
+            [
+                'id' => 3,
+                'label' => '3 เดือน',
+                'multiplier' => 3
+            ],
+            [
+                'id' => 6,
+                'label' => '6 เดือน',
+                'multiplier' => 6
+            ],
+            [
+                'id' => 12,
+                'label' => 'รายปี (12 เดือน)',
+                'multiplier' => 12
+            ]
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Packages retrieved successfully',
+            'data' => [
+                'devices' => $packages,
+                'care_durations' => $durations
+            ]
+        ]);
     }
 }

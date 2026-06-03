@@ -486,85 +486,88 @@
 
     <main class="status-wrapper">
         <div class="content-container-950">
+            @if(session('success'))
+                <div class="alert alert-success mb-4 text-center rounded-3">{{ session('success') }}</div>
+            @endif
+
             <article class="status-card">
                 <div class="status-hero">
                     <div class="pkg-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm">
+                        <img src="{{ $request->image_url ?? 'https://via.placeholder.com/600' }}" alt="Package Image">
                     </div>
                     <div class="pkg-info-side">
                         <div class="pkg-header-flex">
-                            <h1 class="pkg-main-title">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
+                            <h1 class="pkg-main-title">{{ $request->product_name }}</h1>
                             <span class="tag-red-label">แจ้งซ่อม</span>
                         </div>
                         <div class="job-details-text">
-                            JOB 20250130-001<br>
-                            ตรวจเช็คเสียงสัญญาณเตือน<br>
-                            คุณ ณพวัฒน์ บุญยืน 099 999 9999
+                            JOB {{ $request->ticket_number }}<br>
+                            {{ $request->problem_description }}<br>
+                            คุณ {{ $profile->first_name ?? $user->username }} โทร {{ $user->phone }}
                         </div>
-                        <div class="badge-repair-round">ครั้งที่ 3</div>
+                        <div class="badge-repair-round">ใช้งานครั้งที่ {{ ($request->used_service_count ?? 0) + 1 }}</div>
 
                         <div class="dates-summary-grid">
                             <div class="date-col">
                                 <span class="summary-label">วันที่แจ้ง</span>
-                                <span class="summary-value">30 มี.ค. 2025</span>
+                                <span class="summary-value">{{ \Carbon\Carbon::parse($request->created_at)->addYears(543)->format('d M Y') }}</span>
                             </div>
                             <div class="date-col">
                                 <span class="summary-label">วันนัดหมาย</span>
-                                <span class="summary-value">31 มี.ค. 2025</span>
+                                <span class="summary-value">{{ \Carbon\Carbon::parse($request->preferred_date)->addYears(543)->format('d M Y') }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                @php
+                    // คำนวณความคืบหน้าของ Stepper
+                    $statusArr = ['pending', 'assigned', 'in_progress', 'completed'];
+                    $currentIndex = array_search($request->status, $statusArr);
+                    if($currentIndex === false) $currentIndex = 0; // fallback
+
+                    $labels = [
+                        'pending' => 'รับเรื่องแล้ว',
+                        'assigned' => 'นัดหมายช่าง',
+                        'in_progress' => 'กำลังดำเนินการ',
+                        'completed' => 'เสร็จสิ้น',
+                        'cancelled' => 'ยกเลิก'
+                    ];
+                @endphp
+
                 <div class="stepper-container">
-                    <div class="current-status-tag">กำลังดำเนินการ</div>
+                    <div class="current-status-tag">{{ $labels[$request->status] ?? 'รอดำเนินการ' }}</div>
                     <div class="stepper-line-wrapper">
-                        <div class="step-item completed">
+                        <div class="step-item {{ $currentIndex >= 0 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-check"></i></div>
                             <div class="step-label">รับเรื่องแล้ว</div>
                         </div>
-                        <div class="step-item completed">
+                        <div class="step-item {{ $currentIndex >= 1 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-check"></i></div>
                             <div class="step-label">นัดหมาย</div>
                         </div>
-                        <div class="step-item active">
-                            <div class="step-circle"><i class="fas fa-check"></i></div>
+                        <div class="step-item {{ $currentIndex >= 2 ? 'active completed' : '' }}">
+                            <div class="step-circle"><i class="fas fa-tools"></i></div>
                             <div class="step-label">กำลังดำเนินการ</div>
                         </div>
-                        <div class="step-item">
-                            <div class="step-circle"><i class="fas fa-check"></i></div>
+                        <div class="step-item {{ $currentIndex >= 3 ? 'active completed' : '' }}">
+                            <div class="step-circle"><i class="fas fa-flag-checkered"></i></div>
                             <div class="step-label">เสร็จสิ้น</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="info-block">
-                    <span class="info-block-label">แพ็กเกจดูแลรายเดือน :</span>
-                    <p class="info-block-value">Burglary Alarm (ระบบสัญญาณกันขโมย)</p>
+                    <span class="info-block-label">แพ็กเกจดูแล :</span>
+                    <p class="info-block-value">{{ $request->product_name }}</p>
                 </div>
                 <div class="info-block">
                     <span class="info-block-label">จำนวนบริการคงเหลือ :</span>
-                    <p class="info-block-value fw-bold">7 ครั้ง</p>
-                </div>
-                <div class="info-block">
-                    <span class="info-block-label">รายละเอียดปัญหาและการแก้ไข :</span>
-                    <p class="info-block-value">สายสัญญาณชำรุด</p>
-                </div>
-                <div class="info-block">
-                    <span class="info-block-label">ขอบเขตการบริการ :</span>
-                    <ul class="scope-list-red">
-                        <li>ตรวจสอบ Motion Sensor, Door Contact, Panic Switch</li>
-                        <li>ทดสอบการทำงานของสัญญาณเตือน</li>
-                        <li>เช็ก Battery Backup / Power Supply</li>
-                        <li>ตรวจสอบแผงควบคุม และการเชื่อมต่อ</li>
-                        <li>แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด</li>
-                        <li>ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม</li>
-                    </ul>
+                    <p class="info-block-value fw-bold text-danger">{{ max(0, $request->total_service_count - $request->used_service_count) }} ครั้ง</p>
                 </div>
 
                 <div class="card-footer-right">
-                    <a href="packages" class="btn-navy-back">ย้อนกลับ</a>
+                    <a href="{{ route('repair-history') }}" class="btn-navy-back">ดูประวัติทั้งหมด</a>
                 </div>
             </article>
         </div>

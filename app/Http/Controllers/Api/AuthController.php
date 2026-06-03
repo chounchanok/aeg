@@ -229,7 +229,7 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Successfully logged out']);
     }
-    
+
     public function register(Request $request)
     {
         $request->validate([
@@ -241,18 +241,16 @@ class AuthController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. สร้าง User
-            $user_data = [
+            // 1. สร้าง User (ให้ Active ทันที เพราะผ่าน OTP มาแล้ว)
+            $user = User::create([
                 'username' => $request->username,
-                'email' => $request->username . '@temp.com', // ใช้ username สร้าง email ชั่วคราวถ้าไม่มี
+                'email' => $request->username . '@temp.com',
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
                 'role' => 'customer',
-                'is_active' => false, // รอการยืนยัน OTP
-            ];
-
-            // dd($user_data);
-            $user = User::create($user_data);
+                'is_active' => true, // 🌟 ปรับเป็น true
+                'phone_verified_at' => now(), // 🌟 ถือว่า Verify แล้ว
+            ]);
 
             // 2. สร้าง Profile
             DB::table('customer_profiles')->insert([
@@ -262,23 +260,32 @@ class AuthController extends Controller
                 'created_at' => now(),
             ]);
 
-            // 3. สร้าง OTP (สมมติเป็น 123456 สำหรับการเทส)
-            $otpCode = '123456'; 
-            DB::table('otp_codes')->insert([
-                'phone' => $request->phone,
-                'code' => $otpCode,
-                'expires_at' => Carbon::now()->addMinutes(5),
+            // 3. สร้างกระเป๋าพอยท์ (ถ้ามีระบบ Ease Club)
+            DB::table('customer_wallets')->insert([
+                'user_id' => $user->id,
+                'current_points' => 0,
                 'created_at' => now(),
+                'updated_at' => now()
             ]);
 
             DB::commit();
 
-            // ในระบบจริงตรงนี้ต้องเรียก SMS Gateway ส่ง OTP ไปที่มือถือลูกค้า
-            return $this->successResponse(['phone' => $request->phone], 'สมัครสมาชิกสำเร็จ โปรดยืนยันรหัส OTP ที่ส่งไปยังเบอร์มือถือของท่าน');
+            // 4. สร้าง Token ให้เข้าสู่ระบบได้เลยหลังสมัครเสร็จ
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->successResponse([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'phone' => $user->phone
+                ]
+            ], 'สมัครสมาชิกและเข้าสู่ระบบสำเร็จ');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse('ไม่สามารถสมัครสมาชิกได้: ' . $e->getMessage());
+            return $this->errorResponse('ไม่สามารถสมัครสมาชิกได้: ' . $e->getMessage(), 500);
         }
     }
 
@@ -292,6 +299,7 @@ class AuthController extends Controller
             'code' => 'required|string',
         ]);
 
+        // 1. ตรวจสอบ OTP ในฐานข้อมูล
         $otp = DB::table('otp_codes')
             ->where('phone', $request->phone)
             ->where('code', $request->code)
@@ -302,24 +310,14 @@ class AuthController extends Controller
             return $this->errorResponse('รหัส OTP ไม่ถูกต้องหรือหมดอายุ', 400);
         }
 
-        $user = User::where('phone', $request->phone)->first();
-        if ($user) {
-            $user->update([
-                'is_active' => true,
-                'phone_verified_at' => now()
-            ]);
-            
-            // ลบรหัส OTP ที่ใช้แล้ว
-            DB::table('otp_codes')->where('phone', $request->phone)->delete();
+        // 2. ลบรหัส OTP ที่ใช้แล้วทิ้ง
+        DB::table('otp_codes')->where('phone', $request->phone)->delete();
 
-            $token = $user->createToken('auth_token')->plainTextToken;
-            return $this->successResponse([
-                'access_token' => $token,
-                'token_type' => 'Bearer'
-            ], 'ยืนยันตัวตนสำเร็จ');
-        }
-
-        return $this->errorResponse('ไม่พบข้อมูลผู้ใช้งาน');
+        // 3. แจ้งแอปพลิเคชันว่ายืนยันตัวตนผ่านแล้ว ให้ไปหน้ากรอกข้อมูลต่อได้เลย
+        return $this->successResponse([
+            'phone' => $request->phone,
+            'is_verified' => true
+        ], 'ยืนยันรหัส OTP สำเร็จ กรุณากรอกข้อมูลเพื่อลงทะเบียน');
     }
 
     // ==========================================
@@ -336,7 +334,7 @@ class AuthController extends Controller
         ]);
 
         $column = $request->provider === 'google' ? 'google_id' : 'line_id';
-        
+
         // ค้นหา User จาก Social ID
         $user = User::where($column, $request->provider_id)->first();
 
@@ -368,5 +366,69 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer'
         ], 'เข้าสู่ระบบสำเร็จ');
+    }
+
+    public function requestOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|min:10'
+        ]);
+
+        // 1. เช็คว่าเบอร์นี้เคยสมัครหรือยัง
+        if (DB::table('users')->where('phone', $request->phone)->exists()) {
+            return $this->errorResponse('เบอร์โทรศัพท์นี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ', 400);
+        }
+
+        // 2. สร้างรหัส OTP 6 หลัก และ Ref Code
+        $otpCode = sprintf("%06d", mt_rand(1, 999999));
+        $refCode = \Illuminate\Support\Str::random(4);
+
+        // 3. บันทึกลงตาราง otp_codes
+        DB::table('otp_codes')->updateOrInsert(
+            ['phone' => $request->phone],
+            [
+                'code' => $otpCode,
+                'expires_at' => \Carbon\Carbon::now()->addMinutes(5),
+                'created_at' => now()
+            ]
+        );
+
+        // 4. แปลงเบอร์โทรให้ขึ้นต้นด้วย 66 (เช่น 0639149666 -> 66639149666)
+        $formattedPhone = preg_replace('/^0/', '66', $request->phone);
+
+        // 5. ข้อความที่จะส่ง
+        $smsMessage = "รหัส OTP ของคุณคือ {$otpCode} (Ref: {$refCode})";
+
+        // 6. เตรียม Payload ตามที่คุณฝนส่งมา
+        // 💡 หมายเหตุ: แนะนำให้ย้ายค่ารหัสผ่านไปไว้ในไฟล์ .env ตอนขึ้น Server จริงเพื่อความปลอดภัยครับ
+        $smsPayload = [
+            "user" => "orange",
+            "pass" => "C3!xoO71VSPG",
+            "from" => "watsarod",
+            "to"   => $formattedPhone,
+            "servid" => "OGE001",
+            "text" => $smsMessage
+        ];
+
+        try {
+            // 🌟 สำคัญ: ต้องถาม "คุณฝน" ว่า URL Endpoint ที่ใช้ยิง API คือ URL อะไร
+            // สมมติ URL เช่น 'https://sms-gateway-api.com/send' ให้เอามาใส่แทนตรงนี้ครับ
+            $apiUrl = env('SMS_GATEWAY_URL', 'https://api.sms-provider.com/send');
+
+            $response = \Illuminate\Support\Facades\Http::post($apiUrl, $smsPayload);
+
+            // ถ้ายิงผ่าน
+            if ($response->successful()) {
+                return $this->successResponse([
+                    'ref_code' => $refCode,
+                    'phone' => $request->phone
+                ], 'ส่งรหัส OTP เรียบร้อยแล้ว');
+            } else {
+                return $this->errorResponse('ไม่สามารถส่ง SMS ได้: ระบบขัดข้อง', 500);
+            }
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('เกิดข้อผิดพลาดในการส่ง OTP: ' . $e->getMessage(), 500);
+        }
     }
 }

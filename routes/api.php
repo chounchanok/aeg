@@ -25,10 +25,17 @@ Route::prefix('smart-lockers')->group(function () {
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
 
 // --- Public Routes ---
-Route::post('/register', [AuthController::class, 'register']);
+// 1. เช็คเบอร์ว่ามีในระบบไหม ถ้าไม่มีให้ส่ง OTP ไปเบอร์นั้น
+Route::post('/request-otp', [AuthController::class, 'requestOtp']);
+
+// 2. ยืนยัน OTP (มีอยู่แล้ว)
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+
+// 3. กรอกข้อมูลส่วนตัวต่อให้จบ (มีอยู่แล้ว)
+Route::post('/register', [AuthController::class, 'register']);
+
+Route::post('/login', [AuthController::class, 'login']);
 Route::post('/social-login', [AuthController::class, 'socialLogin']);
-Route::get('/service-categories', [ServiceCategoryApiController::class, 'index']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -36,8 +43,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::prefix('ecommerce')->group(function () {
     Route::get('/products', [EcommerceController::class, 'getProducts']);
     Route::get('/products/{id}', [EcommerceController::class, 'getProductDetail']);
-    
-    // Webhook สำหรับรับข้อมูลจาก Payment Gateway (ไม่ต้อง Auth)
+
+    // 🌟 เพิ่ม API เส้นใหม่สำหรับแพ็กเกจดูแลอุปกรณ์ (Type = 5)
+    Route::get('/packages', [EcommerceController::class, 'getPackages']);
+
     Route::post('/payment/webhook', [EcommerceController::class, 'paymentWebhook']);
 });
 
@@ -52,7 +61,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     // ระบบที่อยู่
     Route::get('/addresses', [EcommerceController::class, 'getAddresses']);
     Route::post('/addresses', [EcommerceController::class, 'createAddress']);
-    
+
     // 🌟 เพิ่ม 2 เส้นนี้สำหรับการแสดงข้อมูลและการแก้ไข
     Route::get('/addresses/{id}', [EcommerceController::class, 'getAddressDetail']);
     Route::post('/addresses/{id}/update', [EcommerceController::class, 'updateAddress']);
@@ -74,7 +83,7 @@ Route::prefix('main')->group(function () {
 
 // --- Protected Routes (ต้องล็อกอิน) ---
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Main Page (ส่วนบุคคล)
     Route::prefix('main')->group(function () {
         Route::get('/expiring-services', [MainPageController::class, 'getExpiringServices']);
@@ -123,7 +132,7 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
     // ระบบแชทในใบแจ้งซ่อม
     Route::get('/{id}/chats', [SupportController::class, 'getChats']);
     Route::post('/{id}/chats', [SupportController::class, 'sendMessage']);
-    
+
     // ติดตามสถานะงานซ่อม
     Route::get('/{id}/tracking', [SupportController::class, 'getTrackingLogs']);
 });
@@ -131,4 +140,31 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
 // ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
 Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/book', [SmartLockerController::class, 'book']);
+});
+
+// --- ประกันภัย (Insurance) ---
+Route::prefix('insurances')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\InsuranceApiController::class, 'index']); // รายการประกัน
+    Route::get('/{id}', [\App\Http\Controllers\Api\InsuranceApiController::class, 'show']); // รายละเอียดประกัน
+});
+
+// --- ติดต่อเรา (Contact Admin Email) ---
+Route::post('/contact-admin', [SupportController::class, 'sendContactEmail']);
+
+// --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
+Route::get('/point-history', [ProfileController::class, 'getPointHistory']);
+
+// ==========================================
+// --- Technician Routes (สำหรับช่างซ่อม) ---
+// ==========================================
+// หมายเหตุ: แนะนำให้สร้าง Middleware เช่น 'role:technician' ไว้ดักด้วยครับ
+Route::middleware(['auth:sanctum'])->prefix('technician')->group(function () {
+    // ดูรายการแจ้งซ่อมที่ถูกมอบหมายให้ช่างคนนี้
+    Route::get('/tasks', [\App\Http\Controllers\Api\TechnicianController::class, 'getMyTasks']);
+
+    // ดูรายละเอียดงาน
+    Route::get('/tasks/{id}', [\App\Http\Controllers\Api\TechnicianController::class, 'getTaskDetail']);
+
+    // อัปเดตสถานะงาน (เช่น รับงาน, กำลังเดินทาง, ซ่อมเสร็จแล้ว)
+    Route::post('/tasks/{id}/update-status', [\App\Http\Controllers\Api\TechnicianController::class, 'updateTaskStatus']);
 });

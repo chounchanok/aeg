@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ให้คะแนนและรีวิว - AEG EASE CLUB</title>
+@section('title', 'ให้คะแนนและรีวิว - AEG EASE CLUB')
+
+@push('styles')
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
         rel="stylesheet">
@@ -350,83 +348,9 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <header class="navbar-main-header">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="fas fa-user"></i><span>ข้อมูลของฉัน</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i
-                                        class="fas fa-id-card-alt me-2"></i>ข้อมูลของฉัน</a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider border-secondary">
-                            </li>
-                            <li><a class="dropdown-item text-warning" href="#"><i
-                                        class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ</a></li>
-                        </ul>
-                    </div>
-
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <img src="https://flagcdn.com/w20/th.png" alt="TH" width="20">
-                            <span>TH</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/th.png" width="18"> Thai (TH)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/gb.png" width="18"> English (EN)</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100 mt-2">
-                <a class="navbar-brand" href="index"><img src="assets/image/logo.webp" alt="AEG Logo"></a>
-                <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
-                    <input type="text" class="search-input" placeholder="ค้นหาบริการหรือสินค้า...">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-                <div class="cart-section">
-                    <a href="#" class="cart-icon" style="color: white; margin-right: 15px; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge shadow-sm"><i class="fas fa-coins" style="color: #f1c40f;"></i> 200</div>
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#mainMenuCollapse">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <nav class="main-navigation-bar sticky-top">
-        <div class="container">
-            <div class="collapse navbar-collapse d-lg-block" id="mainMenuCollapse">
-                <ul class="navbar-nav d-flex flex-column flex-lg-row justify-content-center text-center">
-                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="index">หน้าหลัก</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">สินค้าพร้อมติดตั้ง</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="packages">แพ็กเกจบริการ</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">บริการแนะนำ</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+@section('content')
 
     <div class="reward-banner-gray">
         <div class="container">
@@ -466,84 +390,48 @@
                     <div class="col-right">
                         <h1 class="pkg-title-main">{{ $item->product_name }}</h1>
                         <span class="pkg-subtitle">แพ็กเกจการดูแลอุปกรณ์ (Order: {{ $item->order->order_number }})</span>
-                        
-                        <!-- ถ้าจะทำระบบบันทึกรีวิวให้ครอบ <form> ตรงนี้ -->
-                        <div class="review-block">
-                            <span class="review-label">เขียนรีวิว</span>
-                            <textarea class="custom-textarea" name="review_text" placeholder="เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ"></textarea>
-                        </div>
-                        
-                        <div class="action-btns-row">
-                            <a href="{{ route('packages.mine') }}" class="btn-navy-pill">ย้อนกลับ</a>
-                            <button class="btn-navy-pill" onclick="confirmReview()">ยืนยัน</button>
-                        </div>
+
+                        <form action="{{ url('/packages/feedback/' . $item->id) }}" method="POST">
+                            @csrf
+
+                            <input type="hidden" name="install_rating" id="install_rating_input" value="4">
+                            <input type="hidden" name="sales_rating" id="sales_rating_input" value="4">
+
+                            <div class="review-block">
+                                <span class="review-label font-weight-bold d-block mb-2">เขียนรีวิว</span>
+                                <textarea class="custom-textarea" name="review_text" placeholder="เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ"></textarea>
+                            </div>
+
+                            <div class="action-btns-row">
+                                <a href="{{ route('packages.mine') }}" class="btn-navy-pill bg-secondary text-dark border-0">ย้อนกลับ</a>
+                                <button type="submit" class="btn-navy-pill">ยืนยัน</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer>
-        <div class="container">
-            <div class="row g-4 align-items-start">
-                <div class="col-md-4 text-center text-md-start">
-                    <h6 class="fw-bold mb-3">ดาวน์โหลดแอปพลิเคชัน</h6>
-                    <div class="d-flex justify-content-center justify-content-md-start gap-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=AEG-APP"
-                            class="bg-white p-1 rounded" alt="QR" width="80">
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="28"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="28"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center">
-                    <div class="row">
-                        <div class="col-6 footer-column footer-divider">
-                            <h6 class="fw-bold mb-3">แพ็กเกจที่ใช้งาน</h6>
-                            <a href="packages"
-                                class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column">
-                            <h6 class="fw-bold mb-3">ช่วยเหลือ</h6>
-                            <a href="privacy-policy"
-                                class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center text-md-end">
-                    <img src="assets/image/logo.webp" alt="Logo" height="40">
-                </div>
-            </div>
-            <div class="row mt-5 align-items-center">
-                <div class="col-md-4 d-none d-md-block"></div>
-                <div class="col-md-4 text-center">
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                    <p class="copyright-text mb-0">© 2024 AEG EASE CLUB. All rights reserved.</p>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- Footer Section -->
+@endsection
+@push('scripts')
 
+    <!-- Bootstrap 5.3.3 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const ratings = document.querySelectorAll('.star-rating');
         ratings.forEach(container => {
+            const type = container.getAttribute('data-id'); // 'install' หรือ 'sales'
+            const hiddenInput = document.getElementById(type + '_rating_input'); // หา Input ซ่อน
+
             const stars = container.querySelectorAll('i');
             stars.forEach(star => {
                 star.onclick = function () {
                     const val = parseInt(this.getAttribute('data-value'));
+                    hiddenInput.value = val; // 🌟 เก็บค่าลง Form
+
                     stars.forEach(s => {
                         const sVal = parseInt(s.getAttribute('data-value'));
                         if (sVal <= val) {
@@ -560,6 +448,4 @@
             window.location.href = 'packages';
         }
     </script>
-</body>
-
-</html>
+@endpush

@@ -15,6 +15,7 @@ use App\Http\Controllers\Frontend\PackageController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\InsuranceController;
+use App\Http\Controllers\Frontend\ServiceRequestController;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\ServiceRequestAdminController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
 use App\Http\Controllers\Admin\InsuranceAdminController;
+use App\Http\Controllers\Admin\ReviewAdminController;
 
 Route::get('dark-mode-switcher', function() { return back(); })->name('dark-mode-switcher');
 Route::get('color-scheme-switcher', function() { return back(); })->name('color-scheme-switcher');
@@ -44,6 +46,7 @@ Route::get('/run-link', function () {
 Route::get('/insurance', [InsuranceController::class, 'index'])->name('insurance');
 Route::get('/insurance/{id}', [InsuranceController::class, 'show'])->where('id', '[0-9]+')->name('insurance-detail');
 Route::get('/insurance/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('insurance-contact');
+Route::get('/safe-contact/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('safe-contact');
 
 
 // --- Static Pages (หน้าทั่วไป) ---
@@ -111,12 +114,19 @@ Route::middleware('auth')->group(function() {
     // --- My Packages & Service Requests ---
     Route::get('/my-packages', [PackageController::class, 'myPackages'])->name('packages.mine'); // ย้ายเข้ามาอยู่ใน auth ป้องกันบัคเวลาไม่ได้ Login
     Route::get('/packages/feedback/{id}', [PackageController::class, 'feedback'])->name('packages.feedback');
+    Route::post('/packages/feedback/{id}', [PackageController::class, 'submitFeedback']);
 
-    // Repair related pages (รอผูก Controller ในอนาคต)
-    Route::view('/repairs/history', 'frontend.repair-history')->name('repair-history');
-    Route::view('/repairs/request', 'frontend.repair-request')->name('repair-request');
-    Route::view('/repairs/status', 'frontend.repair-status')->name('repair-status');
-    Route::view('/history-detail', 'frontend.history-detail')->name('history-detail');
+    // 🌟 เปลี่ยนเป็น:
+    Route::get('/repairs/request/{id}', [ServiceRequestController::class, 'requestForm'])->name('repair-request');
+    Route::post('/repairs/request/{id}', [ServiceRequestController::class, 'submitRequest'])->name('repair-request.submit');
+
+    Route::get('/repairs/request/{id}', [ServiceRequestController::class, 'requestForm'])->name('repair-request');
+    Route::post('/repairs/request/{id}', [ServiceRequestController::class, 'submitRequest'])->name('repair-request.submit');
+
+    // 🌟 2 เส้นที่เพิ่มใหม่สำหรับดึงข้อมูลสถานะ และ ประวัติ
+    Route::get('/repairs/status/{id}', [ServiceRequestController::class, 'status'])->name('repair-status');
+    Route::get('/repairs/history', [ServiceRequestController::class, 'history'])->name('repair-history');
+
 
 
     // ==========================================
@@ -195,6 +205,8 @@ Route::middleware('auth')->group(function() {
             'update'  => 'admin.insurances.update',
             'destroy' => 'admin.insurances.destroy',
         ]);
+        // เพิ่มในฝั่ง Backend (ใน group admin):
+        Route::get('/admin/reviews', [ReviewAdminController::class, 'index'])->name('admin.reviews');
 
     });
 

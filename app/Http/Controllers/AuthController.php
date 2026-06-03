@@ -43,7 +43,7 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // 1. เข้าสู่ระบบ (Login) - คงโค้ดเดิมของคุณไว้ได้เลย 
+    // 1. เข้าสู่ระบบ (Login) - คงโค้ดเดิมของคุณไว้ได้เลย
     // ==========================================
     public function login(Request $request)
     {
@@ -59,7 +59,7 @@ class AuthController extends Controller
             // ถ้าขึ้นต้นด้วย +66 ให้ตัดออกแล้วแทนด้วย 0
             if (str_starts_with($phone, '+66')) {
                 $phone = '0' . substr($phone, 3);
-            } 
+            }
             // ถ้าขึ้นต้นด้วย 66 และมีความยาว 11 ตัว ให้แทนด้วย 0 (เผื่อ User พิมพ์ 66812345678)
             elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
                 $phone = '0' . substr($phone, 2);
@@ -83,7 +83,7 @@ class AuthController extends Controller
         ], [
             'phone.regex' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง'
         ]);
-        
+
         // =========================================
         // 🌟 ส่วนที่ 3: เช็คการเข้าสู่ระบบ
         // =========================================
@@ -119,18 +119,13 @@ class AuthController extends Controller
     // ==========================================
     public function registerSubmit(Request $request)
     {
-        // 1. จัดการ Format เบอร์มือถือ (ดึง Logic มาจากหน้า Login ของคุณ)
+        // 1. จัดการ Format เบอร์มือถือ
         $phone = $request->input('phone');
         if ($phone) {
             $phone = preg_replace('/[^0-9+]/', '', $phone);
-            if (str_starts_with($phone, '+66')) {
-                $phone = '0' . substr($phone, 3);
-            } elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
-                $phone = '0' . substr($phone, 2);
-            }
-            if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) {
-                $phone = '0' . $phone;
-            }
+            if (str_starts_with($phone, '+66')) $phone = '0' . substr($phone, 3);
+            elseif (str_starts_with($phone, '66') && strlen($phone) == 11) $phone = '0' . substr($phone, 2);
+            if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) $phone = '0' . $phone;
             $request->merge(['phone' => $phone]);
         }
 
@@ -142,76 +137,73 @@ class AuthController extends Controller
             'phone.unique' => 'เบอร์มือถือนี้มีการลงทะเบียนในระบบแล้ว'
         ]);
 
-        DB::beginTransaction();
         try {
-            // 3. สร้างค่าจำลองสำหรับฟิลด์ที่บังคับใน Database
-            $dummyUsername = 'user_' . $request->phone;
-            $dummyName = 'Guest_' . substr($request->phone, -4); // เช่น Guest_4567
-            $randomPassword = 'password'; // สุ่มรหัสผ่านไปก่อน เพราะเราล็อกอินด้วย OTP
+            // 3. สร้างรหัส OTP และบันทึกลง DB
+            $otpCode = sprintf("%06d", mt_rand(1, 999999));
+            $refCode = \Illuminate\Support\Str::random(4);
 
-            // สร้าง User
-            $user_data = [
-                'username' => $dummyUsername,
-                'email' => $dummyUsername . '@temp.com',
-                'phone' => $request->phone,
-                'password' => Hash::make($randomPassword),
-                'role' => 'customer',
-                'is_active' => false, // รอการยืนยัน OTP
+            DB::table('otp_codes')->updateOrInsert(
+                ['phone' => $request->phone],
+                [
+                    'code' => $otpCode,
+                    'expires_at' => Carbon::now()->addMinutes(5),
+                    'created_at' => now(),
+                ]
+            );
+
+            // 4. ส่ง OTP ผ่าน ThaiBulkSMS
+            $formattedPhone = preg_replace('/^0/', '66', $request->phone);
+            $smsMessage = "รหัส OTP ของคุณคือ {$otpCode} (Ref: {$refCode})";
+
+            $smsPayload = [
+                "user" => "orange",
+                "pass" => "C3!xoO71VSPG",
+                "from" => "watsarod",
+                "to"   => $formattedPhone,
+                "servid" => "OGE001",
+                "text" => $smsMessage
             ];
-            $user = User::create($user_data);
 
-            // สร้าง Profile
-            DB::table('customer_profiles')->insert([
-                'user_id' => $user->id,
-                'first_name' => $dummyName,
-                'phone' => $request->phone,
-                'created_at' => now(),
-            ]);
+            // 🌟 ต้องใส่ URL จริงของ Gateway นะครับ
+            $apiUrl = env('SMS_GATEWAY_URL', 'https://api.sms-provider.com/send');
+            \Illuminate\Support\Facades\Http::post($apiUrl, $smsPayload);
 
-            // สร้าง OTP
-            $otpCode = '123456'; // สำหรับใช้เทส (Production ค่อยต่อ SMS Gateway)
-            DB::table('otp_codes')->insert([
-                'phone' => $request->phone,
-                'code' => $otpCode,
-                'expires_at' => Carbon::now()->addMinutes(5),
-                'created_at' => now(),
-            ]);
+            // 5. บันทึก Session ให้ตรงกัน
+            session(['verify_phone' => $request->phone, 'ref_code' => $refCode]);
 
-            DB::commit();
-
-            // ส่งเบอร์โทรไปเพื่อแสดงในหน้ายืนยัน OTP
-            return redirect()->route('verify-otp')->with('register_phone', $request->phone);
+            return redirect()->route('verify-otp')->with('success', 'ส่งรหัส OTP แล้ว (Ref: ' . $refCode . ')');
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['phone' => 'ระบบขัดข้อง ไม่สามารถสมัครสมาชิกได้: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['phone' => 'ระบบขัดข้อง ไม่สามารถส่ง OTP ได้: ' . $e->getMessage()])->withInput();
         }
     }
 
     // ==========================================
-    // 3. ยืนยัน OTP (Verify OTP) - แปลงจาก API
+    // 3. หน้ากรอกยืนยัน OTP
     // ==========================================
     public function verifyOtpView(Request $request)
     {
-        $phone = session('register_phone');
+        // เช็ค Session ด้วยชื่อ verify_phone
+        $phone = session('verify_phone');
         if (!$phone) {
-            return redirect()->route('register');
+            return redirect()->route('register')->withErrors(['phone' => 'เซสชันหมดอายุ กรุณากรอกเบอร์โทรศัพท์ใหม่']);
         }
-        return view('frontend.verify-otp', compact('phone'));
+
+        $refCode = session('ref_code');
+        return view('frontend.verify-otp', compact('phone', 'refCode'));
     }
 
+    // ==========================================
+    // 4. ยืนยัน OTP และ สร้าง User
+    // ==========================================
     public function verifyOtpSubmit(Request $request)
     {
-        // 1. ดึงเบอร์โทรจาก Session (ปลอดภัยกว่าการส่งผ่าน input hidden)
-        // หมายเหตุ: อย่าลืมใส่ session(['verify_phone' => $request->phone]); ไว้ในฟังก์ชัน Register/Login ก่อนหน้านี้นะครับ
         $phone = session('verify_phone');
 
-        // หากเซสชันหาย หรือไม่มีการทำรายการมาก่อน ให้เด้งกลับไปหน้าล็อกอิน
         if (!$phone) {
             return redirect()->route('login')->with('error', 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
         }
 
-        // 2. เปลี่ยนมา validate รับค่า 'otp' ตาม <input name="otp"> ในหน้าฟอร์ม
         $request->validate([
             'otp' => 'required|string|size:6',
         ], [
@@ -219,41 +211,54 @@ class AuthController extends Controller
             'otp.size' => 'รหัส OTP ต้องมี 6 หลักพอดี'
         ]);
 
-        // 3. ตรวจสอบ OTP ในระบบ
+        // ตรวจสอบ OTP
         $otpRecord = DB::table('otp_codes')
             ->where('phone', $phone)
-            ->where('code', $request->otp) // เปลี่ยนเป็นรับค่าจาก $request->otp
-            ->where('expires_at', '>', \Carbon\Carbon::now())
+            ->where('code', $request->otp)
+            ->where('expires_at', '>', Carbon::now())
             ->first();
 
-        // 4. กรณี OTP ผิด หรือ หมดอายุ (โยน error กลับไปที่ช่อง otp)
         if (!$otpRecord) {
             return back()->withErrors(['otp' => 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ']);
         }
 
-        // 5. กรณี OTP ถูกต้อง ดำเนินการอัปเดต User
-        $user = \App\Models\User::where('phone', $phone)->first();
-        if ($user) {
-            $user->update([
-                'password' => Hash::make('password'), // สุ่มรหัสผ่านใหม่ (เพราะล็อกอินด้วย OTP)
-                'is_active' => 1,
+        DB::beginTransaction();
+        try {
+            // 🌟 สร้าง User จริงๆ "หลังจากที่ OTP ถูกต้องแล้วเท่านั้น"
+            $dummyUsername = 'user_' . $phone;
+            $dummyName = 'Guest_' . substr($phone, -4);
+
+            $user = User::create([
+                'username' => $dummyUsername,
+                'email' => $dummyUsername . '@temp.com',
+                'phone' => $phone,
+                'password' => Hash::make('password'), // สุ่มรหัสผ่านไปก่อน
+                'role' => 'customer',
+                'is_active' => true, // เปิดใช้งานทันที
                 'phone_verified_at' => now()
             ]);
-            
-            // ลบข้อมูล OTP ที่ใช้แล้วทิ้ง
+
+            DB::table('customer_profiles')->insert([
+                'user_id' => $user->id,
+                'first_name' => $dummyName,
+                'phone' => $phone,
+                'created_at' => now(),
+            ]);
+
+            // ลบ OTP และ Session
             DB::table('otp_codes')->where('phone', $phone)->delete();
-            
-            // ล้าง session เบอร์โทรทิ้ง เพื่อความปลอดภัย
-            session()->forget('verify_phone');
+            session()->forget(['verify_phone', 'ref_code']);
 
-            // แทนที่จะออก Token ให้สร้าง Session Login ฝั่ง Web
-            \Illuminate\Support\Facades\Auth::login($user);
+            DB::commit();
 
-            return redirect()->route('home')->with('success', 'ยืนยันตัวตนและเข้าสู่ระบบสำเร็จ');
+            // ล็อกอินและพากลับหน้าแรก
+            Auth::login($user);
+            return redirect()->route('home')->with('success', 'ยืนยันตัวตนและลงทะเบียนสำเร็จ');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'เกิดข้อผิดพลาดในการสร้างบัญชี: ' . $e->getMessage());
         }
-
-        // กรณีหา User ไม่เจอ (โยน error กลับไปเป็น session('error') ตามที่ดักไว้ด้านบนของฟอร์ม)
-        return back()->with('error', 'ไม่พบข้อมูลผู้ใช้งานในระบบ');
     }
 
     // ==========================================
@@ -297,5 +302,5 @@ class AuthController extends Controller
         return back()->withErrors(['email' => trans($response)]);
     }
 
-    
+
 }

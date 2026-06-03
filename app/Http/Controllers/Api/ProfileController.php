@@ -19,7 +19,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
-        
+
         return $this->successResponse([
             'user' => $user,
             'profile' => $profile
@@ -29,7 +29,7 @@ class ProfileController extends Controller
     public function updateProfile(Request $request)
     {
         $user = $request->user();
-        
+
         $request->validate([
             'first_name' => 'nullable|string',
             'last_name' => 'nullable|string',
@@ -86,13 +86,13 @@ class ProfileController extends Controller
             $expireDate = \Carbon\Carbon::parse($pkg->warranty_expire_date);
             $now = \Carbon\Carbon::now();
             $isExpired = $expireDate->isPast();
-            
+
             $remainingText = 'หมดอายุแล้ว';
             if (!$isExpired) {
                 $diff = $now->diff($expireDate);
                 $remainingMonths = $diff->m + ($diff->y * 12);
                 $remainingDays = $diff->d;
-                
+
                 if ($remainingMonths > 0) {
                     $remainingText = "เหลือเวลา $remainingMonths เดือน $remainingDays วัน";
                 } else {
@@ -164,7 +164,7 @@ class ProfileController extends Controller
     public function toggleFavorite(Request $request)
     {
         $request->validate(['product_id' => 'required|integer']);
-        
+
         $userId = $request->user()->id;
         $productId = $request->product_id;
 
@@ -230,5 +230,31 @@ class ProfileController extends Controller
             ->update(['is_read' => true, 'updated_at' => now()]);
 
         return $this->successResponse(null, 'Notification marked as read');
+    }
+
+    // ดึงประวัติแต้มเข้า-ออก
+    public function getPointHistory(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $history = DB::table('point_transactions')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($tx) {
+                return [
+                    'id' => $tx->id,
+                    'amount' => $tx->amount, // ถ้าเป็นลบคือใช้แต้ม, ถ้าเป็นบวกคือได้รับแต้ม
+                    'type' => $tx->type, // เช่น 'redeem', 'earn'
+                    'description' => $tx->description,
+                    'created_at' => \Carbon\Carbon::parse($tx->created_at)->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Point history retrieved successfully',
+            'data' => $history
+        ]);
     }
 }

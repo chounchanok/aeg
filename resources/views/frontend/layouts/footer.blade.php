@@ -20,14 +20,12 @@
                 <div class="col-md-4 text-center">
                     <div class="row">
                         <div class="col-6 footer-column footer-divider">
-                            <h6 class="fw-bold mb-3">แพ็กเกจที่ใช้งาน</h6>
-                            <a href="#"
-                                class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
+                            <a href="{{ route('packages.mine') }}" class="d-block text-white-50 text-decoration-none mb-2">แพ็กเกจที่ใช้งาน</a>
+                            <a href="{{ route('terms-conditions') }}" class="d-block text-white-50 text-decoration-none mb-2">ข้อกำหนดและเงื่อนไข</a>
                         </div>
                         <div class="col-6 footer-column">
-                            <h6 class="fw-bold mb-3">ช่วยเหลือ</h6>
-                            <a href="#"
-                                class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
+                            <a href="{{ route('faq') }}" class="d-block text-white-50 text-decoration-none mb-2">ช่วยเหลือ</a>
+                            <a href="{{ route('privacy-policy') }}" class="d-block text-white-50 text-decoration-none mb-2">นโยบายความเป็นส่วนตัว</a>
                         </div>
                     </div>
                 </div>
@@ -52,3 +50,11 @@
             </div>
         </div>
     </footer>
+
+    <!-- Floating Chat -->
+    <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
+        <div class="chat-circle"
+            style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
+            <i class="fas fa-comment-dots text-danger fs-3"></i>
+        </div>
+    </div>

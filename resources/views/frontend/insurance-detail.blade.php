@@ -287,7 +287,7 @@
     <main class="detail-wrapper">
         <div class="container">
             <div class="insurance-detail-card">
-                <img src="{{ $insurance->image_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}" 
+                <img src="{{ $insurance->image_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}"
                     alt="{{ $insurance->title_th }}" class="banner-image">
 
                 <div class="detail-body">

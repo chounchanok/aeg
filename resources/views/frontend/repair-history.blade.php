@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'รายละเอียดการแจ้งซ่อม - AEG EASE CLUB')
+@section('title', 'ประวัติการแจ้งซ่อม - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -343,65 +343,52 @@
     <!-- Main Repair Details Content -->
     <main class="repair-detail-wrapper">
         <div class="container-950">
-            <div class="repair-card">
+            <h2 class="fw-bold mb-4" style="color: var(--primary-navy);">ประวัติการแจ้งซ่อมของคุณ</h2>
 
-                <!-- Hero Section: Image and Top Text -->
-                <div class="repair-hero">
-                    <div class="repair-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm System">
-                    </div>
-                    <div class="repair-title-block">
-                        <h1 class="repair-main-title">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
-                        <div class="repair-badge">ครั้งที่ 2</div>
-                        <div class="repair-dates-grid">
-                            <div class="date-item">
-                                <label class="date-label">วันที่แจ้งซ่อม</label>
-                                <span class="date-value">30 มี.ค. 2024</span>
+            @if(isset($requests) && $requests->count() > 0)
+                @foreach($requests as $req)
+                <div class="repair-card mb-4" style="padding: 30px;">
+                    <div class="repair-hero mb-0">
+                        <div class="repair-img-box" style="width: 200px; height: 140px;">
+                            <img src="{{ $req->image_url ?? 'https://via.placeholder.com/400' }}" alt="Package Image">
+                        </div>
+                        <div class="repair-title-block">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="fw-bold text-dark mb-1">{{ $req->product_name }}</h4>
+                                    <p class="text-muted small mb-2">Ticket: {{ $req->ticket_number }}</p>
+                                </div>
+                                <div>
+                                    @if($req->status == 'completed')
+                                        <span class="badge bg-success px-3 py-2">เสร็จสิ้น</span>
+                                    @elseif($req->status == 'cancelled')
+                                        <span class="badge bg-secondary px-3 py-2">ยกเลิก</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark px-3 py-2">กำลังดำเนินการ</span>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="date-item">
-                                <label class="date-label">วันที่แก้ไข</label>
-                                <span class="date-value">31 มี.ค. 2024</span>
+
+                            <p class="mb-2 text-truncate" style="max-width: 400px; font-size: 0.9rem;">
+                                <strong>ปัญหา:</strong> {{ $req->problem_description }}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-end mt-3">
+                                <span class="text-muted" style="font-size: 0.8rem;">
+                                    วันที่แจ้ง: {{ \Carbon\Carbon::parse($req->created_at)->format('d M Y') }}
+                                </span>
+                                <a href="{{ route('repair-status', $req->id) }}" class="btn-navy-back" style="padding: 8px 25px;">ดูสถานะ</a>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Info Sections -->
-                <div class="info-section">
-                    <span class="section-label">แพ็กเกจดูแลรายเดือน :</span>
-                    <p class="info-text-dark">Burglary Alarm (ระบบสัญญาณกันขโมย)</p>
+                @endforeach
+            @else
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">คุณยังไม่มีประวัติการแจ้งซ่อม</p>
                 </div>
-
-                <div class="info-section">
-                    <span class="section-label">จำนวนบริการคงเหลือ :</span>
-                    <p class="remaining-count">8 ครั้ง</p>
-                </div>
-
-                <div class="info-section">
-                    <span class="section-label">รายละเอียดปัญหาและการแก้ไข :</span>
-                    <p class="info-text-dark">สายสัญญาณชำรุด</p>
-                </div>
-
-                <!-- Scope of Service (Bullet list) -->
-                <div class="info-section">
-                    <span class="section-label">ขอบเขตการบริการ :</span>
-                    <ul class="scope-list-custom">
-                        <li>ตรวจสอบ Motion Sensor, Door Contact, Panic Switch</li>
-                        <li>ทดสอบการทำงานของสัญญาณเตือน</li>
-                        <li>เช็ก Battery Backup / Power Supply</li>
-                        <li>ตรวจสอบแผงควบคุม และการเชื่อมต่อ</li>
-                        <li>แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด</li>
-                        <li>ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม</li>
-                    </ul>
-                </div>
-
-                <!-- Footer Back Button -->
-                <div class="btn-footer-right">
-                    <a href="history_detail" class="btn-navy-back">ย้อนกลับ</a>
-                </div>
-
-            </div>
+            @endif
         </div>
     </main>
 @endsection

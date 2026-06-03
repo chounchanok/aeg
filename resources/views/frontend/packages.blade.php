@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แพ็กเกจของฉัน - AEG EASE CLUB</title>
-    <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
+@section('title', 'แพ็กเกจของฉัน - AEG EASE CLUB')
+
+@push('styles')
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
         rel="stylesheet">
@@ -369,49 +366,9 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="index" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector"
-                        style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85rem;">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section" style="display: flex; align-items: center; gap: 15px;">
-                    <a href="cart" style="color: white; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+@section('content')
 
     <!-- Main Content -->
     <main class="package-main">
@@ -436,6 +393,15 @@
                                     <h2 class="package-title">{{ $item->product_name }}</h2>
                                     <span class="status-badge status-active">ใช้งาน</span>
                                 </div>
+                                @php
+                                    if(strpos($item->product_name, 'รายปี') != false){
+                                        $duration = $item->quantity.' ปี';
+                                        $expireDate = $item->created_at->addYears($item->quantity);
+                                    } else {
+                                        $duration = $item->quantity.' เดือน';
+                                        $expireDate = $item->created_at->addMonths($item->quantity);
+                                    }
+                                @endphp
                                 <div class="date-info-grid">
                                     <div class="info-item">
                                         <label>วันที่เริ่มใช้บริการ</label>
@@ -443,11 +409,11 @@
                                     </div>
                                     <div class="info-item">
                                         <label>ระยะเวลาคุ้มครอง :</label>
-                                        <span class="val-dark">3 เดือน</span> <!-- สามารถปรับเป็นดึงจาก DB ได้ในอนาคต -->
+                                        <span class="val-dark">{{ $duration }}</span> <!-- สามารถปรับเป็นดึงจาก DB ได้ในอนาคต -->
                                     </div>
                                     <div class="info-item">
                                         <label>วันที่สิ้นสุดบริการ</label>
-                                        <span>{{ $item->created_at->addMonths(3)->format('d M Y') }}</span>
+                                        <span>{{ $expireDate->format('d M Y') }}</span>
                                     </div>
                                     <div class="info-item">
                                         <label>ได้รับพอยท์</label>
@@ -455,11 +421,11 @@
                                     </div>
                                 </div>
                                 <div class="card-btn-group">
-                                    <a href="{{ route('repair-request') }}" class="btn-navy-small">แจ้งซ่อม</a>
+                                    <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อม</a>
                                     <!-- ส่ง ID ไปหน้า Feedback ได้ -->
-                                    <a href="{{ route('packages.feedback', $item->id) }}" class="btn-navy-small">เขียนรีวิว</a> 
+                                    <a href="{{ route('packages.feedback', $item->id) }}" class="btn-navy-small">เขียนรีวิว</a>
                                 </div>
-                                <a href="{{ route('repair-status') }}" class="btn-red-full">สถานะแจ้งซ่อม</a>
+                                <!-- <a href="{{ route('repair-status', $item->id) }}" class="btn-red-full">สถานะแจ้งซ่อม</a> -->
                             </div>
                         </div>
                     @endforeach
@@ -502,55 +468,8 @@
     </main>
 
     <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2">
-                        <div class="bg-white p-2 rounded"
-                            style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column">
-                            <h5 class="fw-bold mb-3 text-center" style="font-size: 0.95rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="package" class="text-center footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column">
-                            <h5 class="fw-bold mb-3 text-center" style="font-size: 0.95rem;">คำถามที่พบบ่อย</h5>
-                            <a href="faq" class="text-center footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Floating Chat -->
-    <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
-        <div class="chat-circle"
-            style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
-            <i class="fas fa-comment-dots text-danger fs-3"></i>
-        </div>
-    </div>
+@endsection
+@push('scripts')
 
     <!-- Bootstrap 5.3.3 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -579,6 +498,4 @@
             }
         }
     </script>
-</body>
-
-</html>
+@endpush

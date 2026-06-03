@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แจ้งซ่อม - AEG EASE CLUB</title>
-    <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
+@section('title', 'แจ้งซ่อม - AEG EASE CLUB')
+
+@push('styles')
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
         rel="stylesheet">
@@ -413,106 +410,64 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
 
-    <!-- Header Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-                    <a href="index" class="nav-icon-item"><i class="fas fa-user"></i><span>ข้อมูลของฉัน</span></a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <div class="lang-selector"
-                        style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85rem;">
-                        <img src="https://flagcdn.com/w20/th.png" alt="TH Flag" width="20">
-                        <span>TH</span>
-                        <i class="fas fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100">
-                <a class="navbar-brand" href="index">
-                    <img src="assets/image/logo.webp" alt="AEG Logo"
-                        onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-                </a>
-
-                <div class="search-container mx-auto">
-                    <input type="text" class="search-input" placeholder="ค้นหา">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-
-                <div class="cart-section" style="display: flex; align-items: center; gap: 15px;">
-                    <a href="cart" style="color: white; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge">
-                        <i class="fas fa-coins" style="color: #f1c40f;"></i> 200
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Repair Form Main Content -->
     <main class="repair-wrapper">
         <div class="container-950">
-            <div class="repair-card">
+            <form action="{{ route('repair-request.submit', $item->id) }}" method="POST" class="repair-card">
+                @csrf
 
-                <!-- Package Summary Section -->
+                @if(session('error'))
+                    <div class="alert alert-danger mb-4">{{ session('error') }}</div>
+                @endif
+
                 <div class="repair-hero">
                     <div class="repair-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm">
+                        <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="Product Image">
                     </div>
                     <div class="repair-title-info">
-                        <h1>Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
+                        <h1>{{ $item->product_name ?? 'อุปกรณ์ของคุณ' }}</h1>
                         <div class="package-info-box">
-                            <span class="info-label"
-                                style="font-size: 1.2rem; margin-bottom: 15px;">ข้อมูลแพ็กเกจ</span>
+                            <span class="info-label" style="font-size: 1.2rem; margin-bottom: 15px;">ข้อมูลแพ็กเกจ</span>
                             <div class="mb-2">
-                                <span class="sub-label">แพ็กเกจดูแลรายเดือน :</span>
-                                <span class="val-text">Burglary Alarm (ระบบสัญญาณกันขโมย)</span>
+                                <span class="sub-label">แพ็กเกจที่ต้องการแจ้งซ่อม :</span>
+                                <span class="val-text">{{ $item->product_name }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Problem Details -->
                 <div class="form-section">
-                    <span class="info-label">รายละเอียดปัญหา</span>
-                    <textarea class="custom-textarea"
-                        placeholder="• สอบถามรายละเอียดเพิ่มเติม / Request More Information"></textarea>
+                    <span class="info-label">รายละเอียดปัญหา <span class="text-danger">*</span></span>
+                    <textarea name="problem_description" class="custom-textarea" required
+                        placeholder="• ระบุอาการเสีย หรือข้อมูลเพิ่มเติมที่ต้องการให้ช่างทราบ"></textarea>
                 </div>
 
-                <!-- Service Address -->
                 <div class="form-section">
                     <span class="info-label">ที่อยู่รับบริการ :</span>
                     <div class="address-box">
                         <div class="address-text">
-                            <strong class="val-text">AEG CNX Branch</strong><br>
-                            เลขที่ 135 ถ.มหิดล ต.หายยา อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50100
-                        </div>
-                        <button class="btn-outline-navy">แก้ไขที่อยู่</button>
+                            <strong class="val-text">{{ $profile->first_name ?? $user->username }}</strong><br>
+                            เบอร์โทรติดต่อ: {{ $user->phone }}
+                            </div>
                     </div>
                 </div>
 
-                <!-- Date & Time Selection -->
                 <div class="row cal-time-flex">
                     <div class="col-lg-6">
                         <div class="form-section mb-lg-0">
-                            <span class="info-label">เลือกวันที่ใช้บริการ :</span>
+                            <span class="info-label">เลือกวันที่ใช้บริการ <span class="text-danger">*</span></span>
+                            <input type="hidden" name="preferred_date" id="hidden_preferred_date" required>
+
                             <div class="calendar-container">
                                 <div class="calendar-header">
                                     <i class="fas fa-chevron-left cursor-pointer" id="prevMonth"></i>
-                                    <span id="monthDisplay">January 2026</span>
+                                    <span id="monthDisplay"></span>
                                     <i class="fas fa-chevron-right cursor-pointer" id="nextMonth"></i>
                                 </div>
                                 <div class="calendar-grid" id="calendarGrid">
-                                    <!-- Header Row (Days) -->
                                     <div class="cal-day-label">Mon</div>
                                     <div class="cal-day-label">Tue</div>
                                     <div class="cal-day-label">Wed</div>
@@ -520,122 +475,74 @@
                                     <div class="cal-day-label">Fri</div>
                                     <div class="cal-day-label">Sat</div>
                                     <div class="cal-day-label">Sun</div>
-                                    <!-- Dates will be injected here by JS -->
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="form-section mb-0">
-                            <span class="info-label">เวลาที่ใช้บริการ :</span>
+                            <span class="info-label">เวลาที่ใช้บริการ <span class="text-danger">*</span></span>
                             <div class="time-select-container">
-                                <select class="custom-dropdown">
-                                    <option value="" selected disabled>• ช่วงเวลาที่สะดวกให้ติดต่อกลับ</option>
-                                    <option value="9-12">ช่วงเช้า (09:00 - 12:00 น.)</option>
-                                    <option value="13-17">ช่วงบ่าย (13:00 - 17:00 น.)</option>
+                                <select name="preferred_time" class="custom-dropdown" required>
+                                    <option value="" selected disabled>• เลือกช่วงเวลา</option>
+                                    <option value="ช่วงเช้า (09:00 - 12:00 น.)">ช่วงเช้า (09:00 - 12:00 น.)</option>
+                                    <option value="ช่วงบ่าย (13:00 - 17:00 น.)">ช่วงบ่าย (13:00 - 17:00 น.)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="repair-footer-actions">
-                    <a href="package" class="btn-navy-action">ย้อนกลับ</a>
-                    <button class="btn-navy-action">บันทึก</button>
+                    <a href="{{ route('packages.mine') }}" class="btn-navy-action" style="background: transparent; color: var(--primary-navy); border: 2px solid var(--primary-navy);">ย้อนกลับ</a>
+                    <button type="submit" class="btn-navy-action">บันทึกและส่งคำขอ</button>
                 </div>
-
-            </div>
+            </form>
         </div>
     </main>
 
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4 mb-md-0 text-center text-md-start">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <div class="bg-white p-2 rounded d-flex align-items-center justify-content-center"
-                            style="width: 80px; height: 80px;">
-                            <i class="fas fa-qrcode fa-3x text-dark"></i>
-                        </div>
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="35" alt="App Store"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="35" alt="Play Store"></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="package" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">คำถามที่พบบ่อย</h5>
-                            <a href="faq" class="footer-link">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                    <div class="social-icons-bar">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4"></div>
-            </div>
-        </div>
-    </footer>
+@endsection
 
-    <!-- Floating Chat -->
-    <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
-        <div class="chat-circle"
-            style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
-            <i class="fas fa-comment-dots text-danger fs-3"></i>
-        </div>
-    </div>
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Calendar Logic
-        const monthNames = ["January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
+        // Calendar Logic ที่ปรับปรุงให้ส่งค่าเข้า Form
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-        let currentYear = 2026;
-        let currentMonth = 0; // January
-        let selectedDate = 10; // Default active date from image
+        let currentDate = new Date();
+        let currentYear = currentDate.getFullYear();
+        let currentMonth = currentDate.getMonth();
+        let selectedDate = currentDate.getDate(); // ให้ Default เป็นวันนี้
 
         const monthDisplay = document.getElementById('monthDisplay');
         const calendarGrid = document.getElementById('calendarGrid');
         const prevBtn = document.getElementById('prevMonth');
         const nextBtn = document.getElementById('nextMonth');
+        const hiddenDateInput = document.getElementById('hidden_preferred_date');
+
+        function updateHiddenDate(date, month, year) {
+            // สร้าง Format: YYYY-MM-DD
+            const formattedMonth = String(month + 1).padStart(2, '0');
+            const formattedDate = String(date).padStart(2, '0');
+            hiddenDateInput.value = `${year}-${formattedMonth}-${formattedDate}`;
+        }
 
         function renderCalendar(month, year) {
             monthDisplay.textContent = `${monthNames[month]} ${year}`;
 
-            // Clear existing dates (keep labels)
+            // เคลียร์วันที่เก่าทิ้ง แต่เก็บ Label (Mon-Sun) ไว้
             const labels = Array.from(calendarGrid.querySelectorAll('.cal-day-label'));
             calendarGrid.innerHTML = '';
             labels.forEach(label => calendarGrid.appendChild(label));
 
-            // Logic to get first day of month and total days
             const firstDay = new Date(year, month, 1).getDay();
-            // Adjust for Mon-Sun grid (standard JS Day is Sun=0, Mon=1...)
-            // We want Mon=0, Tue=1, ... Sun=6
             let startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-            // 1. Prev Month Faded Dates
+            // 1. วันของเดือนก่อนหน้า (จางๆ)
             for (let i = startOffset; i > 0; i--) {
                 const dateDiv = document.createElement('div');
                 dateDiv.className = 'cal-date fade';
@@ -643,26 +550,33 @@
                 calendarGrid.appendChild(dateDiv);
             }
 
-            // 2. Current Month Dates
+            // 2. วันในเดือนนี้
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateDiv = document.createElement('div');
                 dateDiv.className = 'cal-date';
+
+                // เช็คไฮไลท์
                 if (i === selectedDate && currentMonth === month && currentYear === year) {
                     dateDiv.classList.add('active');
+                    updateHiddenDate(i, month, year); // ตั้งค่าเริ่มต้นให้ Input
                 }
+
                 dateDiv.textContent = i;
 
+                // กดเลือกวัน
                 dateDiv.onclick = function () {
-                    // Remove active from all
                     document.querySelectorAll('.cal-date').forEach(d => d.classList.remove('active'));
                     this.classList.add('active');
                     selectedDate = i;
+                    currentMonth = month;
+                    currentYear = year;
+                    updateHiddenDate(i, month, year); // อัปเดตค่าให้ Form
                 };
 
                 calendarGrid.appendChild(dateDiv);
             }
 
-            // 3. Next Month Faded Dates (fill to 42 cells for 6 rows)
+            // 3. วันของเดือนถัดไป (จางๆ)
             const remaining = 42 - (startOffset + daysInMonth);
             for (let i = 1; i <= remaining; i++) {
                 const dateDiv = document.createElement('div');
@@ -674,25 +588,17 @@
 
         prevBtn.onclick = () => {
             currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
             renderCalendar(currentMonth, currentYear);
         };
 
         nextBtn.onclick = () => {
             currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
             renderCalendar(currentMonth, currentYear);
         };
 
-        // Initial render
+        // Render ครั้งแรก
         renderCalendar(currentMonth, currentYear);
     </script>
-</body>
-
-</html>
+@endpush
