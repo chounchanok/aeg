@@ -214,12 +214,22 @@ class ProfileController extends Controller
 
     public function getNotifications(Request $request)
     {
-        $notifications = DB::table('notifications')
-            ->where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $userId = $request->user()->id;
+        $type = $request->query('type'); // รับค่าจาก App (เช่น ?type=promotion)
 
-        return $this->successResponse($notifications, 'Notifications retrieved');
+        $query = DB::table('notifications')->where('user_id', $userId)->orderBy('created_at', 'desc');
+
+        // ถ้ามีการส่ง type มา และไม่ใช่คำว่า "ทั้งหมด" (all) ให้ filter
+        if ($type && $type !== 'all') {
+            $query->where('type', $type);
+        }
+
+        $notifications = $query->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $notifications
+        ]);
     }
 
     public function readNotification(Request $request, $id)

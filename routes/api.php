@@ -53,11 +53,15 @@ Route::prefix('ecommerce')->group(function () {
 
 // --- E-Commerce Protected Routes (ต้องล็อกอิน) ---
 Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
-    // ระบบตะกร้าสินค้า
+    // --- ระบบตะกร้าสินค้า (เพิ่มเส้น Count) ---
     Route::get('/cart', [EcommerceController::class, 'getCart']);
+    Route::get('/cart/count', [EcommerceController::class, 'getCartCount']); // 🌟 เพิ่มเส้นนี้สำหรับนับจำนวนตะกร้า
     Route::post('/cart/add', [EcommerceController::class, 'addToCart']);
     Route::delete('/cart/remove/{cartItemId}', [EcommerceController::class, 'removeFromCart']);
     Route::post('/cart/clear', [EcommerceController::class, 'clearCart']);
+
+    // --- ให้คะแนนบริการและรีวิวแพ็กเกจ ---
+    Route::post('/items/{itemId}/review', [EcommerceController::class, 'submitReview']); // 🌟 เพิ่มเส้นนี้สำหรับส่งรีวิว
 
     // ระบบที่อยู่
     Route::get('/addresses', [EcommerceController::class, 'getAddresses']);
@@ -66,6 +70,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     // 🌟 เพิ่ม 2 เส้นนี้สำหรับการแสดงข้อมูลและการแก้ไข
     Route::get('/addresses/{id}', [EcommerceController::class, 'getAddressDetail']);
     Route::post('/addresses/{id}/update', [EcommerceController::class, 'updateAddress']);
+    Route::get('/orders/{id}', [EcommerceController::class, 'getOrderDetail']);
 
     // ระบบ Checkout และ Payment
     Route::post('/checkout', [EcommerceController::class, 'checkout']);

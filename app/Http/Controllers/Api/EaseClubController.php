@@ -10,6 +10,12 @@ class EaseClubController extends Controller
 {
     use ApiResponseTrait;
 
+    public function getBanners()
+    {
+        $banners = DB::table('banners')->where('location', 'ease_club')->where('is_active', true)->get();
+        return $this->successResponse($banners, 'Ease Club banners retrieved');
+    }
+    
     public function getUserInfo(Request $request)
     {
         $user = $request->user();
@@ -61,12 +67,6 @@ class EaseClubController extends Controller
         ];
 
         return $this->successResponse($data, 'User info retrieved successfully');
-    }
-
-    public function getBanners()
-    {
-        $banners = DB::table('banners')->where('location', 'ease_club')->where('is_active', true)->get();
-        return $this->successResponse($banners, 'Ease Club banners retrieved');
     }
 
     public function getOverview()

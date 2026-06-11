@@ -67,6 +67,101 @@ class EcommerceController extends Controller
         return $this->successResponse($products, 'Products retrieved successfully');
     }
 
+    // ดึงรายละเอียดคำสั่งซื้อ
+    public function getOrderDetail(Request $request, $id)
+    {
+        $userId = $request->user()->id;
+        
+        $order = \App\Models\Order::with('items')
+            ->where('id', $id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$order) {
+            return $this->errorResponse('Order not found', 404);
+        }
+
+        // จัด Format ให้ตรงกับหน้า UI
+        $data = [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'status' => $order->status, // เช่น 'completed', 'pending'
+            'payment_method' => $order->payment_gateway ?? 'QR พร้อมเพย์',
+            'transaction_date' => \Carbon\Carbon::parse($order->updated_at)->format('d M Y - H:i น.'),
+            'subtotal' => $order->subtotal,
+            'discount' => $order->discount,
+            'total_amount' => $order->total_amount,
+            'items' => $order->items->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    // ถ้าระบบเก็บ duration_months ไว้ ให้ส่งกลับไปด้วย
+                    'duration_months' => $item->duration_months ?? null
+                ];
+            })
+        ];
+
+        return $this->successResponse($data, 'Order detail retrieved successfully');
+    }
+
+    public function getCartCount(Request $request)
+    {
+        $userId = $request->user()->id;
+        $cart = DB::table('carts')->where('user_id', $userId)->first();
+
+        if (!$cart) {
+            return $this->successResponse(['total_items' => 0, 'total_quantity' => 0, 'items' => []], 'Cart is empty');
+        }
+
+        $items = DB::table('cart_items')->where('cart_id', $cart->id)->get();
+        
+        return $this->successResponse([
+            'total_items' => $items->count(), // จำนวนรายการ (เช่น มีสินค้า 2 แบบ)
+            'total_quantity' => $items->sum('quantity'), // จำนวนชิ้นรวม (เช่น ซื้อแบบละ 5 ชิ้น = 10)
+            'items' => $items
+        ], 'Cart count retrieved');
+    }
+
+    public function submitReview(Request $request, $itemId)
+    {
+        $request->validate([
+            'install_rating' => 'required|integer|min:1|max:5',
+            'sales_rating' => 'required|integer|min:1|max:5',
+            'review_text' => 'nullable|string'
+        ]);
+
+        $userId = $request->user()->id;
+
+        // ตรวจสอบว่ามี item นี้จริงและเป็นของ user คนนี้
+        $orderItem = \App\Models\OrderItem::whereHas('order', function($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })->where('id', $itemId)->first();
+
+        if (!$orderItem) return $this->errorResponse('Item not found', 404);
+
+        // ตรวจสอบว่ารีวิวไปแล้วหรือยัง
+        $exists = DB::table('package_reviews')->where('order_item_id', $itemId)->exists();
+        if ($exists) return $this->errorResponse('You already reviewed this item', 400);
+
+        DB::table('package_reviews')->insert([
+            'order_item_id' => $itemId,
+            'user_id' => $userId,
+            'install_rating' => $request->install_rating,
+            'sales_rating' => $request->sales_rating,
+            'review_text' => $request->review_text,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        // แจก 1 Point
+        DB::table('customer_wallets')->where('user_id', $userId)->increment('current_points', 1);
+
+        return $this->successResponse(null, 'Review submitted and 1 point rewarded');
+    }
+
     public function getProductDetail($id)
     {
         $lang = request()->header('Accept-Language', 'th');
