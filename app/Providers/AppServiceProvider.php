@@ -70,6 +70,18 @@ class AppServiceProvider extends ServiceProvider
                 'route_name' => 'admin.insurances.index',
                 'params' => []
             ],
+            'notifications' => [
+                'icon' => 'bell', // ใช้ไอคอนกระดิ่ง
+                'title' => 'จัดการแจ้งเตือน (Push)',
+                'route_name' => 'admin.notifications.index',
+                'params' => []
+            ],
+            'support-chats' => [
+                'icon' => 'message-circle', // ไอคอนแชท
+                'title' => 'แชทติดต่อสอบถาม',
+                'route_name' => 'admin.support-chats.index',
+                'params' => []
+            ],
             'devider', // เส้นคั่นเมนู
             'cms' => [
                 'icon' => 'layout',

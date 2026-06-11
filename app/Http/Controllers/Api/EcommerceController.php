@@ -129,29 +129,35 @@ class EcommerceController extends Controller
     {
         $request->validate([
             'install_rating' => 'required|integer|min:1|max:5',
+            'review_text' => 'nullable|string', // รีวิวงานติดตั้ง
             'sales_rating' => 'required|integer|min:1|max:5',
-            'review_text' => 'nullable|string'
+            'sales_review_text' => 'nullable|string', // รีวิวฝ่ายขาย
+            'media.*' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:20480' // อัปโหลดรูป/วิดีโอ (สูงสุด 20MB)
         ]);
 
         $userId = $request->user()->id;
 
-        // ตรวจสอบว่ามี item นี้จริงและเป็นของ user คนนี้
-        $orderItem = \App\Models\OrderItem::whereHas('order', function($q) use ($userId) {
-            $q->where('user_id', $userId);
-        })->where('id', $itemId)->first();
-
-        if (!$orderItem) return $this->errorResponse('Item not found', 404);
-
-        // ตรวจสอบว่ารีวิวไปแล้วหรือยัง
-        $exists = DB::table('package_reviews')->where('order_item_id', $itemId)->exists();
+        // เช็คว่าเคยรีวิวหรือยัง
+        $exists = DB::table('package_reviews')->where('order_item_id', $itemId)->where('user_id', $userId)->exists();
         if ($exists) return $this->errorResponse('You already reviewed this item', 400);
+
+        // จัดการไฟล์อัปโหลด
+        $mediaPaths = [];
+        if ($request->hasFile('media')) {
+            foreach ($request->file('media') as $file) {
+                $path = $file->store('reviews/media', 'public');
+                $mediaPaths[] = '/storage/' . $path;
+            }
+        }
 
         DB::table('package_reviews')->insert([
             'order_item_id' => $itemId,
             'user_id' => $userId,
             'install_rating' => $request->install_rating,
-            'sales_rating' => $request->sales_rating,
             'review_text' => $request->review_text,
+            'sales_rating' => $request->sales_rating,
+            'sales_review_text' => $request->sales_review_text,
+            'media_paths' => json_encode($mediaPaths),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -159,7 +165,7 @@ class EcommerceController extends Controller
         // แจก 1 Point
         DB::table('customer_wallets')->where('user_id', $userId)->increment('current_points', 1);
 
-        return $this->successResponse(null, 'Review submitted and 1 point rewarded');
+        return $this->successResponse(null, 'Review submitted successfully');
     }
 
     public function getProductDetail($id)

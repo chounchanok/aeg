@@ -68,4 +68,21 @@ class ProfileController extends Controller
             return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage()]);
         }
     }
+
+    // กดอ่านแจ้งเตือน
+    public function readNotification($id)
+    {
+        // อัปเดตสถานะ is_read เป็น true (1)
+        \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('id', $id)
+            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->update([
+                'is_read' => true,
+                'updated_at' => now()
+            ]);
+
+        // กลับไปที่หน้าเดิม (ระบบจะรีเฟรชและตัวเลขกระดิ่งจะลดลงอัตโนมัติ)
+        // 💡 หมายเหตุ: อนาคตถ้าในตารางมีคอลัมน์ link สามารถเปลี่ยนให้ redirect() ไปหน้านั้นๆ แทน back() ได้ครับ
+        return back();
+    }
 }

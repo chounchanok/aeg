@@ -16,6 +16,7 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\InsuranceController;
 use App\Http\Controllers\Frontend\ServiceRequestController;
+use App\Http\Controllers\Frontend\SupportChatController;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\ServiceRequestAdminController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
 use App\Http\Controllers\Admin\InsuranceAdminController;
 use App\Http\Controllers\Admin\ReviewAdminController;
+use App\Http\Controllers\Admin\SupportChatAdminController;
 
 Route::get('dark-mode-switcher', function() { return back(); })->name('dark-mode-switcher');
 Route::get('color-scheme-switcher', function() { return back(); })->name('color-scheme-switcher');
@@ -98,6 +100,23 @@ Route::middleware('guest')->group(function() {
 // ==========================================
 Route::middleware('auth')->group(function() {
 
+    // --- Support Chats (สำหรับลูกค้า) ---
+    Route::get('/support-chat', [SupportChatController::class, 'index'])->name('support-chat');
+    Route::get('/support-chat/history', [SupportChatController::class, 'getHistory'])->name('support-chat.history');
+    Route::post('/support-chat/send', [SupportChatController::class, 'sendMessage'])->name('support-chat.send');
+
+    // --- API จำลองสำหรับกดอ่านแจ้งเตือนหน้าเว็บ (AJAX) ---
+    Route::post('/notifications/{id}/read', function (\Illuminate\Http\Request $request, $id) {
+        \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('id', $id)
+            ->where('user_id', auth()->id())
+            ->update([
+                'is_read' => true,
+                'updated_at' => now()
+            ]);
+        return response()->json(['status' => 'success']);
+    })->name('notifications.read');
+
     // --- Authentication ---
     Route::get('logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout.post');
@@ -117,9 +136,6 @@ Route::middleware('auth')->group(function() {
     Route::post('/packages/feedback/{id}', [PackageController::class, 'submitFeedback']);
 
     // 🌟 เปลี่ยนเป็น:
-    Route::get('/repairs/request/{id}', [ServiceRequestController::class, 'requestForm'])->name('repair-request');
-    Route::post('/repairs/request/{id}', [ServiceRequestController::class, 'submitRequest'])->name('repair-request.submit');
-
     Route::get('/repairs/request/{id}', [ServiceRequestController::class, 'requestForm'])->name('repair-request');
     Route::post('/repairs/request/{id}', [ServiceRequestController::class, 'submitRequest'])->name('repair-request.submit');
 
@@ -157,6 +173,22 @@ Route::middleware('auth')->group(function() {
             'update'  => 'admin.products.update',
             'destroy' => 'admin.products.destroy',
         ]);
+
+        // --- Notifications (แจ้งเตือน) ---
+        Route::prefix('admin/notifications')->name('admin.notifications.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'store'])->name('store');
+            Route::delete('/{id}/delete', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'destroy'])->name('delete');
+        });
+
+        // --- Support Chats (แชทติดต่อสอบถามทั่วไป) ---
+        Route::prefix('admin/support-chats')->name('admin.support-chats.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'index'])->name('index');
+            // รับค่า user_id และ topic ผ่าน URL เพื่อดูประวัติแชทเจาะจงเรื่องนั้นๆ
+            Route::get('/{user_id}', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'show'])->name('show');
+            Route::post('/{user_id}/reply', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'reply'])->name('reply');
+        });
 
         // --- Staff ---
         Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');

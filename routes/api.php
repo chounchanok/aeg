@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
     Route::post('/device-token', [ProfileController::class, 'saveDeviceToken']);
     Route::get('/notifications', [ProfileController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [ProfileController::class, 'readNotification']);
+    
 });
 
 // --- Service Request (ระบบแจ้งซ่อม) ---
@@ -155,7 +156,7 @@ Route::prefix('insurances')->group(function () {
 });
 
 // --- ติดต่อเรา (Contact Admin Email) ---
-Route::post('/contact-admin', [SupportController::class, 'sendContactEmail']);
+Route::post('/contact-admin', [SupportController::class, 'submitContactAdmin']);
 
 // --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
 Route::get('/point-history', [ProfileController::class, 'getPointHistory']);

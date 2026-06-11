@@ -121,4 +121,40 @@ class SupportController extends Controller
             'message' => 'ส่งข้อความติดต่อแอดมินสำเร็จ ทีมงานจะติดต่อกลับโดยเร็วที่สุด'
         ]);
     }
+
+    // ==========================================
+    // 4. ติดต่อแอดมิน (Contact Admin Form อัปเดตใหม่ตาม UI)
+    // ==========================================
+    public function submitContactAdmin(Request $request)
+    {
+        // 1. ตรวจสอบข้อมูลให้ตรงกับ UI ใหม่
+        $request->validate([
+            'user_type' => 'required|in:business,personal', // เลือก ธุรกิจ หรือ ส่วนตัว
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'address_full' => 'required|string', // จังหวัด, เขต, แขวง, รหัสไปรษณีย์
+            'email' => 'required|email',
+            'phone' => 'required|string',
+            'company_name' => 'nullable|string', // จำเป็นถ้าเป็น business
+            'preferred_contact_time' => 'nullable|string'
+        ]);
+
+        // 2. บันทึกลง Database (ใช้ตารางใหม่ contact_admin_requests)
+        DB::table('contact_admin_requests')->insert([
+            // ถ้า User ล็อกอินอยู่ จะเก็บ ID ให้ด้วย ถ้าไม่ล็อกอินก็เป็น null
+            'user_id' => auth('sanctum')->check() ? auth('sanctum')->id() : null,
+            'user_type' => $request->user_type,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'address_full' => $request->address_full,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'company_name' => $request->user_type === 'business' ? $request->company_name : null,
+            'preferred_contact_time' => $request->preferred_contact_time,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return $this->successResponse(null, 'Contact form submitted successfully');
+    }
 }
