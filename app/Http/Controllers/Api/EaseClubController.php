@@ -15,7 +15,7 @@ class EaseClubController extends Controller
         $banners = DB::table('banners')->where('location', 'ease_club')->where('is_active', true)->get();
         return $this->successResponse($banners, 'Ease Club banners retrieved');
     }
-    
+
     public function getUserInfo(Request $request)
     {
         $user = $request->user();
@@ -147,6 +147,10 @@ class EaseClubController extends Controller
 
         $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
 
+        if(empty($wallet)){
+            return $this->errorResponse('User wallet not found', 404);
+        }
+
         if ($wallet->current_points < $reward->points_required) {
             return $this->errorResponse('Insufficient points', 400);
         }
@@ -173,7 +177,7 @@ class EaseClubController extends Controller
                 'user_id' => $user->id,
                 'amount' => -$reward->points_required,
                 'type' => 'redeem',
-                'description' => 'Redeemed reward: ' . $reward->title,
+                'description' => 'Redeemed reward: ' . $reward->title_th,
                 'created_at' => now()
             ]);
         });

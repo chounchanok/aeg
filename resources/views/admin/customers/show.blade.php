@@ -36,11 +36,32 @@
             <div class="box p-5">
                 <div class="flex items-center border-b border-slate-200/60 pb-5">
                     <div class="font-medium text-base mr-auto">สินค้าและบริการที่ลูกค้าครอบครอง</div>
-                    <button class="btn btn-primary btn-sm" data-tw-toggle="modal" data-tw-target="#add-product-modal">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มสินค้าให้ลูกค้า
-                    </button>
+                    <div class="dropdown">
+                        <button class="dropdown-toggle btn btn-primary btn-sm flex items-center" aria-expanded="false" data-tw-toggle="dropdown">
+                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มรายการ <i data-lucide="chevron-down" class="w-4 h-4 ml-2"></i>
+                        </button>
+                        <div class="dropdown-menu w-48">
+                            <ul class="dropdown-content">
+                                <li>
+                                    <a href="javascript:;" data-tw-toggle="modal" data-tw-target="#add-product-modal" class="dropdown-item">
+                                        <i data-lucide="package" class="w-4 h-4 mr-2"></i> สินค้า / แพ็กเกจ
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="javascript:;" data-tw-toggle="modal" data-tw-target="#add-insurance-modal" class="dropdown-item">
+                                        <i data-lucide="shield" class="w-4 h-4 mr-2"></i> ประกันภัย
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="javascript:;" data-tw-toggle="modal" data-tw-target="#add-locker-modal" class="dropdown-item">
+                                        <i data-lucide="lock" class="w-4 h-4 mr-2"></i> ตู้เซฟนิรภัย (Lockers)
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div class="mt-5">
                     @forelse($customerProducts as $cp)
                         <div class="intro-x flex items-center p-3 border-b border-slate-200/60 last:border-0">
@@ -90,6 +111,82 @@
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">วันหมดประกัน</label>
+                        <input name="warranty_expire_date" type="date" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer text-right">
+                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary w-24">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-insurance-modal" class="modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.customers.insurances.store', $customer->id) }}" method="POST" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto"><i data-lucide="shield" class="w-4 h-4 inline mr-1"></i> เพิ่มประกันภัยให้ลูกค้า</h2>
+                </div>
+                <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                    <div class="col-span-12">
+                        <label class="form-label">เลือกแพ็กเกจประกันภัย</label>
+                        <select name="master_insurance_id" class="form-select" required>
+                            <option value="">-- กรุณาเลือกประกัน --</option>
+                            @foreach($masterInsurances as $ins)
+                                <option value="{{ $ins->id }}">{{ $ins->title_th ?? $ins->title_th ?? 'ประกัน #' . $ins->id }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เลขกรมธรรม์ (ถ้ามี)</label>
+                        <input name="policy_number" type="text" class="form-control" placeholder="เช่น INS-2026-999">
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">วันที่เริ่มคุ้มครอง</label>
+                        <input name="purchase_date" type="date" class="form-control" required>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">วันสิ้นสุดความคุ้มครอง</label>
+                        <input name="warranty_expire_date" type="date" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer text-right">
+                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary w-24">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-locker-modal" class="modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.customers.lockers.store', $customer->id) }}" method="POST" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto"><i data-lucide="lock" class="w-4 h-4 inline mr-1"></i> เพิ่มตู้เซฟเช่าให้ลูกค้า</h2>
+                </div>
+                <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                    <div class="col-span-12">
+                        <label class="form-label">เลือกตู้เซฟ (Smart Lockers)</label>
+                        <select name="master_locker_id" class="form-select" required>
+                            <option value="">-- กรุณาเลือกตู้เซฟ --</option>
+                            @foreach($masterLockers as $locker)
+                                <option value="{{ $locker->id }}">{{ $locker->title_th ?? $locker->type.' : '.$locker->title_th ?? 'ตู้เซฟ #' . $locker->id }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">หมายเลขตู้ / รหัสตู้ (ถ้ามี)</label>
+                        <input name="locker_number" type="text" class="form-control" placeholder="เช่น Locker A-01">
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">วันที่เริ่มเช่า</label>
+                        <input name="purchase_date" type="date" class="form-control" required>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">วันสิ้นสุดสัญญาเช่า</label>
                         <input name="warranty_expire_date" type="date" class="form-control">
                     </div>
                 </div>

@@ -14,10 +14,15 @@ class ProfileController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        // ดึงข้อมูล Profile เพิ่มเติมจากตาราง customer_profiles แบบที่ API ทำ
-        $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
-        return view('frontend.my-account', compact('user', 'profile'));
+        $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first() ?? $user; // ดึงโปรไฟล์ (ปรับตามตารางจริงของพี่)
+
+        // ดึงรายการที่อยู่
+        $addresses = DB::table('customer_addresses')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('frontend.my-account', compact('user', 'profile', 'addresses'));
     }
 
     // อัปเดตข้อมูลผู้ใช้
@@ -30,7 +35,7 @@ class ProfileController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name'  => 'nullable|string|max:255',
             'phone'      => 'required|string|max:20',
-            'password'   => 'nullable|string|min:6|confirmed', 
+            'password'   => 'nullable|string|min:6|confirmed',
         ]);
 
         DB::beginTransaction();
@@ -45,7 +50,7 @@ class ProfileController extends Controller
             if ($request->filled('password')) {
                 $updateUserData['password'] = Hash::make($validated['password']);
             }
-            
+
             DB::table('users')->where('id', $user->id)->update($updateUserData);
 
             // 2. อัปเดตข้อมูลในตาราง customer_profiles (ชื่อ และ นามสกุล แยกกัน)
@@ -84,5 +89,76 @@ class ProfileController extends Controller
         // กลับไปที่หน้าเดิม (ระบบจะรีเฟรชและตัวเลขกระดิ่งจะลดลงอัตโนมัติ)
         // 💡 หมายเหตุ: อนาคตถ้าในตารางมีคอลัมน์ link สามารถเปลี่ยนให้ redirect() ไปหน้านั้นๆ แทน back() ได้ครับ
         return back();
+    }
+
+    // 2. ฟังก์ชันเพิ่มที่อยู่ใหม่
+    public function storeAddress(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:100',
+            'contact_name' => 'required|string|max:100',
+            'contact_phone' => 'required|string|max:20',
+            'address_line' => 'required|string',
+            'province' => 'required|string',
+            'district' => 'required|string',
+            'subdistrict' => 'required|string',
+            'zipcode' => 'required|string'
+        ]);
+
+        DB::table('customer_addresses')->insert([
+            'user_id' => Auth::id(),
+            'title' => $request->title,
+            'contact_name' => $request->contact_name,
+            'contact_phone' => $request->contact_phone,
+            'address_line' => $request->address_line,
+            'province' => $request->province,
+            'district' => $request->district,
+            'subdistrict' => $request->subdistrict,
+            'zipcode' => $request->zipcode,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return back()->with('success', 'เพิ่มที่อยู่ใหม่เรียบร้อยแล้ว');
+    }
+
+    // 3. ฟังก์ชันอัปเดตที่อยู่
+    public function updateAddress(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|string|max:100',
+            'contact_name' => 'required|string|max:100',
+            'contact_phone' => 'required|string|max:20',
+            'address_line' => 'required|string',
+            'province' => 'required|string',
+            'district' => 'required|string',
+            'subdistrict' => 'required|string',
+            'zipcode' => 'required|string'
+        ]);
+
+        // เช็คว่าเป็นเจ้าของที่อยู่จริงไหม
+        $address = DB::table('customer_addresses')->where('id', $id)->where('user_id', Auth::id())->first();
+        if (!$address) return back()->withErrors(['error' => 'ไม่พบข้อมูลที่อยู่นี้']);
+
+        DB::table('customer_addresses')->where('id', $id)->update([
+            'title' => $request->title,
+            'contact_name' => $request->contact_name,
+            'contact_phone' => $request->contact_phone,
+            'address_line' => $request->address_line,
+            'province' => $request->province,
+            'district' => $request->district,
+            'subdistrict' => $request->subdistrict,
+            'zipcode' => $request->zipcode,
+            'updated_at' => now()
+        ]);
+
+        return back()->with('success', 'อัปเดตข้อมูลที่อยู่เรียบร้อยแล้ว');
+    }
+
+    // 4. ฟังก์ชันลบที่อยู่
+    public function deleteAddress($id)
+    {
+        DB::table('customer_addresses')->where('id', $id)->where('user_id', Auth::id())->delete();
+        return back()->with('success', 'ลบที่อยู่เรียบร้อยแล้ว');
     }
 }

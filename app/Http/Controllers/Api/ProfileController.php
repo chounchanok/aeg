@@ -126,6 +126,7 @@ class ProfileController extends Controller
                 'product_name' => $pkg->product_name ?? 'ไม่ระบุชื่อ', // ดึงชื่อจากตารางเดิมเลย
                 'serial_number' => $pkg->serial_number ?? '-',
                 'image_url' => $pkg->image_url ?? null, // ถ้าไม่มีรูปก็จะส่ง null ให้แอปโชว์รูป Default แทน
+                // 'warranty_start_date' => $pkg->created_at->format('Y-m-d'),
                 'warranty_expire_date' => $expireDate->format('Y-m-d'),
                 'remaining_text' => $remainingText,
                 'total_service_count' => $totalCount,

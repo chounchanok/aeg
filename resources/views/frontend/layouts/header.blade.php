@@ -10,7 +10,7 @@
                             ->where('user_id', Auth::id())
                             ->where('is_read', false)
                             ->count();
-                        
+
                         // ดึงรายการล่าสุด 5 รายการ
                         $recentNotifications = \Illuminate\Support\Facades\DB::table('notifications')
                             ->where('user_id', Auth::id())
@@ -23,20 +23,20 @@
                         <button class="btn-dropdown dropdown-toggle position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; background: transparent; border: none; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;">
                             <i class="fas fa-bell"></i>
                             <span>การแจ้งเตือน</span>
-                            
+
                             @if($unreadCount > 0)
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; margin-top: 5px; margin-left: -5px;">
                                     {{ $unreadCount > 99 ? '99+' : $unreadCount }}
                                 </span>
                             @endif
                         </button>
-                        
+
                         <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 320px; max-height: 450px; overflow-y: auto; background-color: #ffffff; border-radius: 12px; padding: 0; border: 1px solid #eee;">
-                            
+
                             <li style="background-color: var(--primary-navy, #1a2d5e); padding: 12px 15px; border-radius: 11px 11px 0 0; position: sticky; top: 0; z-index: 10;">
                                 <h6 class="dropdown-header text-white fw-bold m-0 p-0" style="font-size: 0.95rem;"><i class="fas fa-bell me-2"></i>การแจ้งเตือนล่าสุด</h6>
                             </li>
-                            
+
                             @forelse($recentNotifications as $notify)
                                 <li>
                                     <a class="dropdown-item py-3 border-bottom" href="javascript:void(0);" onclick="markNotifyAsRead({{ $notify->id }}, this)" style="white-space: normal; background-color: {{ $notify->is_read ? '#ffffff' : '#f8fafc' }}; color: #333; transition: background-color 0.3s;">
@@ -118,7 +118,10 @@
         <!-- Bottom Row -->
         <div class="navbar-bottom-row w-100 mt-2">
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ asset('assets/image/logo.webp') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
+                <img src="{{ asset('assets/image/logo.png') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
+            </a>
+            <a class="navbar-brand" href="{{ route('rewards') }}">
+                <img src="{{ asset('assets/image/logo-ease.png') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
             </a>
 
             <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
@@ -128,7 +131,12 @@
 
             <div class="cart-section">
                 <a href="{{ route('cart') }}" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
-                <div class="points-badge shadow-sm"><i class="fas fa-coins" style="color: #f1c40f;"></i> {{ Auth::check() ? (Auth::user()->points ?? 0) : 0 }}</div>
+
+                <div class="points-badge shadow-sm">
+                    <i class="fas fa-coins" style="color: #f1c40f;"></i>
+                    {{ Auth::check() ? (\Illuminate\Support\Facades\DB::table('customer_wallets')->where('user_id', Auth::id())->value('current_points') ?? 0) : 0 }}
+                </div>
+
                 <button class="navbar-toggler d-lg-none ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenuCollapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -154,7 +162,7 @@
 function markNotifyAsRead(id, element) {
     // 1. ตรวจสอบว่าถ้ายังไม่ได้อ่าน (สีเทา) ถึงจะทำงาน
     if (element.style.backgroundColor !== 'rgb(255, 255, 255)' && element.style.backgroundColor !== '#ffffff') {
-        
+
         // เปลี่ยนพื้นหลังเป็นสีขาวทันที (UX)
         element.style.backgroundColor = '#ffffff';
 

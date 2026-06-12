@@ -77,23 +77,94 @@
                         </div>
                     </div>
 
-                    <!-- My Address Card (คงไว้ตามเดิม แต่ใส่ข้อมูลจำลองไปก่อน) -->
+                    <!-- My Address Card -->
                     <div class="card-custom mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h3 class="section-title mb-0">รายการที่อยู่ของฉัน</h3>
-                            <button class="btn btn-add-address" data-bs-toggle="modal" data-bs-target="#addressModal">เพิ่มที่อยู่ใหม่</button>
+                            <button class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">+ เพิ่มที่อยู่ใหม่</button>
                         </div>
-                        <div class="address-item">
-                            <div>
-                                <div class="address-name">AEG CNX Branch</div>
-                                <div class="address-details">
-                                    {{ $user->address ?? 'เลขที่ 135 ถ.มหิดล ต.หายยา อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50100' }}
+
+                        @forelse($addresses as $address)
+                            <div class="address-item border rounded p-3 mb-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold text-dark" style="font-size: 1.1rem;">
+                                        <i class="fas fa-map-marker-alt text-danger me-2"></i>{{ $address->title }}
+                                    </div>
+                                    <div class="mt-2 text-muted" style="font-size: 0.9rem;">
+                                        <strong>ชื่อผู้ติดต่อ:</strong> {{ $address->contact_name }} ({{ $address->contact_phone }})<br>
+                                        {{ $address->address_line }} ต.{{ $address->subdistrict }} อ.{{ $address->district }} จ.{{ $address->province }} {{ $address->zipcode }}
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-column flex-sm-row">
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editAddressModal{{ $address->id }}">แก้ไข</button>
+
+                                    <form action="{{ route('my-account.address.delete', $address->id) }}" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบที่อยู่นี้?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">ลบ</button>
+                                    </form>
                                 </div>
                             </div>
-                            <div>
-                                <a class="edit-link" data-bs-toggle="modal" data-bs-target="#addressModal">แก้ไข</a>
+
+                            <div class="modal fade" id="editAddressModal{{ $address->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title fw-bold">แก้ไขที่อยู่ ({{ $address->title }})</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="{{ route('my-account.address.update', $address->id) }}" method="POST">
+                                            @csrf
+                                            <div class="modal-body">
+                                                <div class="row g-3">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)</label>
+                                                        <input type="text" class="form-control" name="title" value="{{ $address->title }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">ชื่อผู้ติดต่อ</label>
+                                                        <input type="text" class="form-control" name="contact_name" value="{{ $address->contact_name }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">เบอร์โทรศัพท์</label>
+                                                        <input type="text" class="form-control" name="contact_phone" value="{{ $address->contact_phone }}" required>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)</label>
+                                                        <input type="text" class="form-control" name="address_line" value="{{ $address->address_line }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">จังหวัด</label>
+                                                        <input type="text" class="form-control" name="province" value="{{ $address->province }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">เขต/อำเภอ</label>
+                                                        <input type="text" class="form-control" name="district" value="{{ $address->district }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">แขวง/ตำบล</label>
+                                                        <input type="text" class="form-control" name="subdistrict" value="{{ $address->subdistrict }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">รหัสไปรษณีย์</label>
+                                                        <input type="text" class="form-control" name="zipcode" value="{{ $address->zipcode }}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                                <button type="submit" class="btn btn-navy">บันทึกการแก้ไข</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @empty
+                            <div class="text-center text-muted py-5 border rounded bg-light">
+                                <i class="fas fa-map-marked-alt fa-3x mb-3 text-secondary"></i>
+                                <h5>ยังไม่มีข้อมูลที่อยู่</h5>
+                                <p>เพิ่มที่อยู่เพื่อให้การสั่งซื้อและการรับบริการสะดวกยิ่งขึ้น</p>
+                            </div>
+                        @endforelse
                     </div>
 
                 </div>
@@ -146,6 +217,60 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">ยกเลิก</button>
                         <button type="submit" class="btn btn-modal-confirm">บันทึกข้อมูล</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">เพิ่มที่อยู่ใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('my-account.address.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)</label>
+                                <input type="text" class="form-control" name="title" placeholder="บ้าน" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อผู้ติดต่อ</label>
+                                <input type="text" class="form-control" name="contact_name" placeholder="ชื่อ-นามสกุล" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เบอร์โทรศัพท์</label>
+                                <input type="text" class="form-control" name="contact_phone" placeholder="08X-XXX-XXXX" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)</label>
+                                <input type="text" class="form-control" name="address_line" placeholder="เลขที่..." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">จังหวัด</label>
+                                <input type="text" class="form-control" name="province" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เขต/อำเภอ</label>
+                                <input type="text" class="form-control" name="district" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">แขวง/ตำบล</label>
+                                <input type="text" class="form-control" name="subdistrict" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">รหัสไปรษณีย์</label>
+                                <input type="text" class="form-control" name="zipcode" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-navy">บันทึกที่อยู่</button>
                     </div>
                 </form>
             </div>

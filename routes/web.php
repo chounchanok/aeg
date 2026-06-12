@@ -125,6 +125,11 @@ Route::middleware('auth')->group(function() {
     Route::get('/my-account', [ProfileController::class, 'index'])->name('my-account');
     Route::post('/my-account/update', [ProfileController::class, 'update'])->name('my-account.update');
 
+    // 🌟 3 เส้นทางที่เพิ่มใหม่สำหรับจัดการที่อยู่หน้าเว็บ
+    Route::post('/my-account/address', [ProfileController::class, 'storeAddress'])->name('my-account.address.store');
+    Route::post('/my-account/address/{id}/update', [ProfileController::class, 'updateAddress'])->name('my-account.address.update');
+    Route::post('/my-account/address/{id}/delete', [ProfileController::class, 'deleteAddress'])->name('my-account.address.delete');
+
     // --- Cart (ตะกร้าสินค้า) ---
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
     Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
@@ -162,6 +167,10 @@ Route::middleware('auth')->group(function() {
         Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
         Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
         Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
+
+        // 🌟 2 เส้นทางใหม่ สำหรับเพิ่มประกันและตู้เซฟ
+        Route::post('/admin/customers/{id}/insurances', [CustomerAdminController::class, 'storeInsurance'])->name('admin.customers.insurances.store');
+        Route::post('/admin/customers/{id}/lockers', [CustomerAdminController::class, 'storeLocker'])->name('admin.customers.lockers.store');
 
         // --- Products ---
         Route::get('/admin/products', [ProductAdminController::class, 'index'])->name('admin.products');
