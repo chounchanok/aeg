@@ -65,47 +65,56 @@ class ProfileController extends Controller
     {
         $userId = $request->user()->id;
 
-        // 1. ดึงข้อมูลจาก customer_products โดยตรง (เอา Join ออก)
+        // 1. ดึงข้อมูลจาก customer_products
         $rawPackages = DB::table('customer_products')
             ->where('customer_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 2. ดึงประวัติการเรียกช่างทั้งหมดของลูกค้านี้มาเตรียมไว้
+        // ดึงข้อมูล Master มาเตรียมไว้
+        $productIds = $rawPackages->where('reference_type', 'product')->pluck('reference_id')->filter()->toArray();
+        $insuranceIds = $rawPackages->where('reference_type', 'insurance')->pluck('reference_id')->filter()->toArray();
+        $lockerIds = $rawPackages->where('reference_type', 'locker')->pluck('reference_id')->filter()->toArray();
+
+        $masterProducts = DB::table('products')->whereIn('id', $productIds)->get()->keyBy('id');
+        $masterInsurances = DB::table('insurances')->whereIn('id', $insuranceIds)->get()->keyBy('id');
+        $masterSmartLockers = DB::table('smart_lockers')->whereIn('id', $lockerIds)->get()->keyBy('id');
+
+        // 2. ดึงประวัติการเรียกช่าง
         $serviceRequests = DB::table('service_requests')
             ->where('customer_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy('customer_product_id');
 
+        // 🌟 3. ดึงประวัติการรีวิวทั้งหมดของลูกค้าคนนี้ (เอามาทั้งก้อนเลย จะได้ส่งให้แอปโชว์ดาวได้)
+        $reviews = DB::table('package_reviews')
+            ->where('user_id', $userId)
+            ->get()
+            ->keyBy('order_item_id'); // จัดกลุ่มด้วย ID ของรายการนั้นๆ เพื่อให้หาง่ายขึ้น
+
         $activePackages = [];
         $historyPackages = [];
 
         foreach ($rawPackages as $pkg) {
-            // คำนวณวันหมดอายุและระยะเวลาคงเหลือ
             $expireDate = \Carbon\Carbon::parse($pkg->warranty_expire_date);
             $now = \Carbon\Carbon::now();
             $isExpired = $expireDate->isPast();
+            $startDate = \Carbon\Carbon::parse($pkg->purchase_date);
 
+            // คำนวณระยะเวลาคงเหลือ
             $remainingText = 'หมดอายุแล้ว';
             if (!$isExpired) {
                 $diff = $now->diff($expireDate);
                 $remainingMonths = $diff->m + ($diff->y * 12);
                 $remainingDays = $diff->d;
-
-                if ($remainingMonths > 0) {
-                    $remainingText = "เหลือเวลา $remainingMonths เดือน $remainingDays วัน";
-                } else {
-                    $remainingText = "เหลือเวลา $remainingDays วัน";
-                }
+                $remainingText = $remainingMonths > 0 ? "เหลือเวลา $remainingMonths เดือน $remainingDays วัน" : "เหลือเวลา $remainingDays วัน";
             }
 
-            // คำนวณโควต้าจำนวนครั้งคงเหลือ (ป้องกันค่า null)
             $totalCount = $pkg->total_service_count ?? 0;
             $usedCount = $pkg->used_service_count ?? 0;
             $remainingServices = max(0, $totalCount - $usedCount);
 
-            // ดึงประวัติการเรียกช่างของแพ็กเกจนี้มาเรียงลำดับ
             $requests = isset($serviceRequests[$pkg->id]) ? $serviceRequests[$pkg->id] : collect([]);
             $history = $requests->map(function($req, $index) use ($requests) {
                 $count = $requests->count() - $index;
@@ -120,13 +129,64 @@ class ProfileController extends Controller
                 ];
             })->toArray();
 
-            // ประกอบร่างข้อมูล
+            // 🌟 แมตช์ข้อมูล Detail และ DetailPrice
+            $productDetail = '';
+            $productDetailPrice = '';
+            if ($pkg->reference_type === 'product' && isset($masterProducts[$pkg->reference_id])) {
+                $master = $masterProducts[$pkg->reference_id];
+                $productDetail = $master->description_th;
+                $productDetailPrice = $master->description_en;
+            } elseif ($pkg->reference_type === 'insurance' && isset($masterInsurances[$pkg->reference_id])) {
+                $master = $masterInsurances[$pkg->reference_id];
+                $productDetail = $master->description_th;
+                $productDetailPrice = $master->insurance_coverage;
+            } elseif ($pkg->reference_type === 'locker' && isset($masterSmartLockers[$pkg->reference_id])) {
+                $master = $masterSmartLockers[$pkg->reference_id];
+                $productDetail = $master->description_th;
+                $productDetailPrice = $master->description_en;
+            }
+
+            // 🌟 [ข้อ 1] คำนวณสถานะการใช้งาน (Usage Status)
+            $usageStatus = 'ปกติ';
+            if ($pkg->reference_type === 'product') {
+                $hasActiveRepair = $requests->whereNotIn('status', ['completed', 'cancelled', 'done'])->count() > 0;
+                $usageStatus = $hasActiveRepair ? 'แจ้งซ่อม' : 'ใช้งานปกติ';
+            } else {
+                $usageStatus = $isExpired ? 'หมดอายุ' : 'ปกติ';
+            }
+
+            // 🌟 [ข้อ 2 & 3] ตรวจสอบสถานะการรีวิว
+            $reviewData = isset($reviews[$pkg->id]) ? $reviews[$pkg->id] : null;
+            $isReviewed = $reviewData ? true : false;
+            $reviewStatusText = $isReviewed ? 'รีวิวเรียบร้อยแล้ว' : 'ยังไม่ได้รีวิว';
+            $earnedCoins = $isReviewed ? 1 : 0; 
+
+            // 🌟 [ข้อ 4] วันเริ่มต้นการดูแล
+            $careStartDate = null;
+            if ($pkg->reference_type === 'product') {
+                $careStartDate = $startDate->format('Y-m-d');
+            }
+
+            // ประกอบร่างข้อมูลส่งกลับ
             $formattedPackage = [
                 'id' => $pkg->id,
-                'product_name' => $pkg->product_name ?? 'ไม่ระบุชื่อ', // ดึงชื่อจากตารางเดิมเลย
+                'reference_type' => $pkg->reference_type ?? 'product',
+                'product_name' => $pkg->product_name ?? 'ไม่ระบุชื่อ',
+                'product_detail' => $productDetail,
+                'product_detailprice' => $productDetailPrice,
                 'serial_number' => $pkg->serial_number ?? '-',
-                'image_url' => $pkg->image_url ?? null, // ถ้าไม่มีรูปก็จะส่ง null ให้แอปโชว์รูป Default แทน
-                // 'warranty_start_date' => $pkg->created_at->format('Y-m-d'),
+                'image_url' => $pkg->image_url ?? null,
+                
+                // --- 🌟 ข้อมูลที่เพิ่มเข้ามาใหม่ ---
+                'usage_status' => $usageStatus,           
+                'care_start_date' => $careStartDate,      
+                'is_reviewed' => $isReviewed,             
+                'review_status_text' => $reviewStatusText,
+                'earned_coins' => $earnedCoins,           
+                'review_info' => $reviewData, // 🌟 แนบข้อมูลการให้คะแนนและคอมเมนต์กลับไปให้แอปด้วย
+                // -----------------------------
+                
+                'warranty_start_date' => $startDate->format('Y-m-d'),
                 'warranty_expire_date' => $expireDate->format('Y-m-d'),
                 'remaining_text' => $remainingText,
                 'total_service_count' => $totalCount,

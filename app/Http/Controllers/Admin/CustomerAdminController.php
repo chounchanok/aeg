@@ -66,6 +66,8 @@ class CustomerAdminController extends Controller
 
         DB::table('customer_products')->insert([
             'customer_id' => $id,
+            'reference_type' => 'product', // 🌟 เพิ่มบรรทัดนี้
+            'reference_id' => $request->master_product_id, // 🌟 เพิ่มบรรทัดนี้
             'product_name' => $masterProduct->name_th . ' / ' . $masterProduct->name_en,
             'serial_number' => $request->serial_number,
             'purchase_date' => $request->purchase_date,
@@ -88,6 +90,8 @@ class CustomerAdminController extends Controller
 
         DB::table('customer_products')->insert([
             'customer_id' => $id,
+            'reference_type' => 'insurance', // 🌟 เพิ่มบรรทัดนี้
+            'reference_id' => $request->master_insurance_id, // 🌟 เพิ่มบรรทัดนี้
             'product_name' => '[ประกันภัย] ' . $name, // 🌟 ใส่ Prefix
             'serial_number' => $request->policy_number, // ใช้ช่อง serial_number เก็บเลขกรมธรรม์
             'purchase_date' => $request->purchase_date,
@@ -109,6 +113,8 @@ class CustomerAdminController extends Controller
 
         DB::table('customer_products')->insert([
             'customer_id' => $id,
+            'reference_type' => 'locker', // 🌟 เพิ่มบรรทัดนี้
+            'reference_id' => $request->master_locker_id, // 🌟 เพิ่มบรรทัดนี้
             'product_name' => '[ตู้เซฟเช่า] ' . $name, // 🌟 ใส่ Prefix
             'serial_number' => $request->locker_number, // ใช้ช่อง serial_number เก็บหมายเลขตู้/พิน
             'purchase_date' => $request->purchase_date,
