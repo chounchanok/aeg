@@ -31,6 +31,7 @@ class ProductAdminController extends Controller
         ]);
     }
 
+    // 🌟 1. อัปเกรดฟังก์ชันบันทึกสินค้าใหม่ (Multiple Images)
     public function store(Request $request)
     {
         $request->validate([
@@ -40,32 +41,62 @@ class ProductAdminController extends Controller
             'description_en' => 'nullable|string',
             'type' => 'required|numeric',
             'price' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480'
+            'images' => 'nullable|array', // เปลี่ยนจาก image เป็น images (Array)
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480' // ตรวจสอบไฟล์ใน Array
         ]);
 
-        $imageUrl = null;
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $imageUrl = url('storage/' . $path);
+        DB::beginTransaction();
+        try {
+            // บันทึกข้อมูลสินค้าลงตาราง products หลักก่อน
+            $productId = DB::table('products')->insertGetId([
+                'name_th' => $request->name_th,
+                'name_en' => $request->name_en,
+                'description_th' => $request->description_th,
+                'description_en' => $request->description_en,
+                'type' => $request->type,
+                'price' => $request->price,
+                'compare_at_price' => $request->compare_at_price,
+                'point_earn' => $request->point_earn ?? 0,
+                'image_url' => null, // คอลัมน์เก่าปล่อยว่าง หรือใส่รูปแรกเป็น Cover ได้ด้านล่าง
+                'is_contact_only' => $request->has('is_contact_only'),
+                'is_active' => $request->has('is_active'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // วนลูปอัปโหลดรูปภาพทั้งหมดเข้าตารางย่อย product_images
+            if ($request->hasFile('images')) {
+                $coverUrl = null;
+                foreach ($request->file('images') as $index => $file) {
+                    $path = $file->store('products', 'public');
+                    $imageUrl = url('storage/' . $path);
+
+                    if ($index === 0) {
+                        $coverUrl = $imageUrl; // เก็บรูปแรกสุดไว้เป็นรูปหน้าปก
+                    }
+
+                    DB::table('product_images')->insert([
+                        'product_id' => $productId,
+                        'image_url' => $imageUrl,
+                        'sort_order' => $index,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+
+                // สั่งอัปเดตรูปแรกเข้าไปที่ตารางหลัก (Fallback เผื่อหน้าเว็บเก่าดึงใช้)
+                if ($coverUrl) {
+                    DB::table('products')->where('id', $productId)->update(['image_url' => $coverUrl]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('admin.products')->with('success', 'เพิ่มสินค้า/บริการ และรูปภาพเรียบร้อยแล้ว');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage())->withInput();
         }
-
-        DB::table('products')->insert([
-            'name_th' => $request->name_th,
-            'name_en' => $request->name_en,
-            'description_th' => $request->description_th,
-            'description_en' => $request->description_en,
-            'type' => $request->type,
-            'price' => $request->price,
-            'compare_at_price' => $request->compare_at_price,
-            'point_earn' => $request->point_earn ?? 0,
-            'image_url' => $imageUrl,
-            'is_contact_only' => $request->has('is_contact_only'),
-            'is_active' => $request->has('is_active'),
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-
-        return redirect()->route('admin.products')->with('success', 'เพิ่มสินค้า/บริการ เรียบร้อยแล้ว');
     }
 
     public function edit($id)
@@ -73,8 +104,12 @@ class ProductAdminController extends Controller
         $product = DB::table('products')->where('id', $id)->first();
         $categories = DB::table('service_categories')->orderBy('created_at', 'desc')->get();
 
+        // ดึงรายการรูปภาพเก่ามาแสดงในหน้าแก้ไขด้วย
+        $productImages = DB::table('product_images')->where('product_id', $id)->orderBy('sort_order', 'asc')->get();
+
         return view('admin.products.form', [
             'product' => $product,
+            'productImages' => $productImages, // ส่งก้อนรูปภาพไปหน้า View
             'categories' => $categories,
             'first_level_active_index' => 'products',
             'second_level_active_index' => '',
@@ -82,28 +117,23 @@ class ProductAdminController extends Controller
         ]);
     }
 
+    // 🌟 2. อัปเกรดฟังก์ชันแก้ไขข้อมูลสินค้า (Multiple Images)
     public function update(Request $request, $id)
     {
-        
-        try{
-            $request->validate([
-                'name_th' => 'required|string',
-                'name_en' => 'required|string',
-                'description_th' => 'nullable|string',
-                'description_en' => 'nullable|string',
-                'type' => 'required|numeric',
-                'price' => 'required|numeric',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480'
-            ]);
+        $request->validate([
+            'name_th' => 'required|string',
+            'name_en' => 'required|string',
+            'description_th' => 'nullable|string',
+            'description_en' => 'nullable|string',
+            'type' => 'required|numeric',
+            'price' => 'required|numeric',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480'
+        ]);
 
-            $product = DB::table('products')->where('id', $id)->first();
-            $imageUrl = $product->image_url;
-
-            if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('products', 'public');
-                $imageUrl = url('storage/' . $path);
-            }
-
+        DB::beginTransaction();
+        try {
+            // อัปเดตข้อมูลตารางหลัก
             DB::table('products')->where('id', $id)->update([
                 'name_th' => $request->name_th,
                 'name_en' => $request->name_en,
@@ -113,15 +143,53 @@ class ProductAdminController extends Controller
                 'price' => $request->price,
                 'compare_at_price' => $request->compare_at_price,
                 'point_earn' => $request->point_earn ?? 0,
-                'image_url' => $imageUrl,
                 'is_contact_only' => $request->has('is_contact_only'),
                 'is_active' => $request->has('is_active'),
                 'updated_at' => now()
             ]);
 
-            return redirect()->route('admin.products')->with('success', 'อัปเดตข้อมูลสำเร็จ');
-        }catch(\Exception $e){
-            dd($e);
+            // ถ้าแอดมินอัปโหลดรูปภาพเซ็ตใหม่เข้ามา
+            if ($request->hasFile('images')) {
+                // ลบไฟล์รูปเก่าใน Storage ทิ้งเพื่อประหยัดพื้นที่ดิสก์
+                $oldImages = DB::table('product_images')->where('product_id', $id)->get();
+                foreach ($oldImages as $oldImg) {
+                    $relativePath = str_replace(url('storage/'), '', $oldImg->image_url);
+                    Storage::disk('public')->delete($relativePath);
+                }
+
+                // เคลียร์ข้อมูลรูปภาพเก่าในตารางย่อยทิ้ง
+                DB::table('product_images')->where('product_id', $id)->delete();
+
+                // วนลูปบันทึกไฟล์รูปภาพชุดใหม่
+                $coverUrl = null;
+                foreach ($request->file('images') as $index => $file) {
+                    $path = $file->store('products', 'public');
+                    $imageUrl = url('storage/' . $path);
+
+                    if ($index === 0) {
+                        $coverUrl = $imageUrl;
+                    }
+
+                    DB::table('product_images')->insert([
+                        'product_id' => $id,
+                        'image_url' => $imageUrl,
+                        'sort_order' => $index,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+
+                // อัปเดตรูปหน้าปกชุดใหม่ลงตารางหลัก
+                if ($coverUrl) {
+                    DB::table('products')->where('id', $id)->update(['image_url' => $coverUrl]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('admin.products')->with('success', 'อัปเดตข้อมูลและรูปภาพสินค้าสำเร็จ');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
         }
     }

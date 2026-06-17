@@ -2,6 +2,8 @@
 
 @section('subhead')
     <title>รายละเอียดใบแจ้งซ่อม - AEG Admin</title>
+    <!-- เพิ่ม CSS ของ Lightbox สำหรับกดดูรูปภาพ -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet" />
 @endsection
 
 @section('subcontent')
@@ -24,7 +26,7 @@
                         <div class="mt-1 font-medium">{{ $request->first_name ?? $request->username }} ({{ $request->phone }})</div>
                     </div>
                     <div>
-                        <div class="text-slate-500">วันและเวลาที่ลูกค้านัดหมาย</div>
+                        <div class="text-slate-500">วันและเวลาที่ลูกค้านัดหมาย (ปัจจุบัน)</div>
                         <div class="mt-1 font-medium text-pending">{{ \Carbon\Carbon::parse($request->preferred_date)->format('d/m/Y') }} | {{ $request->time_slot }}</div>
                     </div>
                     <div class="col-span-2">
@@ -48,7 +50,8 @@
                     <div class="text-slate-500 mb-3">รูปภาพประกอบจากลูกค้า</div>
                     <div class="grid grid-cols-4 gap-4">
                         @foreach($images as $img)
-                        <a href="{{ $img->image_url }}" data-lightbox="service-gallery" class="w-24 h-24 image-fit zoom-in rounded-md overflow-hidden">
+                        <!-- 🌟 เปิดใช้งาน Lightbox2 เมื่อกดที่รูปภาพ -->
+                        <a href="{{ $img->image_url }}" data-lightbox="service-gallery" data-title="รูปภาพประกอบแจ้งซ่อม" class="w-24 h-24 image-fit zoom-in rounded-md overflow-hidden block">
                             <img alt="รูปภาพแจ้งซ่อม" src="{{ $img->image_url }}">
                         </a>
                         @endforeach
@@ -57,10 +60,13 @@
                 @endif
             </div>
 
+            <!-- 🌟 ฟอร์มแก้ไขข้อมูล/สถานะ -->
             <div class="box p-5 mt-5">
-                <div class="font-medium text-base mb-4">อัปเดตสถานะงาน / จ่ายงานให้ช่าง</div>
+                <div class="font-medium text-base mb-4">อัปเดตสถานะงาน / วันเวลานัดหมาย / จ่ายงานให้ช่าง</div>
                 <form action="#" method="POST" class="grid grid-cols-12 gap-4">
                     @csrf
+
+                    <!-- แถวที่ 1: สถานะ และ ช่าง -->
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">เลือกสถานะ</label>
                         <select class="form-select" id="status-select" name="status">
@@ -81,6 +87,17 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <!-- 🌟 แถวที่ 2: วันที่ และ เวลานัดหมาย -->
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">แก้ไขวันที่นัดหมาย</label>
+                        <input type="date" id="preferred-date-input" class="form-control" value="{{ \Carbon\Carbon::parse($request->preferred_date)->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">แก้ไขเวลานัดหมาย</label>
+                        <input type="text" id="time-slot-input" class="form-control" value="{{ $request->time_slot }}" placeholder="เช่น ช่วงเช้า (09:00 - 12:00 น.)">
+                    </div>
+
                     <div class="col-span-12 mt-2">
                         <button type="button" id="btn-update-status" class="btn btn-primary w-24">บันทึก</button>
                     </div>
@@ -119,50 +136,56 @@
 
 @section('script')
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- เพิ่ม JS ของ Lightbox สำหรับการทำงานของปุ่มกดดูรูปภาพ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
 <script>
-    // ตั้งค่า CSRF Token ให้ Axios
     axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // ตั้งค่าตัวแปร URL สำหรับยิง Request
+
     const requestId = {{ $request->id }};
     const updateStatusUrl = `{{ url('/admin/service-requests') }}/${requestId}/status`;
     const sendChatUrl = `{{ url('/admin/service-requests') }}/${requestId}/chat`;
 
     $(document).ready(function() {
-        // เลื่อน Scrollbar ของแชทลงล่างสุดเสมอเมื่อเปิดหน้าต่าง
         const chatContainer = $('#chat-container');
         if(chatContainer.length) {
             chatContainer.scrollTop(chatContainer[0].scrollHeight);
         }
 
         // ==========================================
-        // 1. ระบบบันทึกสถานะงาน
+        // 1. ระบบบันทึกข้อมูล (แนบวันที่และเวลาไปพร้อมกัน)
         // ==========================================
         $('#btn-update-status').click(function() {
             let status = $('#status-select').val();
             let technician_id = $('#technician-select').val();
+            let preferred_date = $('#preferred-date-input').val(); // 🌟 รับค่าวันที่
+            let time_slot = $('#time-slot-input').val();           // 🌟 รับค่าเวลา
+
             let btn = $(this);
-            
             btn.prop('disabled', true).html('กำลังบันทึก...');
 
-            axios.post(updateStatusUrl, { status: status, technician_id: technician_id })
-                .then(res => {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'สำเร็จ',
-                        text: res.data.message,
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload(); // รีเฟรชหน้า 1 ครั้งเพื่อให้แสดง Timeline ใหม่
-                    });
-                })
-                .catch(err => {
-                    Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-                })
-                .finally(() => {
-                    btn.prop('disabled', false).html('บันทึก');
+            axios.post(updateStatusUrl, {
+                status: status,
+                technician_id: technician_id,
+                preferred_date: preferred_date,
+                time_slot: time_slot
+            })
+            .then(res => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'สำเร็จ',
+                    text: res.data.message || 'บันทึกข้อมูลเรียบร้อยแล้ว',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
                 });
+            })
+            .catch(err => {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+            })
+            .finally(() => {
+                btn.prop('disabled', false).html('บันทึก');
+            });
         });
 
         // ==========================================
@@ -170,17 +193,16 @@
         // ==========================================
         function sendChatMessage() {
             let message = $('#chat-input').val().trim();
-            if (!message) return; // ถ้าไม่ได้พิมพ์อะไรให้ข้ามไป
-            
+            if (!message) return;
+
             let btn = $('#btn-send-chat');
             let input = $('#chat-input');
-            
+
             btn.prop('disabled', true);
             input.prop('disabled', true);
 
             axios.post(sendChatUrl, { message: message })
                 .then(res => {
-                    // วาดกล่องแชทใหม่ฝั่งขวา (Admin) ต่อท้าย
                     let newChatHtml = `
                         <div class="chat__box__text-box flex items-end justify-end mb-4">
                             <div class="bg-primary text-white px-4 py-3 rounded-l-md rounded-t-md">
@@ -190,11 +212,9 @@
                         </div>
                         <div class="clear-both"></div>
                     `;
-                    
-                    chatContainer.append(newChatHtml); // เอาข้อความใส่ในกล่อง
-                    chatContainer.scrollTop(chatContainer[0].scrollHeight); // เลื่อนลงล่างสุด
-                    
-                    // เคลียร์กล่องข้อความ
+
+                    chatContainer.append(newChatHtml);
+                    chatContainer.scrollTop(chatContainer[0].scrollHeight);
                     input.val('');
                 })
                 .catch(err => {
@@ -206,14 +226,12 @@
                 });
         }
 
-        // กดปุ่มส่ง
         $('#btn-send-chat').click(function() {
             sendChatMessage();
         });
 
-        // กด Enter เพื่อส่งแชทได้
         $('#chat-input').keypress(function(e) {
-            if (e.which == 13) { 
+            if (e.which == 13) {
                 sendChatMessage();
             }
         });

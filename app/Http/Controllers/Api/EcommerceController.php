@@ -41,11 +41,12 @@ class EcommerceController extends Controller
             ->get()
             ->groupBy('product_id');
 
+        // ตัวอย่างความไหลลื่นใน Api/EcommerceController.php ในส่วนแมตช์ข้อมูล
         $products = $rawProducts->map(function ($p) use ($lang, $allImages) {
-            // จัดการรูปภาพให้เป็น Array
+            // ดึงรูปภาพ Array จากตารางย่อย product_images
             $images = isset($allImages[$p->id]) ? $allImages[$p->id]->pluck('image_url')->toArray() : [];
 
-            // Fallback: ถ้าตารางใหม่ไม่มีรูป ให้ดึงจากคอลัมน์เก่ามาโชว์แก้ขัด
+            // เผื่อกรณีสินค้าเก่าไม่มีในตาราง product_images ให้หยิบจากตารางหลักมาห่อเป็น Array แก้อาการภาพว่าง
             if (empty($images) && !empty($p->image_url)) {
                 $images = [$p->image_url];
             }
@@ -57,8 +58,8 @@ class EcommerceController extends Controller
                 'type' => $p->type,
                 'price' => $p->price,
                 'compare_at_price' => $p->compare_at_price,
-                'image_url' => count($images) > 0 ? $images[0] : null, // รูปหน้าปก
-                'images' => $images, // 🌟 เพิ่มรูปสไลด์ทั้งหมด (Array)
+                'image_url' => count($images) > 0 ? $images[0] : null, // ส่งรูปแรกสุดไปเป็นรูปหน้าปก
+                'images' => $images,                                   // ส่งก้อน Array ทั้งหมดไปทำ Slider
                 'point_earn' => $p->point_earn,
                 'is_contact_only' => (bool) $p->is_contact_only,
             ];
@@ -71,7 +72,7 @@ class EcommerceController extends Controller
     public function getOrderDetail(Request $request, $id)
     {
         $userId = $request->user()->id;
-        
+
         $order = \App\Models\Order::with('items')
             ->where('id', $id)
             ->where('user_id', $userId)
@@ -117,7 +118,7 @@ class EcommerceController extends Controller
         }
 
         $items = DB::table('cart_items')->where('cart_id', $cart->id)->get();
-        
+
         return $this->successResponse([
             'total_items' => $items->count(), // จำนวนรายการ (เช่น มีสินค้า 2 แบบ)
             'total_quantity' => $items->sum('quantity'), // จำนวนชิ้นรวม (เช่น ซื้อแบบละ 5 ชิ้น = 10)

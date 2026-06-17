@@ -52,8 +52,8 @@ class ServiceRequestAdminController extends Controller
         if (!$request) abort(404);
 
         // จัดการเรื่องที่อยู่แสดงผล (ถ้าพิมพ์เอง หรือเลือกจากที่มี)
-        $display_address = $request->address_id 
-            ? "{$request->address_line} จ.{$request->province}" 
+        $display_address = $request->address_id
+            ? "{$request->address_line} จ.{$request->province}"
             : $request->custom_address_text;
 
         // 2. ดึงรูปภาพประกอบ
@@ -94,17 +94,22 @@ class ServiceRequestAdminController extends Controller
     // ==========================================
     public function updateStatus(Request $request, $id)
     {
+        // 1. เพิ่มการ Validate รับค่า วันที่ และ เวลา
         $request->validate([
             'status' => 'required|in:pending,assigned,in_progress,completed,cancelled',
-            'technician_id' => 'nullable|integer' // 🌟 รับค่า ID ช่าง
+            'technician_id' => 'nullable|integer',
+            'preferred_date' => 'nullable|date',   // 🌟 รับค่าวันที่
+            'time_slot' => 'nullable|string'       // 🌟 รับค่าเวลา
         ]);
 
         DB::beginTransaction();
         try {
-            // 1. อัปเดตสถานะและช่างผู้รับผิดชอบ
+            // 2. อัปเดตข้อมูลลงฐานข้อมูล (เพิ่ม preferred_date และ time_slot)
             DB::table('service_requests')->where('id', $id)->update([
                 'status' => $request->status,
-                'technician_id' => $request->technician_id, // 🌟 บันทึกช่าง
+                'technician_id' => $request->technician_id,
+                'preferred_date' => $request->preferred_date, // 🌟 บันทึกวันที่
+                'time_slot' => $request->time_slot,           // 🌟 บันทึกเวลา
                 'updated_at' => now()
             ]);
 
@@ -116,23 +121,32 @@ class ServiceRequestAdminController extends Controller
                 'cancelled' => 'ยกเลิกรายการ'
             ];
 
-            // 2. ถ้ามีการเลือกช่าง ให้เพิ่มชื่อช่างลงไปใน Tracking ด้วย
+            // ดึงชื่อช่าง (ถ้ามี)
             $techName = '';
             if ($request->technician_id) {
                 $techProfile = DB::table('customer_profiles')->where('user_id', $request->technician_id)->first();
                 if ($techProfile) $techName = " (ช่างผู้รับผิดชอบ: " . $techProfile->first_name . ")";
             }
 
+            // จัดฟอร์แมตข้อความแจ้งเตือนวันเวลาที่นัดหมาย
+            $dateTimeInfo = '';
+            if ($request->preferred_date) {
+                $formattedDate = \Carbon\Carbon::parse($request->preferred_date)->format('d/m/Y');
+                $dateTimeInfo = " | นัดหมาย: {$formattedDate} {$request->time_slot}";
+            }
+
+            // 3. บันทึกประวัติ (Tracking)
             DB::table('service_request_tracking')->insert([
                 'service_request_id' => $id,
                 'status' => $statusLabels[$request->status],
-                'description' => 'แอดมินอัปเดตสถานะงานเป็น: ' . $statusLabels[$request->status] . $techName,
+                // 🌟 แนบข้อมูลวันเวลานัดหมายลงไปใน Log ด้วย ลูกค้าจะได้เห็นผ่านแอป
+                'description' => 'แอดมินอัปเดตสถานะงานเป็น: ' . $statusLabels[$request->status] . $techName . $dateTimeInfo,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'อัปเดตสถานะและจ่ายงานสำเร็จ']);
+            return response()->json(['success' => true, 'message' => 'อัปเดตข้อมูลและวันเวลานัดหมายสำเร็จ']);
 
         } catch (\Exception $e) {
             DB::rollBack();

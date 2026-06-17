@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ServiceCategoryApiController;
 use App\Http\Controllers\Api\SmartLockerController;
+use App\Http\Controllers\Frontend\SupportChatController;
 
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
 Route::prefix('smart-lockers')->group(function () {
@@ -104,6 +105,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories/{categoryId}/rewards', [EaseClubController::class, 'getRewardsByCategory']); // รายการสินค้าตามหมวด
         Route::get('/rewards/{rewardId}', [EaseClubController::class, 'getRewardDetail']); // รายละเอียดของรางวัล
         Route::post('/rewards/{rewardId}/redeem', [EaseClubController::class, 'redeemReward']); // ยืนยันการแลกพอยท์
+    });
+
+    // --- Support Chats (แชทติดต่อสอบถามทั่วไป สำหรับ Mobile App) ---
+    Route::prefix('support-chats')->group(function () {
+        // ดึงประวัติแชททั้งหมด (แยกตาม topic ได้ เช่น ?topic=general)
+        Route::get('/history', [SupportChatController::class, 'getHistory']);
+
+        // ส่งข้อความหาแอดมิน
+        Route::post('/send', [SupportChatController::class, 'sendMessage']);
     });
 });
 

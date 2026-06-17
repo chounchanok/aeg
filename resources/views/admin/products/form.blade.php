@@ -41,7 +41,7 @@
                     </div>
 
                     <div class="col-span-12 mt-3 flex items-center">
-                        <input name="is_contact_only" type="checkbox" class="form-check-input border mr-2" value="1">
+                        <input name="is_contact_only" type="checkbox" class="form-check-input border mr-2" value="1" {{ (isset($product) && $product->is_contact_only) ? 'checked' : '' }}>
                         <label class="font-medium text-danger">ตั้งค่าเป็นบริการที่ต้องติดต่อฝ่ายขายเท่านั้น (ไม่สามารถกดซื้อผ่านแอปได้)</label>
                     </div>
 
@@ -62,15 +62,27 @@
                             <input name="point_earn" type="number" class="form-control" value="{{ $product->point_earn ?? 0 }}">
                         </div>
                         <div>
-                            <label class="form-label font-medium">รูปภาพสินค้า</label>
-                            <input name="image" type="file" class="form-control" accept="image/*">
-                            @if(isset($product) && $product->image_url)
-                                <div class="mt-2 text-slate-500 text-xs">
-                                    <a href="{{ $product->image_url }}" target="_blank" class="text-primary underline">ดูรูปภาพปัจจุบัน</a>
-                                </div>
-                            @endif
+                            <label class="form-label font-medium">รูปภาพสินค้า (สามารถเลือกได้มากกว่า 1 รูป)</label>
+                            <input name="images[]" type="file" class="form-control" accept="image/*" multiple>
                         </div>
                     </div>
+
+                    @if(isset($product) && isset($productImages) && count($productImages) > 0)
+                    <div class="mt-4 border-t border-slate-200/60 pt-4">
+                        <label class="form-label font-medium text-slate-500 mb-2">รูปภาพปัจจุบันในระบบ</label>
+                        <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                            @foreach($productImages as $img)
+                            <div class="relative border rounded p-1 bg-slate-50">
+                                <div class="w-full h-20 image-fit">
+                                    <img alt="Product Gallery" class="rounded" src="{{ $img->image_url }}">
+                                </div>
+                                <div class="text-center text-xs text-slate-400 mt-1">รูปที่ {{ $img->sort_order + 1 }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="text-slate-400 text-xs mt-2">* หมายเหตุ: หากเลือกอัปโหลดรูปภาพใหม่ ระบบจะทำการล้างรูปภาพชุดเดิมทั้งหมดออกอัตโนมัติ</div>
+                    </div>
+                    @endif
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
