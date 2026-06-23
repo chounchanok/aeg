@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ServiceCategoryApiController;
 use App\Http\Controllers\Api\SmartLockerController;
 use App\Http\Controllers\Frontend\SupportChatController;
+use App\Http\Controllers\Api\TechnicianController;
 
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
 Route::prefix('smart-lockers')->group(function () {
@@ -101,6 +102,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('ease-club')->group(function () {
         Route::get('/user-info', [EaseClubController::class, 'getUserInfo']); // ข้อมูล User + คะแนน
         Route::get('/banners', [EaseClubController::class, 'getBanners']); // Banner หน้า EASE CLUB
+        Route::get('/banners/category', [EaseClubController::class, 'getBannersCategory']); // Banner หน้า EASE CLUB / Category
         Route::get('/overview', [EaseClubController::class, 'getOverview']); // หมวดหมู่ + พิเศษสำหรับ Advance
         Route::get('/categories/{categoryId}/rewards', [EaseClubController::class, 'getRewardsByCategory']); // รายการสินค้าตามหมวด
         Route::get('/rewards/{rewardId}', [EaseClubController::class, 'getRewardDetail']); // รายละเอียดของรางวัล
@@ -173,14 +175,24 @@ Route::prefix('insurances')->group(function () {
 // ==========================================
 // --- Technician Routes (สำหรับช่างซ่อม) ---
 // ==========================================
-// หมายเหตุ: แนะนำให้สร้าง Middleware เช่น 'role:technician' ไว้ดักด้วยครับ
 Route::middleware(['auth:sanctum'])->prefix('technician')->group(function () {
-    // ดูรายการแจ้งซ่อมที่ถูกมอบหมายให้ช่างคนนี้
+
+    // 1. ดูรายการงานทั้งหมด
     Route::get('/tasks', [\App\Http\Controllers\Api\TechnicianController::class, 'getMyTasks']);
 
-    // ดูรายละเอียดงาน
+    // 2. ดูรายละเอียดงานแต่ละงาน
     Route::get('/tasks/{id}', [\App\Http\Controllers\Api\TechnicianController::class, 'getTaskDetail']);
 
-    // อัปเดตสถานะงาน (เช่น รับงาน, กำลังเดินทาง, ซ่อมเสร็จแล้ว)
+    // 3. อัปเดตสถานะงาน (accepted, traveling, arrived, in_progress)
     Route::post('/tasks/{id}/update-status', [\App\Http\Controllers\Api\TechnicianController::class, 'updateTaskStatus']);
+
+    // 4. ปิดจ๊อบงาน (ส่งรูปหน้างาน ก่อน-หลัง, ลายเซ็น)
+    // หมายเหตุ: ต้องยิงเข้ามาแบบ Multipart/form-data
+    Route::post('/tasks/{id}/complete', [\App\Http\Controllers\Api\TechnicianController::class, 'submitCompletion']);
+
+    // 5. ดูข้อมูลโปรไฟล์ตัวเอง
+    Route::get('/profile', [\App\Http\Controllers\Api\TechnicianController::class, 'getProfile']);
+
+    // 6. แก้ไขข้อมูลโปรไฟล์ (ส่งแบบ multipart/form-data ถ้ามีรูปภาพ)
+    Route::post('/profile/update', [\App\Http\Controllers\Api\TechnicianController::class, 'updateProfile']);
 });

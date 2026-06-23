@@ -159,7 +159,7 @@ class ProfileController extends Controller
             $reviewData = isset($reviews[$pkg->id]) ? $reviews[$pkg->id] : null;
             $isReviewed = $reviewData ? true : false;
             $reviewStatusText = $isReviewed ? 'รีวิวเรียบร้อยแล้ว' : 'ยังไม่ได้รีวิว';
-            $earnedCoins = $isReviewed ? 1 : 0; 
+            $earnedCoins = $isReviewed ? 1 : 0;
 
             // 🌟 [ข้อ 4] วันเริ่มต้นการดูแล
             $careStartDate = null;
@@ -176,16 +176,16 @@ class ProfileController extends Controller
                 'product_detailprice' => $productDetailPrice,
                 'serial_number' => $pkg->serial_number ?? '-',
                 'image_url' => $pkg->image_url ?? null,
-                
+
                 // --- 🌟 ข้อมูลที่เพิ่มเข้ามาใหม่ ---
-                'usage_status' => $usageStatus,           
-                'care_start_date' => $careStartDate,      
-                'is_reviewed' => $isReviewed,             
+                'usage_status' => $usageStatus,
+                'care_start_date' => $careStartDate,
+                'is_reviewed' => $isReviewed,
                 'review_status_text' => $reviewStatusText,
-                'earned_coins' => $earnedCoins,           
+                'earned_coins' => $earnedCoins,
                 'review_info' => $reviewData, // 🌟 แนบข้อมูลการให้คะแนนและคอมเมนต์กลับไปให้แอปด้วย
                 // -----------------------------
-                
+
                 'warranty_start_date' => $startDate->format('Y-m-d'),
                 'warranty_expire_date' => $expireDate->format('Y-m-d'),
                 'remaining_text' => $remainingText,
@@ -214,9 +214,9 @@ class ProfileController extends Controller
     public function getFavorites(Request $request)
     {
         $favorites = DB::table('favorites')
-            ->join('products', 'favorites.product_id', '=', 'products.id')
+            ->join('rewards', 'favorites.product_id', '=', 'rewards.id')
             ->where('favorites.user_id', $request->user()->id)
-            ->select('products.*', 'favorites.created_at as favorited_at')
+            ->select('rewards.*', 'favorites.created_at as favorited_at')
             ->get();
 
         return $this->successResponse($favorites, 'Favorites retrieved');

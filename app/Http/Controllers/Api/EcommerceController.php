@@ -99,7 +99,6 @@ class EcommerceController extends Controller
                     'product_name' => $item->product_name,
                     'quantity' => $item->quantity,
                     'price' => $item->price,
-                    // ถ้าระบบเก็บ duration_months ไว้ ให้ส่งกลับไปด้วย
                     'duration_months' => $item->duration_months ?? null
                 ];
             })
@@ -220,7 +219,7 @@ class EcommerceController extends Controller
         $items = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
             ->where('cart_items.cart_id', $cart->id)
-            ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name_th', 'products.price', 'cart_items.quantity', 'products.image_url')
+            ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name_th', 'products.price', 'cart_items.quantity', 'products.image_url', 'cart_items.duration_months')
             ->get();
 
         $total = $items->sum(function ($item) {
@@ -388,31 +387,50 @@ class EcommerceController extends Controller
     }
 
     // ==========================================
-    // 4. Checkout & Payment (สั่งซื้อจากตะกร้า)
+    // 4. Checkout & Payment (สั่งซื้อจากตะกร้าแบบระบุชิ้น)
     // ==========================================
     public function checkout(Request $request)
     {
+        // 1. รับค่าและบังคับให้ cart_id ต้องเป็น Array
         $request->validate([
+            'cart_id' => 'required|array|min:1',        // 🌟 บังคับเป็น Array และต้องมีอย่างน้อย 1 ชิ้น
+            'cart_id.*' => 'integer',                   // 🌟 ข้อมูลข้างใน Array ต้องเป็นตัวเลข
             'address_id' => 'required|integer',
             'payment_gateway' => 'required|string',
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'coupon_code' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240' // รับรูปหรือวิดีโอ (สูงสุด 10MB)
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
         $user = $request->user();
-        $cart = DB::table('carts')->where('user_id', $user->id)->first();
-        if (!$cart) return $this->errorResponse('Cart is empty', 400);
+        $selectedCartItemIds = $request->cart_id; // Array [1, 5, 8]
 
+        // 2. ดึงข้อมูลตะกร้าหลักของ User คนนี้ (เอาไว้เช็คสิทธิ์)
+        $cart = DB::table('carts')->where('user_id', $user->id)->first();
+        if (!$cart) return $this->errorResponse('Cart not found', 404);
+
+        // 3. ดึงรายการสินค้า "เฉพาะที่ถูกเลือก" และ "ต้องอยู่ในตะกร้าของ User คนนี้เท่านั้น"
         $cartItems = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
-            ->where('cart_items.cart_id', $cart->id)
-            ->select('products.id', 'products.name_th as name', 'products.price', 'cart_items.quantity')
+            ->where('cart_items.cart_id', $cart->id)              // 🌟 ล็อกความปลอดภัย ต้องเป็นตะกร้าของตัวเอง
+            ->whereIn('cart_items.id', $selectedCartItemIds)      // 🌟 ดึงเฉพาะ ID ที่แอปส่งมา
+            ->select(
+                'cart_items.id as cart_item_id',
+                'products.id as product_id',
+                'products.name_th as product_name', // 💡 แก้ as ให้ตรงกับตอน Insert ด้านล่าง
+                'cart_items.price',
+                'cart_items.quantity',
+                'cart_items.duration_months'
+            )
             ->get();
 
-        if ($cartItems->isEmpty()) return $this->errorResponse('Cart is empty', 400);
+        // ตรวจสอบว่ามีรายการที่ถูกต้องหรือไม่
+        if ($cartItems->isEmpty()) {
+            return $this->errorResponse('Selected cart items are invalid or empty', 400);
+        }
 
+        // คำนวณยอดรวม
         $totalAmount = $cartItems->sum(function ($item) {
             return $item->price * $item->quantity;
         });
@@ -426,13 +444,13 @@ class EcommerceController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. สร้าง Order พร้อมข้อมูลใหม่
+            // 4. สร้าง Order พร้อมข้อมูลใหม่
             $orderId = DB::table('orders')->insertGetId([
                 'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,
                 'address_id' => $request->address_id,
                 'subtotal' => $totalAmount,
-                'discount' => 0, // TODO: ถ้าระบบคูปองเสร็จ สามารถคำนวณส่วนลดตรงนี้ได้
+                'discount' => 0,
                 'total_amount' => $totalAmount,
                 'status' => 'pending_payment',
                 'payment_gateway' => $request->payment_gateway,
@@ -444,23 +462,22 @@ class EcommerceController extends Controller
                 'updated_at' => now()
             ]);
 
-            // 2. ย้ายของจาก Cart ไป Order Items
-            $orderItemsData = [];
+            // 5. ย้ายของจาก Cart ไป Order Items
             foreach ($cartItems as $item) {
                 DB::table('order_items')->insert([
                     'order_id' => $orderId,
                     'product_id' => $item->product_id,
-                    'product_name' => $item->product_name, // ดึงจาก Join ที่คุณมี
+                    'product_name' => $item->product_name,
                     'quantity' => $item->quantity,
-                    'price' => $item->price, // ราคานี้คูณเดือนมาจากตะกร้าแล้ว
-                    'duration_months' => $item->duration_months, // 🌟 ย้ายข้อมูลเดือนมาเก็บในบิล
+                    'price' => $item->price,
+                    'duration_months' => $item->duration_months,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             }
 
-            // 3. ล้างตะกร้า
-            DB::table('cart_items')->where('cart_id', $cart->id)->delete();
+            // 6. ลบ "เฉพาะ" รายการที่เพิ่งสั่งซื้อออกจากตะกร้า (รายการอื่นที่ไม่ได้ติ๊กจะยังคงอยู่)
+            DB::table('cart_items')->whereIn('id', $cartItems->pluck('cart_item_id'))->delete();
 
             DB::commit();
 
@@ -493,6 +510,7 @@ class EcommerceController extends Controller
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'coupon_code' => 'nullable|string',
+            'duration_months' => 'nullable|integer|in:1,3,6,12', // 🌟 รับระยะเวลาแพ็กเกจ (ถ้ามี)
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
@@ -503,7 +521,7 @@ class EcommerceController extends Controller
             return $this->errorResponse('Product not found or inactive', 404);
         }
 
-        $subtotal = $product->price * $request->quantity;
+        $subtotal = $product->price * $request->quantity * $request->duration_months;
 
         // จัดการอัปโหลดไฟล์ (ถ้ามีส่งมา)
         $attachmentUrl = null;
@@ -538,6 +556,7 @@ class EcommerceController extends Controller
                 'product_id' => $product->id,
                 'product_name' => $product->name_th,
                 'price' => $product->price,
+                'duration_months' => $request->duration_months, // 🌟 ย้ายข้อมูลเดือนมาเก็บในบิล
                 'quantity' => $request->quantity,
                 'created_at' => now(),
                 'updated_at' => now()

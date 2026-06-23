@@ -16,6 +16,12 @@ class EaseClubController extends Controller
         return $this->successResponse($banners, 'Ease Club banners retrieved');
     }
 
+    public function getBannersCategory()
+    {
+        $banners = DB::table('banners')->where('location', 'category')->where('is_active', true)->get();
+        return $this->successResponse($banners, 'Category Ease Club banners retrieved');
+    }
+
     public function getUserInfo(Request $request)
     {
         $user = $request->user();
