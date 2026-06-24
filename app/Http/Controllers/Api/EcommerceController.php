@@ -278,7 +278,7 @@ class EcommerceController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
                 'price' => $unitPrice, // 🌟 เก็บราคาต่อหน่วยที่คูณจำนวนเดือนแล้ว
-                'duration_months' => $request->duration_months, // 🌟 เก็บรายละเอียดเดือน
+                'duration_months' => $duration, // 🌟 เก็บรายละเอียดเดือน
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -677,6 +677,9 @@ class EcommerceController extends Controller
                     DB::table('customer_products')->insert([
                         'customer_id' => $order->user_id,
                         'product_name' => $item->product_name,
+                        'reference_type' => 'product',
+                        'reference_id' => $item->product_id,
+                        'purchase_date' => \Carbon\Carbon::now(),
                         'serial_number' => 'PKG-' . strtoupper(\Illuminate\Support\Str::random(8)),
                         'warranty_expire_date' => \Carbon\Carbon::now()->addYear(), // หมดอายุใน 1 ปี
                         'status' => 'active',

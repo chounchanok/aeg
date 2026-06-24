@@ -137,6 +137,9 @@ Route::middleware('auth')->group(function() {
 
     // --- My Packages & Service Requests ---
     Route::get('/my-packages', [PackageController::class, 'myPackages'])->name('packages.mine'); // ย้ายเข้ามาอยู่ใน auth ป้องกันบัคเวลาไม่ได้ Login
+    // เส้นทางดูรายละเอียดและ Timeline ประวัติงานซ่อมของไอเทมชิ้นนั้นๆ
+    Route::get('/my-packages/{id}/detail', [PackageController::class, 'showDetail'])->name('repair-status');
+    Route::get('/my-packages/repair-completion/{repairId}', [PackageController::class, 'getRepairCompletionDetail'])->name('packages.repair-completion');
     Route::get('/packages/feedback/{id}', [PackageController::class, 'feedback'])->name('packages.feedback');
     Route::post('/packages/feedback/{id}', [PackageController::class, 'submitFeedback']);
 

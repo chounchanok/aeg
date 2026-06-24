@@ -3,12 +3,8 @@
 @section('title', 'แพ็กเกจของฉัน - AEG EASE CLUB')
 
 @push('styles')
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
-        rel="stylesheet">
-    <!-- Bootstrap 5.3.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -376,8 +372,8 @@
 
             <!-- Tabs Navigation -->
             <div class="tab-nav-container">
-                <button class="tab-btn active" id="activeTabBtn" onclick="switchTab('active')">แพ็กเกจที่ใช้งาน</button>
-                <button class="tab-btn inactive" id="historyTabBtn" onclick="switchTab('history')">ประวัติการใช้งาน</button>
+                <button type="button" class="tab-btn active" id="activeTabBtn" onclick="switchTab('active')">แพ็กเกจ/สินค้า</button>
+                <button type="button" class="tab-btn inactive" id="historyTabBtn" onclick="switchTab('history')">ประวัติ</button>
             </div>
 
             <!-- Tab Content: Active Packages -->
@@ -386,51 +382,55 @@
                     @foreach($activeItems as $item)
                         <div class="package-card">
                             <div class="package-img-box">
-                                <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="{{ $item->product_name }}">
+                                <img src="{{ $item->image_url }}" alt="{{ $item->product_name }}">
                             </div>
                             <div class="package-info">
                                 <div class="package-header-flex">
                                     <h2 class="package-title">{{ $item->product_name }}</h2>
-                                    <span class="status-badge status-active">ใช้งาน</span>
+                                    <span class="status-badge status-active">ใช้งานปกติ</span>
                                 </div>
-                                @php
-                                    if(strpos($item->product_name, 'รายปี') != false){
-                                        $duration = $item->quantity.' ปี';
-                                        $expireDate = $item->created_at->addYears($item->quantity);
-                                    } else {
-                                        $duration = $item->quantity.' เดือน';
-                                        $expireDate = $item->created_at->addMonths($item->quantity);
-                                    }
-                                @endphp
+
                                 <div class="date-info-grid">
                                     <div class="info-item">
-                                        <label>วันที่เริ่มใช้บริการ</label>
-                                        <span>{{ $item->created_at->format('d M Y') }}</span>
+                                        <label>หมายเลข Serial Number / Policy</label>
+                                        <span class="val-dark">{{ $item->serial_number }}</span>
                                     </div>
                                     <div class="info-item">
-                                        <label>ระยะเวลาคุ้มครอง :</label>
-                                        <span class="val-dark">{{ $duration }}</span> <!-- สามารถปรับเป็นดึงจาก DB ได้ในอนาคต -->
+                                        <label>วันที่เริ่มเปิดสิทธิ์ดูแล</label>
+                                        <span class="val-dark">{{ $item->created_at->format('d M Y') }}</span>
                                     </div>
                                     <div class="info-item">
-                                        <label>วันที่สิ้นสุดบริการ</label>
-                                        <span>{{ $expireDate->format('d M Y') }}</span>
+                                        <label>วันที่สิ้นสุดบริการการดูแล</label>
+                                        <span>{{ !empty($item->warranty_expire_date) ? \Carbon\Carbon::parse($item->warranty_expire_date)->format('d M Y') : '-' }}</span>
                                     </div>
+                                    @if($item->reference_type === 'product' && $item->total_service_count > 0)
                                     <div class="info-item">
-                                        <label>ได้รับพอยท์</label>
-                                        <div class="points-pill">รับ {{ $item->product ? $item->product->point_earn : 0 }} EASE Coins</div>
+                                        <label>โควต้าบริการคงเหลือ</label>
+                                        <div class="points-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">เหลือ {{ $item->remaining_services }} ครั้ง</div>
                                     </div>
+                                    @endif
                                 </div>
+
                                 <div class="card-btn-group">
-                                    <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อม</a>
-                                    <!-- ส่ง ID ไปหน้า Feedback ได้ -->
-                                    <a href="{{ route('packages.feedback', $item->id) }}" class="btn-navy-small">เขียนรีวิว</a>
+
+                                    @if($item->reference_type === 'product')
+                                        @if($item->total_service_count == 0)
+                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อมสินค้า</a>
+                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">รายละเอียด/ประวัติ</a>
+                                        @else
+                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อมสินค้า</a>
+                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">รายละเอียดประวัติบริการ</a>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color: var(--tab-inactive); width: 100%; flex: none;">ดูรายละเอียดสิทธิ์</a>
+                                    @endif
+
                                 </div>
-                                <!-- <a href="{{ route('repair-status', $item->id) }}" class="btn-red-full">สถานะแจ้งซ่อม</a> -->
                             </div>
                         </div>
                     @endforeach
                 @else
-                    <div class="text-center py-5 text-muted">ยังไม่มีแพ็กเกจที่กำลังใช้งาน</div>
+                    <div class="text-center py-5 text-muted">ยังไม่มีรายการสินค้าหรือบริการที่กำลังใช้งาน</div>
                 @endif
             </div>
 
@@ -469,11 +469,8 @@
 
     <!-- Footer Section -->
 @endsection
+
 @push('scripts')
-
-    <!-- Bootstrap 5.3.3 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         function switchTab(type) {
             const activeBtn = document.getElementById('activeTabBtn');
@@ -486,6 +483,7 @@
                 activeBtn.classList.add('active');
                 historyBtn.classList.remove('active');
                 historyBtn.classList.add('inactive');
+
                 activeContent.classList.add('show');
                 historyContent.classList.remove('show');
             } else {
@@ -493,6 +491,7 @@
                 historyBtn.classList.add('active');
                 activeBtn.classList.remove('active');
                 activeBtn.classList.add('inactive');
+
                 historyContent.classList.add('show');
                 activeContent.classList.remove('show');
             }

@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดแพ็กเกจ - AEG EASE CLUB</title>
+@extends('frontend.layouts.main')
+
+@section('title', 'รายละเอียดแพ็กเกจ - AEG EASE CLUB')
+
+@push('styles')
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
         rel="stylesheet">
@@ -436,69 +435,9 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <header class="navbar-main-header">
-        <div class="container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="fas fa-user"></i><span>ข้อมูลของฉัน</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-id-card-alt me-2"></i>
-                                    ข้อมูลของฉัน</a></li>
-                            <li>
-                                <hr class="dropdown-divider border-secondary">
-                            </li>
-                            <li><a class="dropdown-item text-warning" href="#"><i class="fas fa-sign-out-alt me-2"></i>
-                                    ออกจากระบบ</a></li>
-                        </ul>
-                    </div>
-
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <img src="https://flagcdn.com/w20/th.png" alt="TH" width="20">
-                            <span>TH</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/th.png" width="18"> Thai (TH)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/gb.png" width="18"> English (EN)</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100 mt-2">
-                <a class="navbar-brand" href="index"><img src="assets/image/logo.webp" alt="AEG Logo"></a>
-                <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
-                    <input type="text" class="search-input" placeholder="ค้นหาบริการหรือสินค้า...">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-                <div class="cart-section">
-                    <a href="#" class="cart-icon" style="color: white; margin-right: 15px; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge shadow-sm"><i class="fas fa-coins" style="color: #f1c40f;"></i> 200</div>
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#mainMenuCollapse">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
+@section('content')
 
     <nav class="main-navigation-bar sticky-top">
         <div class="container">
@@ -591,80 +530,5 @@
         </div>
     </main>
 
-    <footer>
-        <div class="container">
-            <div class="row g-4 align-items-start">
-                <div class="col-md-4 text-center text-md-start">
-                    <h6 class="fw-bold mb-3">ดาวน์โหลดแอปพลิเคชัน</h6>
-                    <div class="d-flex justify-content-center justify-content-md-start gap-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=AEG-APP"
-                            class="bg-white p-1 rounded" alt="QR" width="80">
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="28"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="28"></a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 text-center">
-                    <div class="row">
-                        <div class="col-6 footer-column footer-divider">
-                            <h6 class="fw-bold mb-3">แพ็กเกจที่ใช้งาน</h6>
-                            <a href="packages"
-                                class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column">
-                            <h6 class="fw-bold mb-3">ช่วยเหลือ</h6>
-                            <a href="privacy-policy"
-                                class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 text-center text-md-end">
-                    <img src="assets/image/logo.webp" alt="Logo" height="40">
-                </div>
-            </div>
-
-            <div class="row mt-5 align-items-center">
-                <div class="col-md-4 d-none d-md-block"></div>
-                <div class="col-md-4 text-center">
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                    <p class="copyright-text mb-0">© 2024 AEG EASE CLUB. All rights reserved.</p>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        function switchInternalTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("itab-panel");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-                tabcontent[i].classList.remove("active");
-            }
-            tablinks = document.getElementsByClassName("itab-btn");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(tabName).style.display = "block";
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.className += " active";
-        }
-    </script>
-</body>
-
-</html>
+    <!-- Footer Section -->
+@endsection

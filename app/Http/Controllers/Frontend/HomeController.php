@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Banner;
 use App\Models\ServiceCategory;
+use Auth;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -20,6 +22,24 @@ class HomeController extends Controller
 
         // 2. ดึงข้อมูล หมวดหมู่บริการ
         $categories = ServiceCategory::all();
+
+        // 🌟 2. ดึงข้อมูล "บริการที่ใกล้หมดอายุ" เฉพาะกรณีที่มีการ Login เท่านั้น
+        $expiringServices = collect(); // ตั้งค่าเริ่มต้นเป็น Array ว่างเผื่อไม่ได้ล็อกอิน
+
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            // ดึงบริการของลูกค้าคนนี้ที่กำลังจะหมดอายุในอีกไม่เกิน 90 วัน (และยังไม่หมดอายุ)
+            $expiringServices = DB::table('customer_products')
+                ->where('customer_id', $userId)
+                ->where('status', 'active')
+                ->whereNotNull('warranty_expire_date')
+                ->where('warranty_expire_date', '>=', Carbon::now()) // ยังไม่หมดอายุ
+                // ->where('warranty_expire_date', '<=', Carbon::now()->addDays(90)) // (เปิดคอมเมนต์บรรทัดนี้ได้ ถ้าอยากให้โชว์เฉพาะตัวที่จะหมดใน 90 วัน)
+                ->orderBy('warranty_expire_date', 'asc') // เอาตัวที่ใกล้หมดอายุสุดขึ้นก่อน
+                ->limit(4) // ดึงมาโชว์แค่ 4 ตัว
+                ->get();
+        }
 
         // 3. ดึงข้อมูล สิทธิพิเศษแนะนำ (Rewards) สุ่มมา 3 รายการเพื่อให้พอดีกับ Layout หน้าเว็บ
         $recommendedPrivileges = DB::table('rewards')
@@ -37,6 +57,7 @@ class HomeController extends Controller
 
         return view('frontend.index', compact(
             'banners',
+            'expiringServices',
             'categories',
             'recommendedPrivileges',
             'recommendedServices'

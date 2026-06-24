@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
+@extends('frontend.layouts.main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดแพ็กเกจ - AEG EASE CLUB</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
-        rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+@section('title', 'รายละเอียดแพ็กเกจ - AEG EASE CLUB')
+
+@push('styles')
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -27,141 +22,6 @@
             overflow-x: hidden;
         }
 
-        /* --- Header & Navigation --- */
-        .navbar-main-header {
-            background-image: url('assets/image/header-bk.webp');
-            background-size: cover;
-            background-position: center;
-            padding: 10px 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .navbar-top-row {
-            display: flex;
-            justify-content: flex-end;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 10px;
-        }
-
-        .nav-icons {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-icon-item {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.85rem;
-            transition: opacity 0.3s;
-        }
-
-        .header-dropdown .btn-dropdown {
-            color: white;
-            background: transparent;
-            border: none;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .header-dropdown .dropdown-menu {
-            background: var(--primary-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 10px !important;
-            z-index: 1050;
-        }
-
-        .header-dropdown .dropdown-item {
-            color: white;
-            font-size: 0.85rem;
-            padding: 8px 15px;
-        }
-
-        .header-dropdown .dropdown-item:hover {
-            background: var(--primary-red);
-            color: white;
-        }
-
-        .navbar-bottom-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .navbar-brand img {
-            height: 50px;
-        }
-
-        .search-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .search-input {
-            border-radius: 25px;
-            padding: 8px 20px;
-            border: none;
-            width: 100%;
-            font-size: 0.95rem;
-        }
-
-        .search-btn {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            color: #666;
-            border: none;
-            font-size: 1.1rem;
-        }
-
-        .points-badge {
-            background: white;
-            color: var(--primary-red);
-            border-radius: 20px;
-            padding: 5px 15px;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-        }
-
-        .main-navigation-bar {
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            z-index: 1000;
-        }
-
-        .nav-link-custom {
-            font-weight: 500;
-            color: var(--primary-dark);
-            padding: 15px 20px !important;
-            transition: all 0.3s;
-            border-bottom: 3px solid transparent;
-        }
-
-        .nav-link-custom:hover,
-        .nav-link-custom.active {
-            color: var(--primary-red);
-            border-bottom: 3px solid var(--primary-red);
-        }
-
-        /* --- Main Content Layout --- */
         .container-950 {
             max-width: 950px;
             margin: 0 auto;
@@ -227,6 +87,10 @@
             color: #28a745;
         }
 
+        .detail-status-tag.expired {
+            color: #999;
+        }
+
         .info-label {
             display: block;
             font-size: 0.8rem;
@@ -273,6 +137,7 @@
 
         .repair-history-btns {
             display: flex;
+            flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 10px;
         }
@@ -285,38 +150,30 @@
             font-weight: 600;
             text-decoration: none;
             transition: 0.3s;
+            cursor: pointer;
+            border: none;
         }
 
         .btn-history-pill:hover {
             opacity: 0.9;
         }
 
-        .service-scope-list {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 50px;
-        }
-
-        .service-scope-list li {
-            position: relative;
-            padding-left: 20px;
+        .service-scope-content {
             font-size: 0.95rem;
             color: #555;
-            margin-bottom: 8px;
-            line-height: 1.6;
-        }
-
-        .service-scope-list li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: var(--primary-red);
-            font-weight: 900;
-            font-size: 1.3rem;
+            margin-bottom: 50px;
+            line-height: 1.8;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
         }
 
         .detail-footer {
             text-align: right;
+            margin-top: 30px;
+            border-top: 1px solid #f2f2f2;
+            padding-top: 25px;
         }
 
         .btn-back-detail {
@@ -329,146 +186,52 @@
             text-decoration: none;
         }
 
-        /* --- Footer --- */
-        footer {
-            background: var(--ease-gradient);
-            color: white;
-            padding: 40px 0 20px;
+        /* Styles สำหรับ Timeline ฝั่งดีไซน์ช่าง */
+        .tech-timeline {
+            list-style: none;
+            padding: 0;
+            position: relative;
         }
-
-        .footer-divider {
-            border-right: 2px solid rgba(255, 255, 255, 0.3) !important;
+        .tech-timeline::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 9px;
+            width: 2px; background: #e2e8f0;
         }
-
-        .social-icons a {
-            color: white;
-            font-size: 1.3rem;
-            margin: 0 10px;
-            transition: color 0.3s;
-        }
-
-        .social-icons a:hover {
-            color: #f1c40f;
-        }
-
-        .copyright-text {
+        .tech-timeline li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
+        }
+        .tech-timeline li::before {
+            content: '';
+            position: absolute;
+            left: 3px; top: 4px;
+            width: 14px; height: 14px;
+            border-radius: 50%; background: #c41e3a;
+            border: 2px solid #fff;
         }
 
         @media (max-width: 991px) {
-            .navbar-top-row {
-                display: none;
-            }
-
             .detail-top-hero {
                 flex-direction: column;
                 gap: 25px;
                 padding-bottom: 20px;
             }
-
             .detail-img-box {
                 width: 100%;
                 height: 200px;
             }
-
             .detail-card {
                 padding: 30px 20px;
                 border-radius: 30px;
             }
-
-            .footer-divider {
-                border-right: none !important;
-            }
-
-            /* Hamburger Menu Icon: White SVG */
-            .navbar-toggler {
-                border-color: rgba(255, 255, 255, 0.7) !important;
-            }
-
-            .navbar-toggler-icon {
-                background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
-            }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <header class="navbar-main-header">
-        <div class="container navbar-container">
-            <div class="navbar-top-row w-100">
-                <div class="nav-icons ms-auto">
-                    <a href="#" class="nav-icon-item"><i class="fas fa-headset"></i><span>ติดตามสถานะ</span></a>
-                    <a href="#" class="nav-icon-item"><i class="fas fa-bell"></i><span>การแจ้งเตือน</span></a>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="fas fa-user"></i><span>ข้อมูลของฉัน</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i
-                                        class="fas fa-id-card-alt me-2"></i>ข้อมูลของฉัน</a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider border-secondary">
-                            </li>
-                            <li><a class="dropdown-item text-warning" href="#"><i
-                                        class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ</a></li>
-                        </ul>
-                    </div>
-
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-
-                    <div class="dropdown header-dropdown">
-                        <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <img src="https://flagcdn.com/w20/th.png" alt="TH" width="20">
-                            <span>TH</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/th.png" width="18"> Thai (TH)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><img
-                                        src="https://flagcdn.com/w20/gb.png" width="18"> English (EN)</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="navbar-bottom-row w-100 mt-2">
-                <a class="navbar-brand" href="index"><img src="assets/image/logo.webp" alt="AEG Logo"></a>
-                <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
-                    <input type="text" class="search-input" placeholder="ค้นหาบริการหรือสินค้า...">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-                <div class="cart-section">
-                    <a href="#" class="cart-icon" style="color: white; margin-right: 15px; font-size: 1.5rem;"><i
-                            class="fas fa-shopping-cart"></i></a>
-                    <div class="points-badge shadow-sm"><i class="fas fa-coins" style="color: #f1c40f;"></i> 200</div>
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#mainMenuCollapse">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <nav class="main-navigation-bar sticky-top">
-        <div class="container">
-            <div class="collapse navbar-collapse d-lg-block" id="mainMenuCollapse">
-                <ul class="navbar-nav d-flex flex-column flex-lg-row justify-content-center text-center">
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index">หน้าหลัก</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">สินค้าพร้อมติดตั้ง</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom active"
-                            href="packages">แพ็กเกจบริการ</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">บริการแนะนำ</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+@section('content')
 
     <main class="detail-main-wrapper">
         <div class="container-950">
@@ -476,59 +239,77 @@
 
                 <div class="detail-top-hero">
                     <div class="detail-img-box">
-                        <img src="https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80"
-                            alt="Burglary Alarm">
+                        <img src="{{ $package->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ $package->product_name }}">
                     </div>
                     <div class="detail-info-side">
                         <div class="detail-header-flex">
-                            <h1 class="detail-main-title">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
-                            <span class="detail-status-tag">ใช้งาน</span>
-                        </div>
-                        <label class="info-label">แพ็กเกจดูแลรายเดือน :</label>
-                        <div class="info-value-navy">Burglary Alarm (ระบบสัญญาณกันขโมย)</div>
+                            <h1 class="detail-main-title">{{ $package->product_name }}</h1>
 
-                        <label class="info-label">ระยะเวลาการดูแล :</label>
+                            @php
+                                $isExpired = !empty($package->warranty_expire_date) && \Carbon\Carbon::parse($package->warranty_expire_date)->isPast();
+                            @endphp
+
+                            <span class="detail-status-tag {{ ($package->status !== 'active' || $isExpired) ? 'expired' : '' }}">
+                                {{ ($package->status === 'active' && !$isExpired) ? 'ใช้งานปกติ' : 'หมดอายุ / ไม่ได้ใช้งาน' }}
+                            </span>
+                        </div>
+
+                        <label class="info-label">หมายเลข Serial Number / Policy :</label>
+                        <div class="info-value-navy">{{ $package->serial_number ?? 'ไม่ระบุ' }}</div>
+
+                        <label class="info-label">ระยะเวลาการคุ้มครอง / การดูแล :</label>
                         <div class="date-columns">
                             <div>
                                 <label class="info-label">เริ่มต้น</label>
-                                <span class="date-val-red">01 ม.ค. 2025</span>
+                                <span class="date-val-red">{{ \Carbon\Carbon::parse($package->created_at)->translatedFormat('d M Y') }}</span>
                             </div>
                             <div>
                                 <label class="info-label">สิ้นสุด</label>
-                                <span class="date-val-red">31 มี.ค. 2025</span>
+                                <span class="date-val-red">{{ !empty($package->warranty_expire_date) ? \Carbon\Carbon::parse($package->warranty_expire_date)->translatedFormat('d M Y') : 'ไม่ระบุวันสิ้นสุด' }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="detail-body-area">
+
+                    @if($package->reference_type === 'product' && $package->total_service_count > 0)
                     <div class="section-block">
                         <span class="section-label-bold">จำนวนบริการคงเหลือ :</span>
-                        <p class="remaining-text">8 ครั้ง</p>
+                        <p class="remaining-text">{{ max(0, $package->total_service_count - $package->used_service_count) }} ครั้ง (จากทั้งหมด {{ $package->total_service_count }} ครั้ง)</p>
+                    </div>
+                    @endif
+
+                    <div class="section-block">
+                        <span class="section-label-bold">ประวัติการแจ้งซ่อม / เรียกใช้บริการ :</span>
+                        @if($repairs->count() > 0)
+                            <div class="repair-history-btns">
+                                @foreach($repairs as $index => $repair)
+                                    <button type="button" class="btn-history-pill" onclick="openCompletionModal({{ $repair->id }})">
+                                        ครั้งที่ {{ $repairs->count() - $index }}
+                                        <small style="opacity: 0.8; margin-left: 5px;">({{ \Carbon\Carbon::parse($repair->created_at)->format('d/m/Y') }})</small>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-muted">ยังไม่มีประวัติการแจ้งซ่อม</p>
+                        @endif
                     </div>
 
                     <div class="section-block">
-                        <span class="section-label-bold">ประวัติการแจ้งซ่อม :</span>
-                        <div class="repair-history-btns">
-                            <a href="history_repair_entry" class="btn-history-pill">ครั้งที่ 1</a>
-                            <a href="history_repair_entry" class="btn-history-pill">ครั้งที่ 2</a>
+                        <span class="section-label-bold">รายละเอียด / ขอบเขตการบริการ :</span>
+                        <div class="service-scope-content">
+                            {!! nl2br(e($description)) !!}
+                            @if(!empty($coverage))
+                                <hr class="my-3">
+                                <strong>¼ข้อมูลความคุ้มครองเพิ่มเติม:</strong><br>
+                                {!! nl2br(e($coverage)) !!}
+                            @endif
                         </div>
                     </div>
 
-                    <div class="section-block">
-                        <span class="section-label-bold">ขอบเขตการบริการ :</span>
-                        <ul class="service-scope-list">
-                            <li>ตรวจสอบ Motion Sensor, Door Contact, Panic Switch</li>
-                            <li>ทดสอบการทำงานของสัญญาณเตือน</li>
-                            <li>เช็ก Battery Backup / Power Supply</li>
-                            <li>ตรวจสอบแผงควบคุม และการเชื่อมต่อ</li>
-                            <li>แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด</li>
-                            <li>ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม</li>
-                        </ul>
-                    </div>
-
                     <div class="detail-footer">
-                        <a href="packages" class="btn-back-detail">ย้อนกลับ</a>
+                        <a href="{{ route('packages.mine') }}" class="btn-back-detail"><i class="fas fa-arrow-left me-2"></i> ย้อนกลับ</a>
                     </div>
                 </div>
 
@@ -536,62 +317,126 @@
         </div>
     </main>
 
-    <footer>
-        <div class="container">
-            <div class="row g-4 align-items-start">
-                <div class="col-md-4 text-center text-md-start">
-                    <h6 class="fw-bold mb-3">ดาวน์โหลดแอปพลิเคชัน</h6>
-                    <div class="d-flex justify-content-center justify-content-md-start gap-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=AEG-APP"
-                            class="bg-white p-1 rounded" alt="QR" width="80">
-                        <div class="d-flex flex-column gap-2">
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                                    height="28"></a>
-                            <a href="#"><img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                                    height="28"></a>
+    <div class="modal fade" id="completionModal" static="true" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none;">
+                <div class="modal-header text-white" style="background-color: var(--primary-navy);">
+                    <h5 class="modal-title fw-bold" id="modalTitle">รายละเอียดรายงานการซ่อม</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" style="background-color: #f8fafc;">
+                    <div id="modalLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">กำลังดึงข้อมูลรายงานการซ่อม...</p>
+                    </div>
+
+                    <div id="modalContent" class="d-none">
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-5">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-danger"></i>บันทึกเวลาทำงาน (Timeline)</h6>
+                                <ul class="tech-timeline" id="logTimeline">
+                                    </ul>
+                            </div>
+                            <div class="col-md-7">
+                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-comment-alt me-2 text-primary"></i>หมายเหตุการแก้ไขจากช่าง</h6>
+                                <div class="p-3 bg-white border rounded mb-3" id="techNote" style="font-size: 0.9rem; min-height: 80px;"></div>
+
+                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-signature me-2 text-success"></i>ลายเซ็นยืนยันจากลูกค้า</h6>
+                                <div class="text-center bg-white border rounded p-2" style="max-width: 250px;">
+                                    <img id="custSignature" src="" alt="Customer Signature" style="max-height: 80px; width: auto;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-dark mb-2 border-t pt-3"><i class="fas fa-images me-2 text-warning"></i>รูปภาพ/หลักฐานประกอบจากหน้างาน</h6>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <span class="d-block small fw-bold text-muted mb-2">📸 ภาพก่อนการซ่อม (Before)</span>
+                                <div class="d-flex flex-wrap gap-2" id="galleryBefore"></div>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block small fw-bold text-muted mb-2">✅ ภาพหลังการซ่อม (After)</span>
+                                <div class="d-flex flex-wrap gap-2" id="galleryAfter"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 text-center">
-                    <div class="row">
-                        <div class="col-6 footer-column footer-divider">
-                            <h6 class="fw-bold mb-3">แพ็กเกจที่ใช้งาน</h6>
-                            <a href="packages"
-                                class="d-block text-white-50 text-decoration-none small mb-2">ข้อกำหนดและเงื่อนไข</a>
-                        </div>
-                        <div class="col-6 footer-column">
-                            <h6 class="fw-bold mb-3">ช่วยเหลือ</h6>
-                            <a href="privacy-policy"
-                                class="d-block text-white-50 text-decoration-none small mb-2">นโยบายความเป็นส่วนตัว</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 text-center text-md-end">
-                    <img src="assets/image/logo.webp" alt="Logo" height="40">
-                </div>
-            </div>
-
-            <div class="row mt-5 align-items-center">
-                <div class="col-md-4 d-none d-md-block"></div>
-                <div class="col-md-4 text-center">
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-line"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                    <p class="copyright-text mb-0">© 2024 AEG EASE CLUB. All rights reserved.</p>
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+@endsection
 
-</html>
+@push('scripts')
+    <script>
+        // ฟังก์ชัน AJAX เรียกเปิดข้อมูล Modal รายงานการซ่อม
+        function openCompletionModal(repairId) {
+            // 1. สั่งเปิด Modal โครงขึ้นมา และเซ็ตโหมดโหลดข้อมูล
+            const modalEl = document.getElementById('completionModal');
+            const bsModal = new bootstrap.Modal(modalEl);
+
+            document.getElementById('modalLoading').classList.remove('d-none');
+            document.getElementById('modalContent').classList.add('d-none');
+            bsModal.show();
+
+            // 2. ดึงค่าผ่าน Fetch API
+            fetch(`/my-packages/repair-completion/${repairId}`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    const data = res.data;
+
+                    // เซ็ตชื่อหัวข้อบิล
+                    document.getElementById('modalTitle').innerText = `รายละเอียดรายงานของใบงาน: ${data.ticket_number}`;
+
+                    // เซ็ตหมายเหตุช่าง และลายเซ็น
+                    document.getElementById('techNote').innerText = data.technician_note;
+                    document.getElementById('custSignature').src = data.customer_signature ? data.customer_signature : 'https://via.placeholder.com/150?text=No+Signature';
+
+                    // วาดชุดประวัติเวลา (Timeline)
+                    let timelineHtml = `
+                        <li><span class="text-muted">จ่ายงาน:</span> <strong class="text-dark">${data.timestamps.assigned}</strong></li>
+                        <li><span class="text-muted">รับงาน:</span> <strong class="text-dark">${data.timestamps.accepted}</strong></li>
+                        <li><span class="text-muted">เริ่มเดินทาง:</span> <strong class="text-dark">${data.timestamps.traveling}</strong></li>
+                        <li><span class="text-muted">ถึงหน้างาน:</span> <strong class="text-dark">${data.timestamps.arrived}</strong></li>
+                        <li><span class="text-muted">เริ่มลงมือซ่อม:</span> <strong class="text-dark">${data.timestamps.started}</strong></li>
+                        <li><span class="text-muted">ส่งมอบงาน:</span> <strong class="text-success">${data.timestamps.completed}</strong></li>
+                    `;
+                    document.getElementById('logTimeline').innerHTML = timelineHtml;
+
+                    // วาดรูปแกลเลอรี่ก่อนซ่อม
+                    let beforeHtml = '';
+                    if(data.before_media.length > 0) {
+                        data.before_media.forEach(url => {
+                            beforeHtml += `<a href="${url}" target="_blank" class="d-block border rounded overflow-hidden" style="width:75px; height:75px;"><img src="${url}" style="width:100%; height:100%; object-fit:cover;"></a>`;
+                        });
+                    } else { beforeHtml = '<span class="text-muted small">ไม่มีรูปภาพ</span>'; }
+                    document.getElementById('galleryBefore').innerHTML = beforeHtml;
+
+                    // วาดรูปแกลเลอรี่หลังซ่อม
+                    let afterHtml = '';
+                    if(data.after_media.length > 0) {
+                        data.after_media.forEach(url => {
+                            afterHtml += `<a href="${url}" target="_blank" class="d-block border rounded overflow-hidden" style="width:75px; height:75px;"><img src="${url}" style="width:100%; height:100%; object-fit:cover;"></a>`;
+                        });
+                    } else { afterHtml = '<span class="text-muted small">ไม่มีรูปภาพ</span>'; }
+                    document.getElementById('galleryAfter').innerHTML = afterHtml;
+
+                    // ปิดโหมดโหลด โชว์คอนเทนต์จริง
+                    document.getElementById('modalLoading').classAdd = 'd-none'; // ซ่อนโหลด
+                    document.getElementById('modalLoading').classList.add('d-none');
+                    document.getElementById('modalContent').classList.remove('d-none');
+                } else {
+                    alert('ไม่สามารถดึงข้อมูลรายงานได้');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อระบบหลังบ้าน');
+            });
+        }
+    </script>
+@endpush

@@ -88,6 +88,8 @@ class CartController extends Controller
                 'cart_id' => $cart->id,
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
+                'price' => ($product->price * $request->quantity),
+                'duration_months' => 1,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);

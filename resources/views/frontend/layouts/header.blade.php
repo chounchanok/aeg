@@ -31,7 +31,7 @@
                             @endif
                         </button>
 
-                        <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 320px; max-height: 450px; overflow-y: auto; background-color: #ffffff; border-radius: 12px; padding: 0; border: 1px solid #eee;">
+                        <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 320px; max-height: 450px; overflow-y: auto; background-color: #ffffff; border-radius: 12px; padding: 0; border: 1px solid #eee; z-index: 9999 !important;">
 
                             <li style="background-color: var(--primary-navy, #1a2d5e); padding: 12px 15px; border-radius: 11px 11px 0 0; position: sticky; top: 0; z-index: 10;">
                                 <h6 class="dropdown-header text-white fw-bold m-0 p-0" style="font-size: 0.95rem;"><i class="fas fa-bell me-2"></i>การแจ้งเตือนล่าสุด</h6>
@@ -117,12 +117,17 @@
 
         <!-- Bottom Row -->
         <div class="navbar-bottom-row w-100 mt-2">
-            <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ asset('assets/image/logo.png') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-            </a>
-            <a class="navbar-brand" href="{{ route('rewards') }}">
-                <img src="{{ asset('assets/image/logo-ease.png') }}" alt="AEG Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AEG+LOGO'">
-            </a>
+            <div class="logo-container" style="position: relative; display: inline-block; max-width: 150px; width: 100%;">
+                <img src="{{ asset('assets/image/logo.webp') }}" alt="AEG EASE CLUB" style="width: 100%; height: auto; display: block;">
+
+                <a href="{{ route('home') }}"
+                style="position: absolute; top: 0; left: 0; width: 40%; height: 100%; z-index: 10;"
+                title="หน้าหลัก"></a>
+
+                <a href="{{ route('rewards') }}"
+                style="position: absolute; top: 0; right: 0; width: 60%; height: 100%; z-index: 10;"
+                title="สิทธิพิเศษ EASE CLUB"></a>
+            </div>
 
             <div class="search-container mx-lg-4 flex-grow-1 d-none d-md-block">
                 <input type="text" class="search-input" placeholder="ค้นหาบริการหรือสินค้า...">

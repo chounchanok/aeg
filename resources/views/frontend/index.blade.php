@@ -431,37 +431,54 @@
     </div>
 
     <!-- Age Services -->
-    <div class="container mt-5">
-        <h3 class="text-center fw-bold mb-4">บริการที่ใกล้หมดอายุ</h3>
-        <div class="row g-3">
-            <div class="col-lg-6">
-                <div class="age-service-box shadow-sm">
-                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
-                    <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-1">ประกันทรัพย์สินมูลค่าสูง</h5>
-                        <p class="text-muted small mb-0">กรมธรรม์ชดเชยผลประโยชน์จากการโจรกรรม</p>
-                    </div>
-                    <div class="ms-3 text-end border-start ps-3">
-                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
+    @auth
+        @if(isset($expiringServices) && $expiringServices->count() > 0)
+        <div class="container mt-5">
+            <h3 class="text-center fw-bold mb-4">บริการที่ใกล้หมดอายุ</h3>
+            <div class="row g-3">
+                @foreach($expiringServices as $service)
+                @php
+                    $startDate = \Carbon\Carbon::parse($service->created_at)->format('d/m/Y');
+                    $endDate = \Carbon\Carbon::parse($service->warranty_expire_date)->format('d/m/Y');
+                    $imgUrl = $service->image_url ?? asset('assets/image/logo2.webp');
+                    $quota = (($service->reference_type ?? 'product') === 'product' && $service->total_service_count > 0)
+                             ? max(0, $service->total_service_count - $service->used_service_count) . ' ครั้ง (จาก ' . $service->total_service_count . ' ครั้ง)'
+                             : '-';
+                    $detailUrl = route('repair-status', $service->id);
+                @endphp
+
+                <div class="col-lg-6">
+                    <div class="age-service-box shadow-sm" style="cursor: pointer; transition: transform 0.3s;"
+                         onmouseover="this.style.transform='translateY(-3px)'"
+                         onmouseout="this.style.transform='translateY(0)'"
+                         data-bs-toggle="modal"
+                         data-bs-target="#expiringModal"
+                         data-name="{{ $service->product_name }}"
+                         data-sn="{{ $service->serial_number ?? 'ไม่ระบุ' }}"
+                         data-start="{{ $startDate }}"
+                         data-end="{{ $endDate }}"
+                         data-img="{{ $imgUrl }}"
+                         data-quota="{{ $quota }}"
+                         data-url="{{ $detailUrl }}">
+
+                        <img src="{{ $imgUrl }}" class="age-icon" alt="Service Icon" style="border-radius: 8px;">
+
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold mb-1 text-truncate" style="max-width: 250px;">{{ $service->product_name }}</h5>
+                            <p class="text-muted small mb-0">S/N: {{ $service->serial_number ?? 'ไม่ระบุ' }}</p>
+                        </div>
+
+                        <div class="ms-3 text-end border-start ps-3" style="min-width: 110px;">
+                            <div class="small text-muted">เริ่ม: <span class="text-dark fw-bold">{{ $startDate }}</span></div>
+                            <div class="small text-muted">จบ: <span class="text-danger fw-bold">{{ $endDate }}</span></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="age-service-box shadow-sm">
-                    <img src="assets/image/logo2.webp" class="age-icon" alt="Logo">
-                    <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-1">AEG Smart Locker</h5>
-                        <p class="text-muted small mb-0">ตู้ล็อกเกอร์ให้เช่า ขนาดเล็ก (Prime)</p>
-                    </div>
-                    <div class="ms-3 text-end border-start ps-3">
-                        <div class="small text-muted">เริ่ม: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                        <div class="small text-muted">จบ: <span class="text-danger fw-bold">xx/xx/xxxx</span></div>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
-    </div>
+        @endif
+    @endauth
 
     <!-- Recommended Services Section -->
     <div class="container mt-5">
@@ -520,5 +537,72 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="expiringModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
+                <div class="modal-header text-white" style="background: var(--primary-navy);">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-box-open me-2"></i> สรุปรายละเอียดบริการ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <img id="modExpImg" src="" alt="Package" style="max-height: 140px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+
+                    <h5 id="modExpName" class="fw-bold text-dark mb-4"></h5>
+
+                    <ul class="list-group list-group-flush mb-4 text-start" style="font-size: 0.95rem;">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">Serial Number / Policy</span>
+                            <strong id="modExpSn" class="text-dark"></strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">วันที่เริ่มบริการ</span>
+                            <strong id="modExpStart" class="text-dark"></strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">วันที่สิ้นสุด <i class="fas fa-exclamation-circle text-danger ms-1"></i></span>
+                            <strong id="modExpEnd" class="text-danger"></strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0" id="modExpQuotaContainer">
+                            <span class="text-muted">โควต้าเรียกช่างคงเหลือ</span>
+                            <strong id="modExpQuota" class="text-primary"></strong>
+                        </li>
+                    </ul>
+
+                    <a href="#" id="modExpUrl" class="btn btn-primary w-100" style="background: var(--ease-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">
+                        ดูรายละเอียดฉบับเต็ม / ประวัติการซ่อม
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var expiringModal = document.getElementById('expiringModal');
+            if (expiringModal) {
+                expiringModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget; // ดึงอ็อบเจ็กต์กล่องที่โดนกด
+
+                    // โยนค่าจาก data-* ลงไปใน ID ของ Modal
+                    document.getElementById('modExpName').textContent = button.getAttribute('data-name');
+                    document.getElementById('modExpSn').textContent = button.getAttribute('data-sn');
+                    document.getElementById('modExpStart').textContent = button.getAttribute('data-start');
+                    document.getElementById('modExpEnd').textContent = button.getAttribute('data-end');
+                    document.getElementById('modExpImg').src = button.getAttribute('data-img');
+                    document.getElementById('modExpUrl').href = button.getAttribute('data-url');
+
+                    // ซ่อน/โชว์ บรรทัดโควต้าถ้ามันไม่มีโควต้า
+                    var quota = button.getAttribute('data-quota');
+                    if (quota && quota !== '-') {
+                        document.getElementById('modExpQuotaContainer').classList.replace('d-none', 'd-flex');
+                        document.getElementById('modExpQuota').textContent = quota;
+                    } else {
+                        document.getElementById('modExpQuotaContainer').classList.replace('d-flex', 'd-none');
+                    }
+                });
+            }
+        });
+    </script>
 
 @endsection
