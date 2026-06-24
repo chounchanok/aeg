@@ -14,17 +14,29 @@ class TechnicianController extends Controller
     use ApiResponseTrait;
 
     // ==========================================
-    // 1. ดึงรายการงานทั้งหมดของช่าง
+    // 1. ดึงรายการงานทั้งหมดของช่าง (อัปเกรดรองรับการกรองตามวันที่)
     // ==========================================
     public function getMyTasks(Request $request)
     {
         $techId = $request->user()->id;
 
-        $tasks = DB::table('service_requests')
+        // เริ่มต้นสร้าง Query
+        $query = DB::table('service_requests')
             ->leftJoin('customer_products', 'service_requests.customer_product_id', '=', 'customer_products.id')
             ->leftJoin('customer_addresses', 'service_requests.address_id', '=', 'customer_addresses.id')
-            ->where('service_requests.technician_id', $techId)
-            ->select(
+            ->where('service_requests.technician_id', $techId);
+
+        // 🌟 เพิ่มเงื่อนไขกรองตาม preferred_date (ถ้ามีการส่ง date มาใน Request)
+        if ($request->has('date') && !empty($request->date)) {
+            $request->validate([
+                'date' => 'date_format:Y-m-d' // ตรวจสอบความถูกต้องของรูปแบบวันที่ YYYY-MM-DD
+            ]);
+            
+            $query->whereDate('service_requests.preferred_date', $request->date);
+        }
+
+        // ดึงข้อมูลและเลือกฟิลด์ที่ต้องการ
+        $tasks = $query->select(
                 'service_requests.id',
                 'service_requests.ticket_number',
                 'service_requests.status',
