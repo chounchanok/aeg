@@ -89,6 +89,13 @@ Route::prefix('main')->group(function () {
     Route::get('/recommended-services', [MainPageController::class, 'getRecommendedServices']);
 });
 
+Route::prefix('ease-club')->group(function () {
+        //No Auth
+        Route::get('/overview', [EaseClubController::class, 'getOverview']); // หมวดหมู่ + พิเศษสำหรับ Advance
+        Route::get('/categories/{categoryId}/rewards', [EaseClubController::class, 'getRewardsByCategory']); // รายการสินค้าตามหมวด
+        Route::get('/rewards/{rewardId}', [EaseClubController::class, 'getRewardDetail']); // รายละเอียดของรางวัล
+    });
+
 // --- Protected Routes (ต้องล็อกอิน) ---
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -103,9 +110,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user-info', [EaseClubController::class, 'getUserInfo']); // ข้อมูล User + คะแนน
         Route::get('/banners', [EaseClubController::class, 'getBanners']); // Banner หน้า EASE CLUB
         Route::get('/banners/category', [EaseClubController::class, 'getBannersCategory']); // Banner หน้า EASE CLUB / Category
-        Route::get('/overview', [EaseClubController::class, 'getOverview']); // หมวดหมู่ + พิเศษสำหรับ Advance
-        Route::get('/categories/{categoryId}/rewards', [EaseClubController::class, 'getRewardsByCategory']); // รายการสินค้าตามหมวด
-        Route::get('/rewards/{rewardId}', [EaseClubController::class, 'getRewardDetail']); // รายละเอียดของรางวัล
         Route::post('/rewards/{rewardId}/redeem', [EaseClubController::class, 'redeemReward']); // ยืนยันการแลกพอยท์
     });
 
