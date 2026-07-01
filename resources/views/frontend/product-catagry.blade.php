@@ -48,9 +48,9 @@
         .navbar-top-row {
             display: flex;
             justify-content: flex-end;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 10px;
+            padding-bottom: 0px !important;
+            border-bottom: 0px solid rgba(255, 255, 255, 0.2) !important;
+            margin-bottom: 0px !important;
         }
 
         .nav-icons {
@@ -388,7 +388,7 @@
     <div class="category-nav">
         <div class="container">
             <div class="nav nav-tabs nav-tabs-custom flex-nowrap overflow-auto" id="securityTabs" role="tablist" style="border-bottom: none; -webkit-overflow-scrolling: touch;">
-                
+
                 <a href="{{ url('products/' . ($currentGroup ?? 'equipment')) }}" class="nav-link {{ is_null($currentCategoryId ?? null) ? 'active' : '' }}" style="text-decoration: none; border: none;">
                     <div class="category-box">
                         <div class="category-icon">
@@ -406,7 +406,7 @@
                             $catNameEn = $cat->title_en ?? $cat->title_th ?? 'Category';
                             $icon = $cat->image_url ? asset($cat->image_url) : asset('assets/image/cat1.webp');
                         @endphp
-                        
+
                         <a href="{{ url('products/'.$cat->group.'/'.$cat->id) }}" class="nav-link {{ ($currentCategoryId ?? null) == $cat->id ? 'active' : '' }}" style="text-decoration: none; border: none;">
                             <div class="category-box">
                                 <div class="category-icon">
@@ -418,7 +418,7 @@
                         </a>
                     @endforeach
                 @endif
-                
+
             </div>
         </div>
     </div>
@@ -428,7 +428,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade show active" role="tabpanel">
                     <div class="row g-3 g-lg-4 justify-content-center">
-                        
+
                         @forelse($products as $product)
                             <div class="col-6 col-md-4">
                                 <div class="product-item-wrapper">
@@ -439,7 +439,7 @@
                                     </a>
                                     <div class="product-title-en">{{ $product->name }}</div>
                                     <div class="product-title-th">฿{{ number_format($product->price, 2) }}</div>
-                                    
+
                                     <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">ดูรายละเอียด</a>
                                 </div>
                             </div>

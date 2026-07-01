@@ -379,56 +379,58 @@ class AuthController extends Controller
             return $this->errorResponse('เบอร์โทรศัพท์นี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ', 400);
         }
 
-        // 2. สร้างรหัส OTP 6 หลัก และ Ref Code
-        $otpCode = sprintf("%06d", mt_rand(1, 999999));
-        $refCode = \Illuminate\Support\Str::random(4);
-
-        // 3. บันทึกลงตาราง otp_codes
-        DB::table('otp_codes')->updateOrInsert(
-            ['phone' => $request->phone],
-            [
-                'code' => $otpCode,
-                'expires_at' => \Carbon\Carbon::now()->addMinutes(5),
-                'created_at' => now()
-            ]
-        );
-
-        // 4. แปลงเบอร์โทรให้ขึ้นต้นด้วย 66 (เช่น 0639149666 -> 66639149666)
-        $formattedPhone = preg_replace('/^0/', '66', $request->phone);
-
-        // 5. ข้อความที่จะส่ง
-        $smsMessage = "รหัส OTP ของคุณคือ {$otpCode} (Ref: {$refCode})";
-
-        // 6. เตรียม Payload ตามที่คุณฝนส่งมา
-        // 💡 หมายเหตุ: แนะนำให้ย้ายค่ารหัสผ่านไปไว้ในไฟล์ .env ตอนขึ้น Server จริงเพื่อความปลอดภัยครับ
-        $smsPayload = [
-            "user" => "orange",
-            "pass" => "C3!xoO71VSPG",
-            "from" => "watsarod",
-            "to"   => $formattedPhone,
-            "servid" => "OGE001",
-            "text" => $smsMessage
-        ];
+        // 2. จัดการฟอร์แมตเบอร์โทรเป็นของ ThaiBulkSMS
+        // แปลงเบอร์ 0639149666 ให้เป็นแบบที่ไทยบัลค์ต้องการ (บางทีอาจรับแค่เบอร์ 10 หลักปกติ หรือ 66 ให้ยึด 0 นำหน้าไว้ก่อน ถ้าเขาตีกลับค่อยเปลี่ยนครับ)
+        $formattedPhone = $request->phone;
 
         try {
-            // 🌟 สำคัญ: ต้องถาม "คุณฝน" ว่า URL Endpoint ที่ใช้ยิง API คือ URL อะไร
-            // สมมติ URL เช่น 'https://sms-gateway-api.com/send' ให้เอามาใส่แทนตรงนี้ครับ
-            $apiUrl = env('SMS_GATEWAY_URL', 'https://api.sms-provider.com/send');
+            // 3. ยิง API ขอ OTP จาก ThaiBulkSMS (ใช้ Endpoint สำหรับขอ OTP โดยเฉพาะ)
+            // *ข้อมูล App Key และ App Secret เอามาจากในรูปภาพที่แนบมา
+            $appKey = env('THAIBULK_APP_KEY', '17828749558276');
+            $appSecret = env('THAIBULK_APP_SECRET', '5fc3972aecabf0f433a9174bf885a0d5');
 
-            $response = \Illuminate\Support\Facades\Http::post($apiUrl, $smsPayload);
+            $apiUrl = 'https://otp.thaibulksms.com/v2/otp/request'; // Endpoint มาตรฐานของบริการ OTP ThaiBulk
 
-            // ถ้ายิงผ่าน
-            if ($response->successful()) {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ])->asForm()->post($apiUrl, [
+                'key' => $appKey,
+                'secret' => $appSecret,
+                'msisdn' => $formattedPhone
+            ]);
+
+            $responseData = $response->json();
+
+            // 4. เช็คผลลัพธ์จาก ThaiBulkSMS
+            // ถ้าสำเร็จ ระบบของเขาจะตอบกลับมาว่ามี token และ ref_no
+            if ($response->successful() && isset($responseData['token'])) {
+
+                $refCode = $responseData['ref_no']; // Ref Code ที่ระบบของเขาสร้างให้
+                $token = $responseData['token'];   // Token สำหรับไว้ใช้ Verify (สำคัญมาก ต้องเก็บไว้)
+
+                // 5. บันทึกลงตาราง otp_codes ในระบบเราชั่วคราว (เพื่อเก็บ token ไว้เช็คตอนลูกค้ากรอกกลับมา)
+                DB::table('otp_codes')->updateOrInsert(
+                    ['phone' => $request->phone],
+                    [
+                        'code' => $token, // 🌟 เราเก็บ token ของ ThaiBulk ไว้แทน otp ตัวเลข เพื่อเอาไป Verify
+                        'expires_at' => \Carbon\Carbon::now()->addMinutes(5),
+                        'created_at' => now()
+                    ]
+                );
+
                 return $this->successResponse([
                     'ref_code' => $refCode,
                     'phone' => $request->phone
-                ], 'ส่งรหัส OTP เรียบร้อยแล้ว');
+                ], 'ส่งรหัส OTP เรียบร้อยแล้วผ่านระบบ EASE CLUB');
+
             } else {
-                return $this->errorResponse('ไม่สามารถส่ง SMS ได้: ระบบขัดข้อง', 500);
+                // กรณีระบบ ThaiBulkSMS ปฏิเสธการส่ง
+                $errorMsg = $responseData['error']['description'] ?? 'ระบบ SMS ขัดข้อง';
+                return $this->errorResponse('ไม่สามารถส่ง SMS ได้: ' . $errorMsg, 500);
             }
 
         } catch (\Exception $e) {
-            return $this->errorResponse('เกิดข้อผิดพลาดในการส่ง OTP: ' . $e->getMessage(), 500);
+            return $this->errorResponse('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ SMS: ' . $e->getMessage(), 500);
         }
     }
 }

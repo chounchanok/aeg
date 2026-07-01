@@ -58,9 +58,9 @@
         .navbar-top-row {
             display: flex;
             justify-content: flex-end;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 10px;
+            padding-bottom: 0px !important;
+            border-bottom: 0px solid rgba(255, 255, 255, 0.2) !important;
+            margin-bottom: 0px !important;
         }
 
         .nav-icons {

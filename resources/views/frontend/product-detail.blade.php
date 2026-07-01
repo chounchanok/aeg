@@ -48,9 +48,9 @@
         .navbar-top-row {
             display: flex;
             justify-content: flex-end;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 10px;
+            padding-bottom: 0px !important;
+            border-bottom: 0px solid rgba(255, 255, 255, 0.2) !important;
+            margin-bottom: 0px !important;
         }
 
         .nav-icons {
@@ -426,13 +426,13 @@
     <main class="detail-section">
         <div class="container">
             <div class="row align-items-center">
-                
+
                 <div class="col-lg-6 d-flex justify-content-center">
                     <div class="detail-image-box">
                         <img src="{{ $product->image_url ?? asset('assets/image/product-1.webp') }}" alt="{{ $product->name }}">
                     </div>
                 </div>
-                
+
                 <div class="col-lg-6">
                     <div class="detail-content">
                         <h1 class="detail-title">{{ $product->name }}</h1>
@@ -442,7 +442,7 @@
                         <form action="{{ route('cart.add') }}" method="POST">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            
+
                             <div class="d-flex align-items-center gap-3 mb-4 qty-container">
                                 <label for="quantity" class="fw-bold text-secondary">จำนวน :</label>
                                 <input type="number" id="quantity" name="quantity" value="1" min="1" class="form-control text-center" style="width: 100px; border-radius: 10px;">
@@ -455,7 +455,7 @@
                                 </button>
                             </div>
                         </form>
-                        
+
                     </div>
                 </div>
             </div>

@@ -115,7 +115,7 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // 2. สมัครสมาชิก (Register) - แบบรับแค่เบอร์มือถือ
+    // 2. สมัครสมาชิก (Register) - เปลี่ยนเป็นระบบ OTP ของ ThaiBulkSMS
     // ==========================================
     public function registerSubmit(Request $request)
     {
@@ -138,43 +138,51 @@ class AuthController extends Controller
         ]);
 
         try {
-            // 3. สร้างรหัส OTP และบันทึกลง DB
-            $otpCode = sprintf("%06d", mt_rand(1, 999999));
-            $refCode = \Illuminate\Support\Str::random(4);
+            // 3. ยิง API ขอ OTP จาก ThaiBulkSMS
+            // 💡 นำ App Key และ App Secret จากเว็บ ThaiBulk มาใส่ตรงนี้นะครับ
+            $appKey = env('THAIBULK_APP_KEY', '17828749558276');
+            $appSecret = env('THAIBULK_APP_SECRET', '5fc3972aecabf0f433a9174bf885a0d5');
+            $apiUrl = 'https://otp.thaibulksms.com/v2/otp/request';
 
-            DB::table('otp_codes')->updateOrInsert(
-                ['phone' => $request->phone],
-                [
-                    'code' => $otpCode,
-                    'expires_at' => Carbon::now()->addMinutes(5),
-                    'created_at' => now(),
-                ]
-            );
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ])->asForm()->post($apiUrl, [
+                'key' => $appKey,
+                'secret' => $appSecret,
+                'msisdn' => $request->phone // เบอร์ที่ลูกค้ากรอก
+            ]);
 
-            // 4. ส่ง OTP ผ่าน ThaiBulkSMS
-            $formattedPhone = preg_replace('/^0/', '66', $request->phone);
-            $smsMessage = "รหัส OTP ของคุณคือ {$otpCode} (Ref: {$refCode})";
+            $responseData = $response->json();
 
-            $smsPayload = [
-                "user" => "orange",
-                "pass" => "C3!xoO71VSPG",
-                "from" => "watsarod",
-                "to"   => $formattedPhone,
-                "servid" => "OGE001",
-                "text" => $smsMessage
-            ];
+            // 4. เช็คผลลัพธ์ว่า ThaiBulkSMS รับเรื่องสำเร็จหรือไม่
+            if ($response->successful() && isset($responseData['token'])) {
 
-            // 🌟 ต้องใส่ URL จริงของ Gateway นะครับ
-            $apiUrl = env('SMS_GATEWAY_URL', 'https://api.sms-provider.com/send');
-            \Illuminate\Support\Facades\Http::post($apiUrl, $smsPayload);
+                $refCode = $responseData['ref_no'];
+                $token = $responseData['token'];
 
-            // 5. บันทึก Session ให้ตรงกัน
-            session(['verify_phone' => $request->phone, 'ref_code' => $refCode]);
+                // 5. บันทึก Token ลงตารางเพื่อเตรียมไว้ใช้ตอน Verify
+                DB::table('otp_codes')->updateOrInsert(
+                    ['phone' => $request->phone],
+                    [
+                        'code' => $token, // 🌟 เก็บ Token ของระบบ ThaiBulk ไว้แทนรหัส 6 หลัก
+                        'expires_at' => Carbon::now()->addMinutes(5),
+                        'created_at' => now(),
+                    ]
+                );
 
-            return redirect()->route('verify-otp')->with('success', 'ส่งรหัส OTP แล้ว (Ref: ' . $refCode . ')');
+                // 6. บันทึก Session ให้ตรงกันเพื่อพาไปหน้ายืนยัน
+                session(['verify_phone' => $request->phone, 'ref_code' => $refCode]);
+
+                return redirect()->route('verify-otp')->with('success', 'ส่งรหัส OTP แล้ว (Ref: ' . $refCode . ')');
+
+            } else {
+                // กรณี ThaiBulkSMS ปฏิเสธ (เช่น เงินหมด, คีย์ผิด)
+                $errorMsg = $responseData['error']['description'] ?? 'ระบบ SMS ขัดข้อง';
+                return back()->withErrors(['phone' => 'ไม่สามารถส่ง SMS ได้: ' . $errorMsg])->withInput();
+            }
 
         } catch (\Exception $e) {
-            return back()->withErrors(['phone' => 'ระบบขัดข้อง ไม่สามารถส่ง OTP ได้: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['phone' => 'ระบบขัดข้อง ไม่สามารถเชื่อมต่อ SMS ได้: ' . $e->getMessage()])->withInput();
         }
     }
 
@@ -194,7 +202,7 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // 4. ยืนยัน OTP และ สร้าง User
+    // 4. ยืนยัน OTP และ สร้าง User ผ่านระบบ ThaiBulkSMS
     // ==========================================
     public function verifyOtpSubmit(Request $request)
     {
@@ -211,49 +219,81 @@ class AuthController extends Controller
             'otp.size' => 'รหัส OTP ต้องมี 6 หลักพอดี'
         ]);
 
-        // ตรวจสอบ OTP
+        // 1. ดึง Token ของ ThaiBulkSMS จาก DB ขึ้นมา
         $otpRecord = DB::table('otp_codes')
             ->where('phone', $phone)
-            ->where('code', $request->otp)
             ->where('expires_at', '>', Carbon::now())
             ->first();
 
         if (!$otpRecord) {
-            return back()->withErrors(['otp' => 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ']);
+            return back()->withErrors(['otp' => 'รหัสอ้างอิงหมดอายุหรือถูกรีเซ็ต กรุณาขอรหัสใหม่']);
         }
 
         DB::beginTransaction();
         try {
-            // 🌟 สร้าง User จริงๆ "หลังจากที่ OTP ถูกต้องแล้วเท่านั้น"
-            $dummyUsername = 'user_' . $phone;
-            $dummyName = 'Guest_' . substr($phone, -4);
+            // 2. ยิง API ยืนยัน OTP ไปที่ระบบ ThaiBulkSMS
+            $appKey = env('THAIBULK_APP_KEY', '17828749558276');
+            $appSecret = env('THAIBULK_APP_SECRET', '5fc3972aecabf0f433a9174bf885a0d5');
+            $apiUrl = 'https://otp.thaibulksms.com/v2/otp/verify';
 
-            $user = User::create([
-                'username' => $dummyUsername,
-                'email' => $dummyUsername . '@temp.com',
-                'phone' => $phone,
-                'password' => Hash::make('password'), // สุ่มรหัสผ่านไปก่อน
-                'role' => 'customer',
-                'is_active' => true, // เปิดใช้งานทันที
-                'phone_verified_at' => now()
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ])->asForm()->post($apiUrl, [
+                'key' => $appKey,
+                'secret' => $appSecret,
+                'token' => $otpRecord->code, // ส่ง Token กลับไป
+                'pin' => $request->otp       // รหัส 6 หลักที่ลูกค้าพิมพ์
             ]);
 
-            DB::table('customer_profiles')->insert([
-                'user_id' => $user->id,
-                'first_name' => $dummyName,
-                'phone' => $phone,
-                'created_at' => now(),
-            ]);
+            $responseData = $response->json();
 
-            // ลบ OTP และ Session
-            DB::table('otp_codes')->where('phone', $phone)->delete();
-            session()->forget(['verify_phone', 'ref_code']);
+            // 3. ตรวจสอบว่า ThaiBulkSMS คอนเฟิร์มว่าถูกต้องไหม
+            if ($response->successful() && isset($responseData['status']) && $responseData['status'] === 'success') {
 
-            DB::commit();
+                // 🌟 สร้าง User จริงๆ "หลังจากที่ OTP ถูกต้องแล้วเท่านั้น"
+                $dummyUsername = 'user_' . $phone;
+                $dummyName = 'Guest_' . substr($phone, -4);
 
-            // ล็อกอินและพากลับหน้าแรก
-            Auth::login($user);
-            return redirect()->route('home')->with('success', 'ยืนยันตัวตนและลงทะเบียนสำเร็จ');
+                $user = User::create([
+                    'username' => $dummyUsername,
+                    'email' => $dummyUsername . '@temp.com',
+                    'phone' => $phone,
+                    'password' => Hash::make('password'), // สุ่มรหัสผ่านไปก่อน
+                    'role' => 'customer',
+                    'is_active' => true, // เปิดใช้งานทันที
+                    'phone_verified_at' => now()
+                ]);
+
+                DB::table('customer_profiles')->insert([
+                    'user_id' => $user->id,
+                    'first_name' => $dummyName,
+                    'phone' => $phone,
+                    'created_at' => now(),
+                ]);
+
+                // สร้างกระเป๋า EASE Coins
+                DB::table('customer_wallets')->insert([
+                    'user_id' => $user->id,
+                    'current_points' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                // ลบ OTP และ Session
+                DB::table('otp_codes')->where('phone', $phone)->delete();
+                session()->forget(['verify_phone', 'ref_code']);
+
+                DB::commit();
+
+                // ล็อกอินและพากลับหน้าแรก
+                Auth::login($user);
+                return redirect()->route('home')->with('success', 'ยืนยันตัวตนและลงทะเบียนสำเร็จ');
+
+            } else {
+                DB::rollBack();
+                // ถ้ารหัสผิด
+                return back()->withErrors(['otp' => 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง']);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();

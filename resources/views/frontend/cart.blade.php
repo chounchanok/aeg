@@ -45,9 +45,9 @@
         .navbar-top-row {
             display: flex;
             justify-content: flex-end;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 10px;
+            padding-bottom: 0px !important;
+            border-bottom: 0px solid rgba(255, 255, 255, 0.2) !important;
+            margin-bottom: 0px !important;
         }
 
         .nav-icons {
@@ -418,7 +418,7 @@
                                 <p class="item-subtitle">
                                     จำนวน: {{ $item->quantity }} ชิ้น | ราคา: {{ number_format($item->price, 2) }} ฿
                                 </p>
-                                
+
                                 <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST" class="mt-2" onclick="event.stopPropagation();">
                                     @csrf
                                     <button type="submit" class="text-danger border-0 bg-transparent p-0 btn-sm" style="font-size: 13px;">
@@ -520,7 +520,7 @@
         // ดึงเฉพาะปุ่มที่มีคลาส radio-active (ถูกเลือกอยู่)
         const activeRadios = document.querySelectorAll('.item-radio.radio-active');
         let total = 0;
-        
+
         // วนลูปบวกเลขจาก attribute data-item-total
         activeRadios.forEach(radio => {
             total += parseFloat(radio.getAttribute('data-item-total'));
@@ -528,7 +528,7 @@
 
         // แปลงตัวเลขให้มีลูกน้ำ (คอมม่า) และทศนิยม 2 ตำแหน่ง
         const formattedTotal = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        
+
         // ส่งตัวเลขกลับไปแสดงที่หน้าจอ
         document.getElementById('totalAmountDisplay').innerText = formattedTotal + ' ฿';
     }
