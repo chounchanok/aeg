@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\CheckAdminRole::class,
         ]);
+        $middleware->preventRequestsDuringMaintenance(except: [
+            'api/*', // ยอมให้แอปฝั่งช่างและลูกค้าเข้า API ได้ปกติ
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
