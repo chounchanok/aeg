@@ -84,9 +84,6 @@ class AuthController extends Controller
         return response()->json($customer_contacts);
     }
 
-    /**
-     * Login user and create token.
-     */
     public function login(Request $request)
     {
         // 1. จัดฟอร์แมตเบอร์โทร (เหมือนฝั่งเว็บ)
@@ -139,14 +136,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // =========================================================
-    // *** 1. FORGOT PASSWORD (ส่งอีเมลพร้อม URL Reset) ***
-    // =========================================================
-
-    /**
-     * Send a password reset link to the given user.
-     * Endpoint: POST /api/forgot-password
-     */
     public function forgotPassword(Request $request)
     {
         // 1. ตรวจสอบว่ามีอีเมลนี้อยู่จริงในระบบหรือไม่
@@ -174,14 +163,6 @@ class AuthController extends Controller
         ], 500);
     }
 
-    // =========================================================
-    // *** 2. RESET PASSWORD (บันทึกรหัสผ่านใหม่) ***
-    // =========================================================
-
-    /**
-     * Reset the given user's password.
-     * Endpoint: POST /api/reset-password
-     */
     public function resetPassword(Request $request)
     {
         // 1. ตรวจสอบความถูกต้องของข้อมูล (token, email, password)
@@ -220,9 +201,6 @@ class AuthController extends Controller
         return response()->json(['message' => trans($response)], 400);
     }
 
-    /**
-     * Logout user (Revoke the token).
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -325,47 +303,98 @@ class AuthController extends Controller
     // ==========================================
     public function socialLogin(Request $request)
     {
-        $request->validate([
-            'provider' => 'required|in:line,google',
-            'provider_id' => 'required|string',
-            'name' => 'required|string',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string',
-        ]);
 
-        $column = $request->provider === 'google' ? 'google_id' : 'line_id';
-
-        // ค้นหา User จาก Social ID
-        $user = User::where($column, $request->provider_id)->first();
-
-        if (!$user) {
-            // ถ้าไม่พบ ให้สร้าง User ใหม่ทันที (Social Login มักถือว่ายืนยันตัวตนแล้ว)
-            DB::transaction(function () use ($request, $column, &$user) {
-                $user = User::create([
-                    'username' => $request->provider . '_' . $request->provider_id,
-                    'email' => $request->email ?? ($request->provider_id . '@' . $request->provider . '.com'),
-                    'phone' => $request->phone,
-                    'password' => Hash::make(Str::random(16)),
-                    $column => $request->provider_id,
-                    'role' => 'customer',
-                    'is_active' => true,
-                    'phone_verified_at' => now(),
-                ]);
-
-                DB::table('customer_profiles')->insert([
-                    'user_id' => $user->id,
-                    'first_name' => $request->name,
-                    'phone' => $request->phone,
-                    'created_at' => now(),
-                ]);
-            });
+        if ($request->has('provider')) {
+            $request->merge([
+                'provider' => strtolower($request->provider)
+            ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-        return $this->successResponse([
-            'access_token' => $token,
-            'token_type' => 'Bearer'
-        ], 'เข้าสู่ระบบสำเร็จ');
+        // 1. รับค่าที่ Mobile App ส่งมาให้
+        $request->validate([
+            'provider' => 'required|in:line,google,apple',
+            'provider_id' => 'required|string', // ID ที่ได้จาก Google/LINE SDK
+            'name' => 'required|string',
+            'email' => 'nullable|email',
+        ]);
+
+        $provider = $request->provider;
+        $providerId = $request->provider_id;
+        $column = 'google_id';
+        if ($provider === 'line') {
+            $column = 'line_id';
+        } elseif ($provider === 'apple') {
+            $column = 'apple_id';
+        }
+
+        try {
+            // 2. ค้นหาว่าเคยผูกบัญชีด้วย Social ID นี้หรือยัง
+            $user = User::where($column, $providerId)->first();
+
+            // 3. ถ้ายังไม่เคยผูก ลองเช็คจาก Email เผื่อลูกค้าเคยสมัครด้วยอีเมลนี้ไว้แล้ว
+            if (!$user && $request->email) {
+                $user = User::where('email', $request->email)->first();
+                
+                // ถ้าเจออีเมลตรงกัน ให้ผูก Social ID เข้าไปในบัญชีเก่าเลย
+                if ($user) {
+                    $user->update([$column => $providerId]);
+                }
+            }
+
+            // 4. ถ้าเป็นลูกค้าใหม่แกะกล่อง (ไม่มีทั้ง ID และ Email ในระบบ) ให้สมัครสมาชิกใหม่
+            if (!$user) {
+                DB::beginTransaction();
+                
+                $dummyUsername = $provider . '_' . substr($providerId, 0, 10);
+                
+                $user = User::create([
+                    'username' => $dummyUsername,
+                    'email' => $request->email ?? ($dummyUsername . '@temp.com'),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    $column => $providerId,
+                    'role' => 'customer',
+                    'is_active' => true,
+                    'phone_verified_at' => now(), // Social ถือว่ายืนยันตัวตนระดับนึงแล้ว
+                ]);
+
+                // สร้าง Profile พื้นฐาน
+                DB::table('customer_profiles')->insert([
+                    'user_id' => $user->id,
+                    'first_name' => $request->name ?? 'Apple User'.$user->id,
+                    'created_at' => now(),
+                ]);
+
+                // สร้างกระเป๋า EASE Coins
+                DB::table('customer_wallets')->insert([
+                    'user_id' => $user->id,
+                    'current_points' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                DB::commit();
+            }
+
+            // 5. ออก Token (Sanctum) ให้แอปมือถือเอาไปใช้
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->successResponse([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ]
+            ], 'เข้าสู่ระบบสำเร็จ');
+
+        } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างบัญชี: ' . $e->getMessage(), 500);
+        }
     }
 
     public function requestOtp(Request $request)
@@ -435,89 +464,38 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // Social Login (LINE / Google) ฝั่ง API สำหรับ Mobile App
+    // ลบบัญชีผู้ใช้งาน (Delete Account) สำหรับ Mobile App
     // ==========================================
-    public function socialLogin(Request $request)
+    public function deleteAccount(Request $request)
     {
-        // 1. รับค่าที่ Mobile App ส่งมาให้
-        $request->validate([
-            'provider' => 'required|in:line,google',
-            'provider_id' => 'required|string', // ID ที่ได้จาก Google/LINE SDK
-            'name' => 'required|string',
-            'email' => 'nullable|email',
-        ]);
+        $user = $request->user();
 
-        $provider = $request->provider;
-        $providerId = $request->provider_id;
-        $column = $provider === 'google' ? 'google_id' : 'line_id';
+        if (!$user) {
+            return $this->errorResponse('ไม่พบผู้ใช้งาน หรือเซสชันหมดอายุ', 401);
+        }
 
+        DB::beginTransaction();
         try {
-            // 2. ค้นหาว่าเคยผูกบัญชีด้วย Social ID นี้หรือยัง
-            $user = User::where($column, $providerId)->first();
+            // 1. เพิกถอน Token ทั้งหมด (บังคับล็อกเอาท์จากทุกอุปกรณ์)
+            $user->tokens()->delete();
 
-            // 3. ถ้ายังไม่เคยผูก ลองเช็คจาก Email เผื่อลูกค้าเคยสมัครด้วยอีเมลนี้ไว้แล้ว
-            if (!$user && $request->email) {
-                $user = User::where('email', $request->email)->first();
-                
-                // ถ้าเจออีเมลตรงกัน ให้ผูก Social ID เข้าไปในบัญชีเก่าเลย
-                if ($user) {
-                    $user->update([$column => $providerId]);
-                }
-            }
+            // 2. ลบข้อมูลที่ผูกกับ User คนนี้ (ป้องกันขยะค้างในระบบ กรณีไม่ได้ทำ Cascade ไว้ใน DB)
+            DB::table('customer_profiles')->where('user_id', $user->id)->delete();
+            DB::table('customer_wallets')->where('user_id', $user->id)->delete();
+            
+            // 💡 ถ้าพี่แชมเปญมีตารางอื่นๆ เช่น ประวัติการแจ้งซ่อม ก็สามารถสั่งลบ หรือจะเก็บไว้เป็นประวัติ (ไม่ลบ) ก็ได้ครับ
+            // DB::table('service_requests')->where('customer_id', $user->id)->delete();
 
-            // 4. ถ้าเป็นลูกค้าใหม่แกะกล่อง (ไม่มีทั้ง ID และ Email ในระบบ) ให้สมัครสมาชิกใหม่
-            if (!$user) {
-                DB::beginTransaction();
-                
-                $dummyUsername = $provider . '_' . substr($providerId, 0, 10);
-                
-                $user = User::create([
-                    'username' => $dummyUsername,
-                    'email' => $request->email ?? ($dummyUsername . '@temp.com'),
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
-                    $column => $providerId,
-                    'role' => 'customer',
-                    'is_active' => true,
-                    'phone_verified_at' => now(), // Social ถือว่ายืนยันตัวตนระดับนึงแล้ว
-                ]);
+            // 3. ลบตัวบัญชี User หลัก
+            $user->delete();
 
-                // สร้าง Profile พื้นฐาน
-                DB::table('customer_profiles')->insert([
-                    'user_id' => $user->id,
-                    'first_name' => $request->name,
-                    'created_at' => now(),
-                ]);
+            DB::commit();
 
-                // สร้างกระเป๋า EASE Coins
-                DB::table('customer_wallets')->insert([
-                    'user_id' => $user->id,
-                    'current_points' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-
-                DB::commit();
-            }
-
-            // 5. ออก Token (Sanctum) ให้แอปมือถือเอาไปใช้
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return $this->successResponse([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                ]
-            ], 'เข้าสู่ระบบสำเร็จ');
+            return $this->successResponse(null, 'ลบบัญชีผู้ใช้งานเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-            }
-            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างบัญชี: ' . $e->getMessage(), 500);
+            DB::rollBack();
+            return $this->errorResponse('เกิดข้อผิดพลาดในการลบบัญชี: ' . $e->getMessage(), 500);
         }
     }
 }

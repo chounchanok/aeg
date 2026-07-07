@@ -124,6 +124,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // ส่งข้อความหาแอดมิน
         Route::post('/send', [SupportChatController::class, 'sendMessage']);
     });
+
+    // 🌟 API สำหรับลบบัญชีตัวเอง
+    Route::delete('/auth/delete-account', [AuthController::class, 'deleteAccount']);
 });
 
 // --- Profile & User Activity (ต้องล็อกอิน) ---

@@ -411,7 +411,6 @@ class AuthController extends Controller
                 }
             }
 
-            dd($user);
             // เข้าสู่ระบบ
             Auth::login($user);
             return redirect()->route('home')->with('success', 'เข้าสู่ระบบด้วย ' . ucfirst($provider) . ' สำเร็จ');
