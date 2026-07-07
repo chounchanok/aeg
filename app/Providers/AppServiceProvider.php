@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 
+use Illuminate\Support\Facades\Event;
+
+
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -14,6 +17,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+
+    // 🌟 2. เพิ่มโค้ดดักจับ Event ของ LINE ตรงนี้ครับ
+        Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            [\SocialiteProviders\Line\LineExtendSocialite::class, 'handle']
+        );
+        
         // 1. Share ค่าพื้นฐานให้ทุกหน้า
         View::share('layout', 'side-menu');
         View::share('dark_mode', false);

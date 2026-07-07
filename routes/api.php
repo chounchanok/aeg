@@ -36,6 +36,9 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 // 3. กรอกข้อมูลส่วนตัวต่อให้จบ (มีอยู่แล้ว)
 Route::post('/register', [AuthController::class, 'register']);
 
+// API สำหรับล็อกอินและสมัครสมาชิก
+Route::post('/auth/social-login', [AuthController::class, 'socialLogin']);
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/social-login', [AuthController::class, 'socialLogin']);
 Route::get('/service-categories', [ServiceCategoryApiController::class, 'index']);

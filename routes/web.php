@@ -92,6 +92,10 @@ Route::middleware('guest')->group(function() {
     Route::post('forgot-password', [AuthController::class, 'forgotPasswordSubmit'])->name('forgot-password.submit');
     Route::get('reset-password/{token}', [AuthController::class, 'resetPasswordView'])->name('password.reset');
     Route::post('reset-password', [AuthController::class, 'resetPasswordSubmit'])->name('password.update');
+
+    // --- Social Login ---
+    Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider'])->name('social.redirect');
+    Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->name('social.callback');
 });
 
 

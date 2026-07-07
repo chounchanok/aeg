@@ -433,4 +433,91 @@ class AuthController extends Controller
             return $this->errorResponse('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ SMS: ' . $e->getMessage(), 500);
         }
     }
+
+    // ==========================================
+    // Social Login (LINE / Google) ฝั่ง API สำหรับ Mobile App
+    // ==========================================
+    public function socialLogin(Request $request)
+    {
+        // 1. รับค่าที่ Mobile App ส่งมาให้
+        $request->validate([
+            'provider' => 'required|in:line,google',
+            'provider_id' => 'required|string', // ID ที่ได้จาก Google/LINE SDK
+            'name' => 'required|string',
+            'email' => 'nullable|email',
+        ]);
+
+        $provider = $request->provider;
+        $providerId = $request->provider_id;
+        $column = $provider === 'google' ? 'google_id' : 'line_id';
+
+        try {
+            // 2. ค้นหาว่าเคยผูกบัญชีด้วย Social ID นี้หรือยัง
+            $user = User::where($column, $providerId)->first();
+
+            // 3. ถ้ายังไม่เคยผูก ลองเช็คจาก Email เผื่อลูกค้าเคยสมัครด้วยอีเมลนี้ไว้แล้ว
+            if (!$user && $request->email) {
+                $user = User::where('email', $request->email)->first();
+                
+                // ถ้าเจออีเมลตรงกัน ให้ผูก Social ID เข้าไปในบัญชีเก่าเลย
+                if ($user) {
+                    $user->update([$column => $providerId]);
+                }
+            }
+
+            // 4. ถ้าเป็นลูกค้าใหม่แกะกล่อง (ไม่มีทั้ง ID และ Email ในระบบ) ให้สมัครสมาชิกใหม่
+            if (!$user) {
+                DB::beginTransaction();
+                
+                $dummyUsername = $provider . '_' . substr($providerId, 0, 10);
+                
+                $user = User::create([
+                    'username' => $dummyUsername,
+                    'email' => $request->email ?? ($dummyUsername . '@temp.com'),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    $column => $providerId,
+                    'role' => 'customer',
+                    'is_active' => true,
+                    'phone_verified_at' => now(), // Social ถือว่ายืนยันตัวตนระดับนึงแล้ว
+                ]);
+
+                // สร้าง Profile พื้นฐาน
+                DB::table('customer_profiles')->insert([
+                    'user_id' => $user->id,
+                    'first_name' => $request->name,
+                    'created_at' => now(),
+                ]);
+
+                // สร้างกระเป๋า EASE Coins
+                DB::table('customer_wallets')->insert([
+                    'user_id' => $user->id,
+                    'current_points' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                DB::commit();
+            }
+
+            // 5. ออก Token (Sanctum) ให้แอปมือถือเอาไปใช้
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->successResponse([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ]
+            ], 'เข้าสู่ระบบสำเร็จ');
+
+        } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างบัญชี: ' . $e->getMessage(), 500);
+        }
+    }
 }

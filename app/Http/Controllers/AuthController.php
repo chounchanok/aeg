@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use App\Models\User;
 use Carbon\Carbon;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -340,6 +341,84 @@ class AuthController extends Controller
         }
 
         return back()->withErrors(['email' => trans($response)]);
+    }
+
+    // โยนผู้ใช้ไปหน้าขออนุญาตของ Google / LINE
+    public function redirectToProvider($provider)
+    {
+        return Socialite::driver($provider)->redirect();
+    }
+
+    // รับข้อมูลกลับมาจาก Google / LINE
+    public function handleProviderCallback($provider)
+    {
+        try {
+            // รับค่า User จาก Provider
+            $socialUser = Socialite::driver($provider)->user();
+
+            $column = $provider === 'google' ? 'google_id' : 'line_id';
+
+            // 1. ตรวจสอบว่าเคยสมัครด้วย Social ไอดีนี้ไหม
+            $user = User::where($column, $socialUser->getId())->first();
+
+            // 2. ถ้าไม่เคย ให้เช็คว่าอีเมลนี้ซ้ำกับระบบไหม (เผื่อเขาสมัครด้วยเบอร์/เมลไปแล้ว)
+            if (!$user && $socialUser->getEmail()) {
+                $user = User::where('email', $socialUser->getEmail())->first();
+                if ($user) {
+                    // ถ้าอีเมลซ้ำ ให้ผูก Social ID เข้ากับบัญชีเดิม
+                    $user->update([$column => $socialUser->getId()]);
+                }
+            }
+
+            // 3. ถ้าเป็นไอดีใหม่แกะกล่อง ให้สมัครสมาชิกให้เลย
+            if (!$user) {
+                DB::beginTransaction();
+                try {
+                    $dummyUsername = $provider . '_' . substr($socialUser->getId(), 0, 10);
+                    // 🌟 สร้างเบอร์หลอกๆ ไว้กันฐานข้อมูล Error
+                    $dummyPhone = 'SC' . rand(10000000, 99999999); 
+                    
+                    $user = User::create([
+                        'username' => $dummyUsername,
+                        'email' => $socialUser->getEmail() ?? ($dummyUsername . '@temp.com'),
+                        'phone' => $dummyPhone, // 🌟 เพิ่มตรงนี้
+                        'password' => Hash::make(Str::random(16)),
+                        $column => $socialUser->getId(),
+                        'role' => 'customer',
+                        'is_active' => true,
+                        'phone_verified_at' => now(), 
+                    ]);
+
+                    DB::table('customer_profiles')->insert([
+                        'user_id' => $user->id,
+                        'first_name' => $socialUser->getName() ?? 'Guest',
+                        'phone' => $dummyPhone, // 🌟 เพิ่มตรงนี้ด้วย
+                        'created_at' => now(),
+                    ]);
+
+                    DB::table('customer_wallets')->insert([
+                        'user_id' => $user->id,
+                        'current_points' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    // 🌟 แสดง Error ตัวเต็มให้เห็นชัดๆ
+                    return redirect()->route('login')->with('error', 'ระบบขัดข้อง: ' . $e->getMessage());
+                }
+            }
+
+            dd($user);
+            // เข้าสู่ระบบ
+            Auth::login($user);
+            return redirect()->route('home')->with('success', 'เข้าสู่ระบบด้วย ' . ucfirst($provider) . ' สำเร็จ');
+
+        } catch (\Exception $e) {
+            return redirect()->route('login')->with('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ ' . ucfirst($provider));
+        }
     }
 
 
