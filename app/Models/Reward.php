@@ -15,6 +15,7 @@ class Reward extends Model
         'title',
         'description',
         'points_required',
+        'discount_amount', // 🌟 เพิ่มตรงนี้
         'image_url',
         'is_active'
     ];

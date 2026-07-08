@@ -39,6 +39,37 @@ class SmartLockerController extends Controller
         return $this->successResponse($lockers, 'Smart Lockers retrieved successfully');
     }
 
+    public function getSmartLockers(Request $request)
+    {
+        $lang = $request->header('Accept-Language', 'th');
+        
+        // ดึงล็อกเกอร์ พร้อมข้อมูลหมวดหมู่
+        $lockers = \App\Models\SmartLocker::with('category')->where('is_active', true)->get();
+
+        $data = $lockers->map(function ($locker) use ($lang) {
+            return [
+                'id' => $locker->id,
+                'locker_number' => $locker->locker_number,
+                
+                // 🌟 ข้อมูลหมวดหมู่มาครบ ทั้งรูปและชื่อ!
+                'category' => [
+                    'id' => $locker->category->id ?? null,
+                    'slug' => $locker->category->slug ?? null,
+                    'name' => ($lang == 'en' && !empty($locker->category->title_en)) 
+                                ? $locker->category->title_en 
+                                : ($locker->category->title_th ?? 'Uncategorized'),
+                    'image_url' => $locker->category->image_url ?? null,
+                ],
+                
+                'title' => ($lang == 'en' && !empty($locker->title_en)) ? $locker->title_en : $locker->title_th,
+                'price' => $locker->price,
+                'image_url' => $locker->image_url,
+            ];
+        });
+
+        return $this->successResponse($data, 'ดึงข้อมูลสำเร็จ');
+    }
+
     // 2. ดึงรายละเอียดตู้เซฟแบบเจาะจง
     public function show($id)
     {

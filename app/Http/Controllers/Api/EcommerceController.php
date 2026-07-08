@@ -212,8 +212,16 @@ class EcommerceController extends Controller
         $user = $request->user();
         $cart = DB::table('carts')->where('user_id', $user->id)->first();
 
+        // 🌟 โครงสร้าง Summary มาตรฐาน
+        $defaultSummary = [
+            'subtotal' => 0,
+            'discount_amount' => 0,
+            'reward_title' => null,
+            'net_total' => 0
+        ];
+
         if (!$cart) {
-            return $this->successResponse(['items' => [], 'summary' => ['total' => 0]], 'Cart is empty');
+            return $this->successResponse(['items' => [], 'summary' => $defaultSummary], 'Cart is empty');
         }
 
         $items = DB::table('cart_items')
@@ -222,13 +230,45 @@ class EcommerceController extends Controller
             ->select('cart_items.id as cart_item_id', 'products.id as product_id', 'products.name_th', 'products.price', 'cart_items.quantity', 'products.image_url', 'cart_items.duration_months')
             ->get();
 
-        $total = $items->sum(function ($item) {
+        // 1. คำนวณยอดรวมปกติ (Subtotal)
+        $subtotal = $items->sum(function ($item) {
             return $item->price * $item->quantity;
         });
 
+        // 🌟 2. ตรวจสอบการใช้ส่วนลดจาก Reward
+        $discountAmount = 0;
+        $rewardTitle = null;
+
+        // ถ้าแอปมีการแนบ reward_id มาให้ด้วย (ผ่าน Query Parameter)
+        if ($request->has('reward_id') && !empty($request->reward_id)) {
+            $reward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
+            
+            if ($reward) {
+                // เช็คว่าลูกค้าแต้มพอที่จะใช้ Reward นี้หรือไม่
+                $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
+                
+                if ($wallet && $wallet->current_points >= $reward->points_required) {
+                    $discountAmount = (float) $reward->discount_amount;
+                    $rewardTitle = $reward->title_th ?? 'ส่วนลดจากของรางวัล';
+                } else {
+                    return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอสำหรับแลกส่วนลดนี้', 400);
+                }
+            } else {
+                return $this->errorResponse('ไม่พบของรางวัล หรือของรางวัลนี้หมดอายุแล้ว', 404);
+            }
+        }
+
+        // 3. คำนวณยอดสุทธิ (Net Total) ป้องกันยอดติดลบ
+        $netTotal = max(0, $subtotal - $discountAmount);
+
         return $this->successResponse([
             'items' => $items,
-            'summary' => ['total_amount' => $total]
+            'summary' => [
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'reward_title' => $rewardTitle,
+                'net_total' => $netTotal
+            ]
         ], 'Cart retrieved');
     }
 
@@ -247,8 +287,13 @@ class EcommerceController extends Controller
         if (!$product) return $this->errorResponse('Product not found', 404);
 
         // 2. 🌟 คำนวณราคา: ถ้าระบุเดือนมา เอาไปคูณราคาตั้งต้น (สำหรับ type = 5)
-        $duration = $request->duration_months ?? 1; // ถ้าไม่ได้ส่งมาให้ถือว่าเป็น 1
-        $unitPrice = $product->price * $duration;
+        $duration = $request->duration_months ?? 0; // ถ้าไม่ได้ส่งมาให้ถือว่าเป็น 1
+
+        if($duration > 0) {
+            $unitPrice = $product->price * $duration;
+        } else {
+            $unitPrice = $product->price;
+        }
 
         // 3. หาตะกร้าของ User (ถ้ายังไม่มีให้สร้าง)
         $cart = DB::table('carts')->where('user_id', $user->id)->first();
@@ -391,51 +436,65 @@ class EcommerceController extends Controller
     // ==========================================
     public function checkout(Request $request)
     {
-        // 1. รับค่าและบังคับให้ cart_id ต้องเป็น Array
         $request->validate([
-            'cart_id' => 'required|array|min:1',        // 🌟 บังคับเป็น Array และต้องมีอย่างน้อย 1 ชิ้น
-            'cart_id.*' => 'integer',                   // 🌟 ข้อมูลข้างใน Array ต้องเป็นตัวเลข
+            'cart_id' => 'required|array|min:1',
+            'cart_id.*' => 'integer',
             'address_id' => 'required|integer',
             'payment_gateway' => 'required|string',
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'coupon_code' => 'nullable|string',
+            'reward_id' => 'nullable|integer', // 🌟 เพิ่มรับค่า Reward จากแอป
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
         $user = $request->user();
-        $selectedCartItemIds = $request->cart_id; // Array [1, 5, 8]
+        $selectedCartItemIds = $request->cart_id;
 
-        // 2. ดึงข้อมูลตะกร้าหลักของ User คนนี้ (เอาไว้เช็คสิทธิ์)
         $cart = DB::table('carts')->where('user_id', $user->id)->first();
         if (!$cart) return $this->errorResponse('Cart not found', 404);
 
-        // 3. ดึงรายการสินค้า "เฉพาะที่ถูกเลือก" และ "ต้องอยู่ในตะกร้าของ User คนนี้เท่านั้น"
         $cartItems = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
-            ->where('cart_items.cart_id', $cart->id)              // 🌟 ล็อกความปลอดภัย ต้องเป็นตะกร้าของตัวเอง
-            ->whereIn('cart_items.id', $selectedCartItemIds)      // 🌟 ดึงเฉพาะ ID ที่แอปส่งมา
+            ->where('cart_items.cart_id', $cart->id)
+            ->whereIn('cart_items.id', $selectedCartItemIds)
             ->select(
-                'cart_items.id as cart_item_id',
-                'products.id as product_id',
-                'products.name_th as product_name', // 💡 แก้ as ให้ตรงกับตอน Insert ด้านล่าง
-                'cart_items.price',
-                'cart_items.quantity',
-                'cart_items.duration_months'
-            )
-            ->get();
+                'cart_items.id as cart_item_id', 'products.id as product_id',
+                'products.name_th as product_name', 'cart_items.price',
+                'cart_items.quantity', 'cart_items.duration_months'
+            )->get();
 
-        // ตรวจสอบว่ามีรายการที่ถูกต้องหรือไม่
         if ($cartItems->isEmpty()) {
             return $this->errorResponse('Selected cart items are invalid or empty', 400);
         }
 
-        // คำนวณยอดรวม
-        $totalAmount = $cartItems->sum(function ($item) {
+        $subtotal = $cartItems->sum(function ($item) {
             return $item->price * $item->quantity;
         });
 
-        // จัดการอัปโหลดไฟล์ (ถ้ามีส่งมา)
+        // 🌟 ==========================================
+        // ระบบคำนวณส่วนลดจาก Reward
+        // ==========================================
+        $discount = 0;
+        $usedReward = null;
+
+        if ($request->reward_id) {
+            $usedReward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
+            if (!$usedReward) return $this->errorResponse('ไม่พบของรางวัลที่เลือก', 404);
+
+            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
+            
+            if (!$wallet || $wallet->current_points < $usedReward->points_required) {
+                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+            }
+
+            $discount = (float)$usedReward->discount_amount;
+        }
+
+        // คำนวณยอดสุทธิ (ป้องกันยอดติดลบ)
+        $totalAmount = max(0, $subtotal - $discount);
+        // ==========================================
+
         $attachmentUrl = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('order_attachments', 'public');
@@ -444,14 +503,13 @@ class EcommerceController extends Controller
 
         DB::beginTransaction();
         try {
-            // 4. สร้าง Order พร้อมข้อมูลใหม่
             $orderId = DB::table('orders')->insertGetId([
                 'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,
                 'address_id' => $request->address_id,
-                'subtotal' => $totalAmount,
-                'discount' => 0,
-                'total_amount' => $totalAmount,
+                'subtotal' => $subtotal,
+                'discount' => $discount, // 🌟 บันทึกส่วนลดลงบิล
+                'total_amount' => $totalAmount, // 🌟 บันทึกยอดที่หักส่วนลดแล้ว
                 'status' => 'pending_payment',
                 'payment_gateway' => $request->payment_gateway,
                 'preferred_date' => $request->preferred_date,
@@ -462,7 +520,6 @@ class EcommerceController extends Controller
                 'updated_at' => now()
             ]);
 
-            // 5. ย้ายของจาก Cart ไป Order Items
             foreach ($cartItems as $item) {
                 DB::table('order_items')->insert([
                     'order_id' => $orderId,
@@ -476,8 +533,14 @@ class EcommerceController extends Controller
                 ]);
             }
 
-            // 6. ลบ "เฉพาะ" รายการที่เพิ่งสั่งซื้อออกจากตะกร้า (รายการอื่นที่ไม่ได้ติ๊กจะยังคงอยู่)
             DB::table('cart_items')->whereIn('id', $cartItems->pluck('cart_item_id'))->delete();
+
+            // 🌟 หากใช้ Reward ให้ตัดคะแนนลูกค้าทันที
+            if ($usedReward) {
+                DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $usedReward->points_required);
+                
+                // สามารถเพิ่มประวัติการใช้แต้ม (Points History) ตรงนี้ได้ถ้ามีตารางรองรับครับ
+            }
 
             DB::commit();
 
@@ -487,9 +550,11 @@ class EcommerceController extends Controller
             return $this->successResponse([
                 'order_id' => $orderId,
                 'order_number' => $order->order_number,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
                 'total_amount' => $totalAmount,
                 'payment_url' => $paymentUrl
-            ], 'Order created successfully. Please proceed to payment.');
+            ], 'สร้างคำสั่งซื้อและหักส่วนลดสำเร็จ กรุณาชำระเงิน');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -510,7 +575,8 @@ class EcommerceController extends Controller
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'coupon_code' => 'nullable|string',
-            'duration_months' => 'nullable|integer|in:1,3,6,12', // 🌟 รับระยะเวลาแพ็กเกจ (ถ้ามี)
+            'reward_id' => 'nullable|integer', // 🌟 รับค่า Reward
+            'duration_months' => 'nullable|integer|in:1,3,6,12',
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
@@ -521,9 +587,31 @@ class EcommerceController extends Controller
             return $this->errorResponse('Product not found or inactive', 404);
         }
 
-        $subtotal = $product->price * $request->quantity * $request->duration_months;
+        $duration = $request->duration_months ?? 1;
+        $subtotal = $product->price * $request->quantity * $duration;
 
-        // จัดการอัปโหลดไฟล์ (ถ้ามีส่งมา)
+        // 🌟 ==========================================
+        // ระบบคำนวณส่วนลดจาก Reward
+        // ==========================================
+        $discount = 0;
+        $usedReward = null;
+
+        if ($request->reward_id) {
+            $usedReward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
+            if (!$usedReward) return $this->errorResponse('ไม่พบของรางวัลที่เลือก', 404);
+
+            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
+            
+            if (!$wallet || $wallet->current_points < $usedReward->points_required) {
+                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+            }
+
+            $discount = (float)$usedReward->discount_amount;
+        }
+
+        $totalAmount = max(0, $subtotal - $discount);
+        // ==========================================
+
         $attachmentUrl = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('order_attachments', 'public');
@@ -532,14 +620,13 @@ class EcommerceController extends Controller
 
         DB::beginTransaction();
         try {
-            // สร้างออเดอร์ทันที
             $orderId = DB::table('orders')->insertGetId([
                 'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,
                 'address_id' => $request->address_id,
                 'subtotal' => $subtotal,
-                'discount' => 0,
-                'total_amount' => $subtotal,
+                'discount' => $discount, // 🌟
+                'total_amount' => $totalAmount, // 🌟
                 'status' => 'pending_payment',
                 'payment_gateway' => $request->payment_gateway,
                 'preferred_date' => $request->preferred_date,
@@ -550,17 +637,21 @@ class EcommerceController extends Controller
                 'updated_at' => now()
             ]);
 
-            // บันทึกรายการสินค้าลงใน Order Items
             DB::table('order_items')->insert([
                 'order_id' => $orderId,
                 'product_id' => $product->id,
                 'product_name' => $product->name_th,
                 'price' => $product->price,
-                'duration_months' => $request->duration_months, // 🌟 ย้ายข้อมูลเดือนมาเก็บในบิล
+                'duration_months' => $request->duration_months,
                 'quantity' => $request->quantity,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+            // 🌟 หักคะแนน
+            if ($usedReward) {
+                DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $usedReward->points_required);
+            }
 
             DB::commit();
 
@@ -570,7 +661,9 @@ class EcommerceController extends Controller
             return $this->successResponse([
                 'order_id' => $orderId,
                 'order_number' => $order->order_number,
-                'total_amount' => $subtotal,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'total_amount' => $totalAmount,
                 'payment_url' => $paymentUrl
             ], 'Order created successfully. Please proceed to payment.');
 
