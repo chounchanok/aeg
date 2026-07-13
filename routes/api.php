@@ -43,6 +43,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/social-login', [AuthController::class, 'socialLogin']);
 Route::get('/service-categories', [ServiceCategoryApiController::class, 'index']);
 
+// ระบบค้นหา Global Search
+Route::get('/search', [EcommerceController::class, 'globalSearch']);
+
 Route::post('/login', [AuthController::class, 'login']);
 
 // --- E-Commerce Public Routes ---
@@ -101,6 +104,10 @@ Route::prefix('ease-club')->group(function () {
 
 // --- Protected Routes (ต้องล็อกอิน) ---
 Route::middleware('auth:sanctum')->group(function () {
+
+    // --- ระบบ Reward Codes ---
+    Route::post('/rewards/redeem', [EcommerceController::class, 'redeemReward']);
+    Route::get('/rewards/my-codes', [EcommerceController::class, 'getMyRewardCodes']);
 
     // Main Page (ส่วนบุคคล)
     Route::prefix('main')->group(function () {

@@ -219,15 +219,19 @@ class TechnicianController extends Controller
     }
 
     // ==========================================
-    // 4. ปิดจ๊อบส่งงาน (ส่งรูป, ลายเซ็น, ตัดโควต้า)
+    // 4. ปิดจ๊อบส่งงาน (ส่งรูป, ลายเซ็น, ตัดโควต้า, รับคะแนน + พิกัด)
     // ==========================================
     public function submitCompletion(Request $request, $id)
     {
+        // 🌟 1. ตรวจสอบข้อมูล (เพิ่ม rating และ พิกัด Lat/Long)
         $request->validate([
             'before_media.*' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:20480',
             'after_media.*' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:20480',
-            'customer_signature' => 'required|file|mimes:jpeg,png,jpg|max:5120', // ลายเซ็นเป็นรูปภาพ
-            'technician_note' => 'nullable|string'
+            'customer_signature' => 'required|file|mimes:jpeg,png,jpg|max:5120', 
+            'technician_note' => 'nullable|string',
+            'rating' => 'required|integer|min:0|max:5', // 🌟 รับคะแนน 0-5 ดาว
+            'latitude' => 'required|numeric',            // 🌟 บังคับส่งพิกัดเพื่อความโปร่งใส
+            'longitude' => 'required|numeric'            // 🌟 บังคับส่งพิกัดเพื่อความโปร่งใส
         ]);
 
         $techId = $request->user()->id;
@@ -263,22 +267,25 @@ class TechnicianController extends Controller
                 $signatureUrl = url('storage/' . $request->file('customer_signature')->store('completions/signatures', 'public'));
             }
 
-            // บันทึกข้อมูลลงตาราง completions
+            // 🌟 2. บันทึกข้อมูลลงตาราง completions พร้อมคะแนนและโลเคชั่น
             DB::table('service_request_completions')->insert([
                 'service_request_id' => $id,
                 'before_media_paths' => json_encode($beforePaths),
                 'after_media_paths' => json_encode($afterPaths),
                 'customer_signature_path' => $signatureUrl,
+                'rating' => $request->rating,         // 🌟 บันทึกคะแนน
+                'latitude' => $request->latitude,     // 🌟 บันทึกพิกัด Lat
+                'longitude' => $request->longitude,   // 🌟 บันทึกพิกัด Long
                 'technician_note' => $request->technician_note,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
             ]);
 
             // อัปเดตตารางหลักให้ส่งงาน และแสตมป์เวลาปิดงาน
             DB::table('service_requests')->where('id', $id)->update([
                 'status' => 'completed',
-                'completed_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
+                'completed_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
             ]);
 
             // ตัดโควต้าการเข้าบริการ (เพิ่มค่า used_service_count ขึ้น 1)
@@ -289,12 +296,44 @@ class TechnicianController extends Controller
                 'service_request_id' => $id,
                 'status' => 'งานซ่อมเสร็จสมบูรณ์',
                 'description' => 'ช่างส่งงานและให้ลูกค้าเซ็นรับงานเรียบร้อยแล้ว',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
             ]);
 
             DB::commit();
-            return $this->successResponse(null, 'ปิดจ๊อบส่งงานสำเร็จ!');
+
+            // 🌟 3. ดึงรายละเอียดงานทั้งหมดกลับมาแสดงผลให้ตามที่พี่แชมเปญขอครับ
+            $updatedTask = DB::table('service_requests')->where('id', $id)->first();
+            $completionData = DB::table('service_request_completions')->where('service_request_id', $id)->first();
+            $trackingHistory = DB::table('service_request_tracking')->where('service_request_id', $id)->orderBy('created_at', 'asc')->get();
+
+            $responseData = [
+                'task_detail' => [
+                    'id' => $updatedTask->id,
+                    'service_request_number' => $updatedTask->service_request_number ?? 'SR-'.str_pad($updatedTask->id, 6, '0', STR_PAD_LEFT),
+                    'status' => $updatedTask->status,
+                    'appointment_date' => $updatedTask->appointment_date,
+                    'completed_at' => \Carbon\Carbon::parse($updatedTask->completed_at)->format('d M Y - H:i น.'),
+                ],
+                'completion_summary' => [
+                    'rating' => (int)$completionData->rating,
+                    'latitude' => (float)$completionData->latitude,
+                    'longitude' => (float)$completionData->longitude,
+                    'technician_note' => $completionData->technician_note,
+                    'customer_signature' => $completionData->customer_signature_path,
+                    'before_images' => json_decode($completionData->before_media_paths),
+                    'after_images' => json_decode($completionData->after_media_paths),
+                ],
+                'tracking_timeline' => $trackingHistory->map(function($log) {
+                    return [
+                        'status' => $log->status,
+                        'description' => $log->description,
+                        'time' => \Carbon\Carbon::parse($log->created_at)->format('d M Y - H:i น.')
+                    ];
+                })
+            ];
+
+            return $this->successResponse($responseData, 'ปิดจ๊อบส่งงานและบันทึกผลประเมินเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -443,8 +443,7 @@ class EcommerceController extends Controller
             'payment_gateway' => 'required|string',
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
-            'coupon_code' => 'nullable|string',
-            'reward_id' => 'nullable|integer', // 🌟 เพิ่มรับค่า Reward จากแอป
+            'reward_code' => 'nullable|string',
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
@@ -472,24 +471,28 @@ class EcommerceController extends Controller
             return $item->price * $item->quantity;
         });
 
-        // 🌟 ==========================================
-        // ระบบคำนวณส่วนลดจาก Reward
+        // ==========================================
+        // ระบบคำนวณส่วนลดจาก โค้ดรางวัล (Reward Code)
         // ==========================================
         $discount = 0;
-        $usedReward = null;
+        $usedRewardCode = null;
 
-        if ($request->reward_id) {
-            $usedReward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
-            if (!$usedReward) return $this->errorResponse('ไม่พบของรางวัลที่เลือก', 404);
+        if ($request->reward_code) {
+            // เช็คว่าโค้ดนี้เป็นของลูกค้าคนนี้จริง และยังไม่ถูกใช้งาน
+            $usedRewardCode = DB::table('customer_reward_codes')
+                ->where('code', $request->reward_code)
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->first();
 
-            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-            
-            if (!$wallet || $wallet->current_points < $usedReward->points_required) {
-                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+            if (!$usedRewardCode) {
+                return $this->errorResponse('โค้ดส่วนลดนี้ไม่ถูกต้อง หรือถูกใช้งานไปแล้ว', 400);
             }
 
-            $discount = (float)$usedReward->discount_amount;
+            // ได้ส่วนลดตามที่แลกมา (ไม่ต้องเช็คแต้มแล้วเพราะถูกหักแต้มไปตอนแลกแล้ว)
+            $discount = (float)$usedRewardCode->discount_amount;
         }
+        // ==========================================
 
         // คำนวณยอดสุทธิ (ป้องกันยอดติดลบ)
         $totalAmount = max(0, $subtotal - $discount);
@@ -535,11 +538,13 @@ class EcommerceController extends Controller
 
             DB::table('cart_items')->whereIn('id', $cartItems->pluck('cart_item_id'))->delete();
 
-            // 🌟 หากใช้ Reward ให้ตัดคะแนนลูกค้าทันที
-            if ($usedReward) {
-                DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $usedReward->points_required);
-                
-                // สามารถเพิ่มประวัติการใช้แต้ม (Points History) ตรงนี้ได้ถ้ามีตารางรองรับครับ
+            // 🌟 ใส่ของใหม่: เปลี่ยนสถานะโค้ดเป็นใช้งานแล้ว
+            if ($usedRewardCode) {
+                DB::table('customer_reward_codes')->where('id', $usedRewardCode->id)->update([
+                    'status' => 'used',
+                    'used_at' => now(),
+                    'updated_at' => now()
+                ]);
             }
 
             DB::commit();
@@ -574,8 +579,7 @@ class EcommerceController extends Controller
             'payment_gateway' => 'required|string',
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
-            'coupon_code' => 'nullable|string',
-            'reward_id' => 'nullable|integer', // 🌟 รับค่า Reward
+            'reward_code' => 'nullable|string',
             'duration_months' => 'nullable|integer|in:1,3,6,12',
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
@@ -590,25 +594,30 @@ class EcommerceController extends Controller
         $duration = $request->duration_months ?? 1;
         $subtotal = $product->price * $request->quantity * $duration;
 
-        // 🌟 ==========================================
-        // ระบบคำนวณส่วนลดจาก Reward
+        // ==========================================
+        // ระบบคำนวณส่วนลดจาก โค้ดรางวัล (Reward Code)
         // ==========================================
         $discount = 0;
-        $usedReward = null;
+        $usedRewardCode = null;
 
-        if ($request->reward_id) {
-            $usedReward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
-            if (!$usedReward) return $this->errorResponse('ไม่พบของรางวัลที่เลือก', 404);
+        if ($request->reward_code) {
+            // เช็คว่าโค้ดนี้เป็นของลูกค้าคนนี้จริง และยังไม่ถูกใช้งาน
+            $usedRewardCode = DB::table('customer_reward_codes')
+                ->where('code', $request->reward_code)
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->first();
 
-            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-            
-            if (!$wallet || $wallet->current_points < $usedReward->points_required) {
-                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+            if (!$usedRewardCode) {
+                return $this->errorResponse('โค้ดส่วนลดนี้ไม่ถูกต้อง หรือถูกใช้งานไปแล้ว', 400);
             }
 
-            $discount = (float)$usedReward->discount_amount;
+            // ได้ส่วนลดตามที่แลกมา (ไม่ต้องเช็คแต้มแล้วเพราะถูกหักแต้มไปตอนแลกแล้ว)
+            $discount = (float)$usedRewardCode->discount_amount;
         }
+        // ==========================================
 
+        // คำนวณยอดสุทธิ (ป้องกันยอดติดลบ)
         $totalAmount = max(0, $subtotal - $discount);
         // ==========================================
 
@@ -648,9 +657,13 @@ class EcommerceController extends Controller
                 'updated_at' => now()
             ]);
 
-            // 🌟 หักคะแนน
-            if ($usedReward) {
-                DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $usedReward->points_required);
+            // 🌟 ใส่ของใหม่: เปลี่ยนสถานะโค้ดเป็นใช้งานแล้ว
+            if ($usedRewardCode) {
+                DB::table('customer_reward_codes')->where('id', $usedRewardCode->id)->update([
+                    'status' => 'used',
+                    'used_at' => now(),
+                    'updated_at' => now()
+                ]);
             }
 
             DB::commit();
@@ -851,5 +864,215 @@ class EcommerceController extends Controller
                 'care_durations' => $durations
             ]
         ]);
+    }
+
+    // ==========================================
+    // ระบบ Reward (กดแลกแต้มเป็นโค้ด และ ดูคลังโค้ด)
+    // ==========================================
+
+    // 1. ฟังก์ชันกดแลกของรางวัล (หักแต้มแล้วได้โค้ด)
+    public function redeemReward(Request $request)
+    {
+        $request->validate([
+            'reward_id' => 'required|integer'
+        ]);
+
+        $user = $request->user();
+        $reward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
+
+        if (!$reward) return $this->errorResponse('ไม่พบของรางวัลนี้', 404);
+
+        $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
+        if (!$wallet || $wallet->current_points < $reward->points_required) {
+            return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
+            DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
+
+            // 🌟 2. เพิ่มการบันทึกประวัติลง point_transactions
+            DB::table('point_transactions')->insert([
+                'user_id' => $user->id,
+                'points' => $reward->points_required, // จำนวนแต้มที่ใช้ไป
+                'type' => 'redeem', // สถานะการใช้แต้ม (เช่น earn=ได้แต้ม, redeem=ใช้แต้ม)
+                'description' => 'แลกรับส่วนลด: ' . $reward->title_th, // คำอธิบายที่จะโชว์ในแอป
+                // ถ้าในตารางพี่แชมเปญมีเก็บ reference ไว้โยงข้อมูล ก็เปิดคอมเมนต์ด้านล่างนี้ได้ครับ
+                // 'reference_type' => 'reward', 
+                // 'reference_id' => $reward->id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // 2. สุ่มโค้ด RWD- ตามด้วยอักษรภาษาอังกฤษและตัวเลข 8 หลัก
+            $code = 'RWD-' . strtoupper(\Illuminate\Support\Str::random(8));
+
+            // 3. บันทึกโค้ดเข้ากระเป๋าลูกค้า
+            DB::table('customer_reward_codes')->insert([
+                'user_id' => $user->id,
+                'reward_id' => $reward->id,
+                'code' => $code,
+                'discount_amount' => $reward->discount_amount,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse([
+                'code' => $code,
+                'discount_amount' => $reward->discount_amount,
+                'reward_title' => $reward->title_th,
+                'reward_point' => $wallet->current_points - $reward->points_required,
+            ], 'แลกของรางวัลสำเร็จ โค้ดส่วนลดถูกเก็บไว้ในกระเป๋าของคุณแล้ว');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล', 500);
+        }
+    }
+
+    // 2. ฟังก์ชันดูโค้ดที่ยังไม่ได้ใช้งาน
+    public function getMyRewardCodes(Request $request)
+    {
+        $user = $request->user();
+        
+        $codes = DB::table('customer_reward_codes')
+            ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
+            ->where('customer_reward_codes.user_id', $user->id)
+            ->where('customer_reward_codes.status', 'active') // 🌟 ดึงเฉพาะที่ยังไม่ได้ใช้
+            ->select(
+                'customer_reward_codes.id',
+                'customer_reward_codes.code',
+                'customer_reward_codes.discount_amount',
+                'customer_reward_codes.created_at as redeemed_date',
+                'rewards.title_th as reward_title',
+                'rewards.image_url'
+            )
+            ->orderBy('customer_reward_codes.created_at', 'desc')
+            ->get();
+
+        return $this->successResponse($codes, 'ดึงรายการโค้ดส่วนลดที่ใช้งานได้สำเร็จ');
+    }
+
+    // ==========================================
+    // ระบบค้นหาแบบครอบจักรวาล (Global Search)
+    // ==========================================
+    public function globalSearch(Request $request)
+    {
+        // รับคำค้นหาจาก query string เช่น ?q=แอร์
+        $keyword = $request->query('q');
+        $lang = $request->header('Accept-Language', 'th');
+
+        // ถ้าไม่ได้พิมพ์อะไรมา ให้ส่ง Array ว่างกลับไป
+        if (!$keyword) {
+            return $this->successResponse([
+                'products_and_services' => [],
+                'lockers' => [],
+                'rewards' => [],
+                'insurances' => []
+            ], 'ไม่พบคำค้นหา');
+        }
+
+        // 1. ค้นหา สินค้า และ บริการ
+        $products = DB::table('products')
+            ->where('is_active', true)
+            ->where(function($q) use ($keyword) {
+                $q->where('name_th', 'like', '%' . $keyword . '%')
+                  ->orWhere('name_en', 'like', '%' . $keyword . '%')
+                  ->orWhere('description_th', 'like', '%' . $keyword . '%');
+            })
+            ->select('id', 'name_th', 'name_en', 'price', 'image_url', 'type')
+            ->limit(10)
+            ->get()
+            ->map(function($item) use ($lang) {
+                return [
+                    'id' => $item->id,
+                    'title' => ($lang == 'en' && !empty($item->name_en)) ? $item->name_en : $item->name_th,
+                    'price' => (float)$item->price,
+                    'image_url' => $item->image_url,
+                    'module' => 'product',
+                    'product_type' => $item->type
+                ];
+            });
+
+        // 2. ค้นหา Smart Lockers
+        $lockers = DB::table('smart_lockers')
+            ->where('is_active', true)
+            ->where(function($q) use ($keyword) {
+                $q->where('title_th', 'like', '%' . $keyword . '%')
+                  ->orWhere('title_en', 'like', '%' . $keyword . '%')
+                  ->orWhere('description_th', 'like', '%' . $keyword . '%')
+                  ->orWhere('locker_number', 'like', '%' . $keyword . '%');
+            })
+            ->select('id', 'title_th', 'title_en', 'price', 'image_url')
+            ->limit(10)
+            ->get()
+            ->map(function($item) use ($lang) {
+                return [
+                    'id' => $item->id,
+                    'title' => ($lang == 'en' && !empty($item->title_en)) ? $item->title_en : $item->title_th,
+                    'price' => (float)$item->price,
+                    'image_url' => $item->image_url,
+                    'module' => 'locker'
+                ];
+            });
+
+        // 3. ค้นหา ของรางวัล (Rewards)
+        $rewards = DB::table('rewards')
+            ->where('is_active', true)
+            ->where(function($q) use ($keyword) {
+                // อิงจากโครงสร้างที่มี title_th, title_en
+                $q->where('title_th', 'like', '%' . $keyword . '%')
+                  ->orWhere('title_en', 'like', '%' . $keyword . '%')
+                  ->orWhere('description_th', 'like', '%' . $keyword . '%');
+            })
+            ->select('id', 'title_th', 'title_en', 'points_required', 'image_url')
+            ->limit(10)
+            ->get()
+            ->map(function($item) use ($lang) {
+                return [
+                    'id' => $item->id,
+                    'title' => ($lang == 'en' && !empty($item->title_en)) ? $item->title_en : $item->title_th,
+                    'price' => null, // Rewards ใช้แต้มแลก ไม่มีราคา
+                    'points_required' => $item->points_required,
+                    'image_url' => $item->image_url,
+                    'module' => 'reward'
+                ];
+            });
+
+        // 4. ค้นหา ประกัน (Insurances)
+        $insurances = [];
+        if (\Illuminate\Support\Facades\Schema::hasTable('insurances')) {
+            $insurances = DB::table('insurances')
+                ->where('is_active', true)
+                ->where(function($q) use ($keyword) {
+                    $q->where('title_th', 'like', '%' . $keyword . '%')
+                      ->orWhere('title_en', 'like', '%' . $keyword . '%')
+                      ->orWhere('description_th', 'like', '%' . $keyword . '%');
+                })
+                // 🌟 แก้ไขตรงนี้: ลบ 'price' ออกจากการ select แล้วครับ
+                ->select('id', 'title_th', 'title_en', 'image_url') 
+                ->limit(10)
+                ->get()
+                ->map(function($item) use ($lang) {
+                    return [
+                        'id' => $item->id,
+                        'title' => ($lang == 'en' && !empty($item->title_en)) ? $item->title_en : $item->title_th,
+                        'price' => null, // 🌟 ส่ง null ไปแทนเพื่อให้โครงสร้าง JSON เหมือนตัวอื่นๆ
+                        'image_url' => $item->image_url,
+                        'module' => 'insurance'
+                    ];
+                });
+        }
+
+        return $this->successResponse([
+            'products_and_services' => $products,
+            'lockers' => $lockers,
+            'rewards' => $rewards,
+            'insurances' => $insurances
+        ], 'ดึงข้อมูลค้นหาสำเร็จ');
     }
 }
