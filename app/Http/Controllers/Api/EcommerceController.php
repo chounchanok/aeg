@@ -895,7 +895,7 @@ class EcommerceController extends Controller
             // 🌟 2. เพิ่มการบันทึกประวัติลง point_transactions
             DB::table('point_transactions')->insert([
                 'user_id' => $user->id,
-                'points' => $reward->points_required, // จำนวนแต้มที่ใช้ไป
+                'amount' => ($reward->points_required*-1), // จำนวนแต้มที่ใช้ไป
                 'type' => 'redeem', // สถานะการใช้แต้ม (เช่น earn=ได้แต้ม, redeem=ใช้แต้ม)
                 'description' => 'แลกรับส่วนลด: ' . $reward->title_th, // คำอธิบายที่จะโชว์ในแอป
                 // ถ้าในตารางพี่แชมเปญมีเก็บ reference ไว้โยงข้อมูล ก็เปิดคอมเมนต์ด้านล่างนี้ได้ครับ
@@ -930,7 +930,8 @@ class EcommerceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล', 500);
+            return dd($e->getMessage());
+            // return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล', 500);
         }
     }
 

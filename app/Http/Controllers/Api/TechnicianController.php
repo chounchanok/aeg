@@ -440,4 +440,87 @@ class TechnicianController extends Controller
             return $this->errorResponse('เกิดข้อผิดพลาด: ' . $e->getMessage(), 500);
         }
     }
+
+    // ==========================================
+    // ระบบสถิติการทำงานของช่าง (Technician KPI)
+    // ==========================================
+    public function getTechnicianKPI(Request $request)
+    {
+        $techId = $request->user()->id;
+
+        // 1. ดึงงานทั้งหมดที่ช่างคนนี้ทำสำเร็จ
+        $completedJobs = DB::table('service_requests')
+            ->where('technician_id', $techId)
+            ->where('status', 'completed')
+            ->get();
+
+        $totalCompleted = $completedJobs->count();
+
+        // 2. คำนวณคะแนนเฉลี่ย (Average Rating) จากตาราง completions
+        $averageRating = 0;
+        if ($totalCompleted > 0) {
+            $averageRating = DB::table('service_request_completions')
+                ->join('service_requests', 'service_request_completions.service_request_id', '=', 'service_requests.id')
+                ->where('service_requests.technician_id', $techId)
+                ->where('service_requests.status', 'completed')
+                ->avg('service_request_completions.rating');
+        }
+        $averageRating = round((float)$averageRating, 1);
+
+        // 3. คำนวณความตรงต่อเวลา (On-Time Percentage)
+        // (อิงจากการเทียบ วันที่นัดหมาย กับ วันที่ปิดงาน ว่าอยู่ในวันเดียวกันหรือก่อนหน้าหรือไม่)
+        $onTimeCount = $completedJobs->filter(function($job) {
+            if (!$job->completed_at || !$job->appointment_date) return false;
+            
+            $appointment = \Carbon\Carbon::parse($job->appointment_date)->startOfDay();
+            $completed = \Carbon\Carbon::parse($job->completed_at)->startOfDay();
+            
+            return $completed->lte($appointment); // ปิดงานก่อนหรือภายในวันที่กำหนด
+        })->count();
+
+        $onTimePercentage = $totalCompleted > 0 ? round(($onTimeCount / $totalCompleted) * 100) : 100;
+
+        // 4. คำนวณแถบสถานะ (Progress Bar) สำหรับด้านล่างของหน้าจอ
+        // 4.1 ความพึงพอใจลูกค้า (แปลงจากคะแนนเต็ม 5 ให้เป็น 100%)
+        $satisfactionPercent = ($averageRating / 5) * 100;
+        $satisfactionText = $this->getKpiLabel($satisfactionPercent);
+
+        // 4.2 เวลาการตอบสนอง (อนุมานจากความตรงต่อเวลาในการปิดงาน)
+        $responseTimePercent = $onTimePercentage;
+        $responseTimeText = $this->getKpiLabel($responseTimePercent);
+
+        // 5. จัด Format ส่งกลับให้แอปพลิเคชัน
+        $data = [
+            'summary' => [
+                'average_rating' => $averageRating,
+                'on_time_percentage' => $onTimePercentage,
+                'total_completed' => $totalCompleted
+            ],
+            'kpis' => [
+                [
+                    'title' => 'เวลาการตอบสนอง (Response Time)',
+                    'status_text' => $responseTimeText,
+                    'percentage' => $responseTimePercent,
+                    'color_theme' => $responseTimePercent >= 80 ? 'green' : ($responseTimePercent >= 60 ? 'yellow' : 'red')
+                ],
+                [
+                    'title' => 'ความพึงพอใจลูกค้า',
+                    'status_text' => $satisfactionText,
+                    'percentage' => $satisfactionPercent,
+                    'color_theme' => $satisfactionPercent >= 80 ? 'green' : ($satisfactionPercent >= 60 ? 'yellow' : 'red')
+                ]
+            ]
+        ];
+
+        return $this->successResponse($data, 'ดึงข้อมูลสถิติช่างสำเร็จ');
+    }
+
+    // ฟังก์ชันช่วยแปลงเปอร์เซ็นต์เป็นคำพูด (ใช้ภายใน Controller)
+    private function getKpiLabel($percent) {
+        if ($percent >= 90) return 'ดีเยี่ยม';
+        if ($percent >= 75) return 'ดีมาก';
+        if ($percent >= 60) return 'ดี';
+        if ($percent >= 50) return 'พอใช้';
+        return 'ต้องปรับปรุง';
+    }
 }

@@ -159,6 +159,8 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
 
     // --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
     Route::get('/point-history', [ProfileController::class, 'getPointHistory']);
+
+    Route::get('/technician/kpi', [TechnicianController::class, 'getTechnicianKPI']);
 });
 
 // --- Service Request (ระบบแจ้งซ่อม) ---
@@ -195,21 +197,21 @@ Route::prefix('insurances')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('technician')->group(function () {
 
     // 1. ดูรายการงานทั้งหมด
-    Route::get('/tasks', [\App\Http\Controllers\Api\TechnicianController::class, 'getMyTasks']);
+    Route::get('/tasks', [TechnicianController::class, 'getMyTasks']);
 
     // 2. ดูรายละเอียดงานแต่ละงาน
-    Route::get('/tasks/{id}', [\App\Http\Controllers\Api\TechnicianController::class, 'getTaskDetail']);
+    Route::get('/tasks/{id}', [TechnicianController::class, 'getTaskDetail']);
 
     // 3. อัปเดตสถานะงาน (accepted, traveling, arrived, in_progress)
-    Route::post('/tasks/{id}/update-status', [\App\Http\Controllers\Api\TechnicianController::class, 'updateTaskStatus']);
+    Route::post('/tasks/{id}/update-status', [TechnicianController::class, 'updateTaskStatus']);
 
     // 4. ปิดจ๊อบงาน (ส่งรูปหน้างาน ก่อน-หลัง, ลายเซ็น)
     // หมายเหตุ: ต้องยิงเข้ามาแบบ Multipart/form-data
-    Route::post('/tasks/{id}/complete', [\App\Http\Controllers\Api\TechnicianController::class, 'submitCompletion']);
+    Route::post('/tasks/{id}/complete', [TechnicianController::class, 'submitCompletion']);
 
     // 5. ดูข้อมูลโปรไฟล์ตัวเอง
-    Route::get('/profile', [\App\Http\Controllers\Api\TechnicianController::class, 'getProfile']);
+    Route::get('/profile', [TechnicianController::class, 'getProfile']);
 
     // 6. แก้ไขข้อมูลโปรไฟล์ (ส่งแบบ multipart/form-data ถ้ามีรูปภาพ)
-    Route::post('/profile/update', [\App\Http\Controllers\Api\TechnicianController::class, 'updateProfile']);
+    Route::post('/profile/update', [TechnicianController::class, 'updateProfile']);
 });
