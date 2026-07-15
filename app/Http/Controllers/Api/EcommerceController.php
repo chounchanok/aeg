@@ -534,9 +534,9 @@ class EcommerceController extends Controller
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
+                DB::table('cart_items')->where('id', $item->cart_item_id)->delete();
             }
 
-            DB::table('cart_items')->whereIn('id', $cartItems->pluck('cart_item_id'))->delete();
 
             // 🌟 ใส่ของใหม่: เปลี่ยนสถานะโค้ดเป็นใช้งานแล้ว
             if ($usedRewardCode) {
@@ -1075,5 +1075,86 @@ class EcommerceController extends Controller
             'rewards' => $rewards,
             'insurances' => $insurances
         ], 'ดึงข้อมูลค้นหาสำเร็จ');
+    }
+
+    // ==========================================
+    // 7. รายการชำระเงินที่ยังไม่สำเร็จ (Pending Payments)
+    // ==========================================
+    public function getPendingPayments(Request $request)
+    {
+        $user = $request->user();
+
+        // ดึงออเดอร์ที่สถานะเป็น 'pending_payment' หรือ 'failed'
+        $pendingOrders = DB::table('orders')
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending_payment', 'failed'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($order) {
+                // หาจำนวนชิ้นสินค้าคร่าวๆ มาโชว์
+                $totalItems = DB::table('order_items')->where('order_id', $order->id)->sum('quantity');
+                
+                return [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'total_amount' => (float) $order->total_amount,
+                    'status' => $order->status,
+                    'total_items' => (int) $totalItems,
+                    'created_at' => \Carbon\Carbon::parse($order->created_at)->format('d M Y - H:i น.')
+                ];
+            });
+
+        return $this->successResponse($pendingOrders, 'ดึงรายการที่รอชำระเงินสำเร็จ');
+    }
+
+    // ==========================================
+    // 8. ชำระเงินใหม่ (Retry Payment)
+    // ==========================================
+    public function retryPayment(Request $request, $id)
+    {
+        $request->validate([
+            'payment_gateway' => 'required|string', // เผื่อลูกค้าอยากเปลี่ยนวิธีจ่ายเงิน เช่น จากบัตรเครดิต เป็น promptpay
+        ]);
+
+        $user = $request->user();
+
+        // เช็คว่าออเดอร์นี้เป็นของลูกค้าคนนี้จริง และสถานะยังไม่ได้จ่ายเงิน
+        $order = DB::table('orders')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$order) {
+            return $this->errorResponse('ไม่พบคำสั่งซื้อนี้', 404);
+        }
+
+        if (!in_array($order->status, ['pending_payment', 'failed'])) {
+            return $this->errorResponse('คำสั่งซื้อนี้ชำระเงินไปแล้ว หรือถูกยกเลิก ไม่สามารถชำระซ้ำได้', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // อัปเดตช่องทางการชำระเงินใหม่ และอัปเดตเวลา
+            DB::table('orders')->where('id', $id)->update([
+                'payment_gateway' => $request->payment_gateway,
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            // สร้างลิงก์ Payment Gateway ให้ใหม่
+            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+
+            return $this->successResponse([
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'total_amount' => (float) $order->total_amount,
+                'payment_url' => $paymentUrl
+            ], 'สร้างลิงก์ชำระเงินใหม่สำเร็จ');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน: ' . $e->getMessage(), 500);
+        }
     }
 }

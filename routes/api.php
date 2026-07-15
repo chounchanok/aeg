@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\TechnicianController;
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
 Route::prefix('smart-lockers')->group(function () {
     // ฝั่งที่ไม่ต้องล็อกอิน (โชว์รายการตู้)
+    Route::get('/categorys', [SmartLockerController::class, 'getSmartLockers']);
     Route::get('/', [SmartLockerController::class, 'index']);
     Route::get('/{id}', [SmartLockerController::class, 'show']);
 });
@@ -87,6 +88,10 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
 
     // ระบบยืนยันการชำระเงินสำเร็จ
     Route::post('/payment-success', [EcommerceController::class, 'paymentSuccess']);
+
+    // ระบบดึงออเดอร์ที่ค้างชำระ และขอชำระเงินใหม่
+    Route::get('/orders/pending', [EcommerceController::class, 'getPendingPayments']);
+    Route::post('/orders/{id}/retry-payment', [EcommerceController::class, 'retryPayment']);
 });
 
 // --- Public Routes (ไม่ต้องล็อกอิน) ---
@@ -160,7 +165,6 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
     // --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
     Route::get('/point-history', [ProfileController::class, 'getPointHistory']);
 
-    Route::get('/technician/kpi', [TechnicianController::class, 'getTechnicianKPI']);
 });
 
 // --- Service Request (ระบบแจ้งซ่อม) ---
@@ -214,4 +218,6 @@ Route::middleware(['auth:sanctum'])->prefix('technician')->group(function () {
 
     // 6. แก้ไขข้อมูลโปรไฟล์ (ส่งแบบ multipart/form-data ถ้ามีรูปภาพ)
     Route::post('/profile/update', [TechnicianController::class, 'updateProfile']);
+
+    Route::get('/kpi', [TechnicianController::class, 'getTechnicianKPI']);
 });

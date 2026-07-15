@@ -32,13 +32,14 @@ class CmsAdminController extends Controller
         ]);
     }
 
-    // 2. ฟังก์ชันอัปเดตตอนสร้างใหม่ (เพิ่ม sort_order)
+    // 2. ฟังก์ชันอัปเดตตอนสร้างใหม่ (เพิ่มรูป Mobile)
     public function storeBanner(Request $request)
     {
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // 🌟 รับรูป Mobile (ไม่บังคับ)
         ]);
 
         $imageUrl = '';
@@ -47,12 +48,20 @@ class CmsAdminController extends Controller
             $imageUrl = url('storage/' . $path);
         }
 
+        // 🌟 จัดการอัปโหลดรูป Mobile
+        $imageUrlM = null;
+        if ($request->hasFile('image_m')) {
+            $pathM = $request->file('image_m')->store('banners/mobile', 'public');
+            $imageUrlM = url('storage/' . $pathM);
+        }
+
         DB::table('banners')->insert([
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
+            'image_url_m' => $imageUrlM, // 🌟 บันทึกรูป Mobile ลง Database
             'location' => $request->location,
-            'sort_order' => $request->sort_order ?? 0, // 🌟 เพิ่มบรรทัดนี้
+            'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
             'created_at' => now(),
             'updated_at' => now()
@@ -61,30 +70,39 @@ class CmsAdminController extends Controller
         return redirect()->back()->with('success', 'อัปโหลดแบนเนอร์เรียบร้อยแล้ว');
     }
 
-    // 3. 🌟 ฟังก์ชันใหม่ สำหรับแก้ไขข้อมูล
+    // 3. ฟังก์ชันสำหรับแก้ไขข้อมูล (เพิ่มรูป Mobile)
     public function updateBanner(Request $request, $id)
     {
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // ไม่บังคับอัปโหลดรูปใหม่
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // 🌟 รับรูป Mobile
         ]);
 
         $banner = DB::table('banners')->where('id', $id)->first();
         $imageUrl = $banner->image_url;
+        $imageUrlM = $banner->image_url_m; // 🌟 เก็บค่ารูป Mobile เดิมไว้ก่อน
 
-        // ถ้ามีการอัปโหลดรูปใหม่ ให้เซฟทับตัวแปรเดิม
+        // ถ้าอัปโหลดรูป Desktop ใหม่
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('banners', 'public');
             $imageUrl = url('storage/' . $path);
+        }
+
+        // 🌟 ถ้าอัปโหลดรูป Mobile ใหม่
+        if ($request->hasFile('image_m')) {
+            $pathM = $request->file('image_m')->store('banners/mobile', 'public');
+            $imageUrlM = url('storage/' . $pathM);
         }
 
         DB::table('banners')->where('id', $id)->update([
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
+            'image_url_m' => $imageUrlM, // 🌟 อัปเดตรูป Mobile
             'location' => $request->location,
-            'sort_order' => $request->sort_order ?? 0, // 🌟 อัปเดตลำดับ
+            'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
             'updated_at' => now()
         ]);

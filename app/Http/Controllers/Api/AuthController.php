@@ -430,25 +430,28 @@ class AuthController extends Controller
 
             $responseData = $response->json();
 
+            // 🌟 เพิ่มบรรทัดนี้เพื่อเก็บ Log ไว้ดูว่า ThaiBulkSMS ส่งโครงสร้างหน้าตาแบบไหนมาให้เรา
+            \Illuminate\Support\Facades\Log::info('ThaiBulkSMS Request OTP:', $responseData);
+
             // 4. เช็คผลลัพธ์จาก ThaiBulkSMS
-            // ถ้าสำเร็จ ระบบของเขาจะตอบกลับมาว่ามี token และ ref_no
             if ($response->successful() && isset($responseData['token'])) {
 
-                $refCode = $responseData['ref_no']; // Ref Code ที่ระบบของเขาสร้างให้
-                $token = $responseData['token'];   // Token สำหรับไว้ใช้ Verify (สำคัญมาก ต้องเก็บไว้)
-
-                // 5. บันทึกลงตาราง otp_codes ในระบบเราชั่วคราว (เพื่อเก็บ token ไว้เช็คตอนลูกค้ากรอกกลับมา)
+                // 🌟 แก้ไขบรรทัดนี้: ใช้ ?? ดักไว้ ถ้าไม่มี refno ให้หา ref_code ถ้าไม่มีอีกให้ใช้คำว่า 'N/A'
+                $refCode = $responseData['refno'] ?? $responseData['ref_code'] ?? 'N/A'; 
+                $token = $responseData['token']; 
+                
+                // 5. บันทึกลงตาราง otp_codes
                 DB::table('otp_codes')->updateOrInsert(
                     ['phone' => $request->phone],
                     [
-                        'code' => $token, // 🌟 เราเก็บ token ของ ThaiBulk ไว้แทน otp ตัวเลข เพื่อเอาไป Verify
+                        'code' => $token,
                         'expires_at' => \Carbon\Carbon::now()->addMinutes(5),
                         'created_at' => now()
                     ]
                 );
 
                 return $this->successResponse([
-                    'ref_code' => $refCode,
+                    'ref_code' => $refCode, // ส่งกลับไปให้แอปโชว์ N/A หรือรหัสจริง
                     'phone' => $request->phone
                 ], 'ส่งรหัส OTP เรียบร้อยแล้วผ่านระบบ EASE CLUB');
 

@@ -155,23 +155,27 @@ class AuthController extends Controller
 
             $responseData = $response->json();
 
+            // 🌟 เก็บ Log ไว้เช็ค
+            \Illuminate\Support\Facades\Log::info('ThaiBulkSMS Web Register OTP:', $responseData);
+
             // 4. เช็คผลลัพธ์ว่า ThaiBulkSMS รับเรื่องสำเร็จหรือไม่
             if ($response->successful() && isset($responseData['token'])) {
 
-                $refCode = $responseData['ref_no'];
+                // 🌟 แก้ไขบรรทัดนี้เหมือนฝั่ง API
+                $refCode = $responseData['refno'] ?? $responseData['ref_code'] ?? 'N/A';
                 $token = $responseData['token'];
 
-                // 5. บันทึก Token ลงตารางเพื่อเตรียมไว้ใช้ตอน Verify
+                // 5. บันทึก Token ลงตาราง
                 DB::table('otp_codes')->updateOrInsert(
                     ['phone' => $request->phone],
                     [
-                        'code' => $token, // 🌟 เก็บ Token ของระบบ ThaiBulk ไว้แทนรหัส 6 หลัก
+                        'code' => $token, 
                         'expires_at' => Carbon::now()->addMinutes(5),
                         'created_at' => now(),
                     ]
                 );
 
-                // 6. บันทึก Session ให้ตรงกันเพื่อพาไปหน้ายืนยัน
+                // 6. บันทึก Session
                 session(['verify_phone' => $request->phone, 'ref_code' => $refCode]);
 
                 return redirect()->route('verify-otp')->with('success', 'ส่งรหัส OTP แล้ว (Ref: ' . $refCode . ')');

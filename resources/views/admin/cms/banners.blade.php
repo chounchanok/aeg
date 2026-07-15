@@ -83,9 +83,14 @@
                         <label class="form-label">ลำดับการแสดงผล (0 = บนสุด)</label>
                         <input name="sort_order" type="number" class="form-control" value="0">
                     </div>
-                    <div class="col-span-12">
-                        <label class="form-label">ไฟล์รูปภาพ <span class="text-danger">*</span></label>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ไฟล์รูปภาพ (Desktop) <span class="text-danger">*</span></label>
                         <input name="image" type="file" class="form-control" accept="image/*" required>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ไฟล์รูปภาพ (Mobile)</label>
+                        <input name="image_m" type="file" class="form-control" accept="image/*">
+                        <div class="text-xs text-slate-500 mt-1">แนะนำรูปแนวตั้ง (อัปโหลดหรือไม่ก็ได้)</div>
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
                         <input name="is_active" type="checkbox" class="form-check-input border mr-2" id="is_active" checked value="1">
@@ -125,11 +130,18 @@
                         <label class="form-label">ลำดับการแสดงผล</label>
                         <input name="sort_order" id="edit_sort_order" type="number" class="form-control">
                     </div>
-                    <div class="col-span-12">
-                        <label class="form-label">เปลี่ยนไฟล์รูปภาพ (ถ้าไม่เปลี่ยนให้เว้นว่างไว้)</label>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">เปลี่ยนไฟล์รูปภาพ (Desktop)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
                         <div class="mt-2 text-xs text-slate-500">
                             รูปปัจจุบัน: <a id="current_banner_img" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                        </div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">เปลี่ยนไฟล์รูปภาพ (Mobile)</label>
+                        <input name="image_m" type="file" class="form-control" accept="image/*">
+                        <div class="mt-2 text-xs text-slate-500" id="current_banner_img_m_wrapper">
+                            รูปปัจจุบัน: <a id="current_banner_img_m" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
                         </div>
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
@@ -163,6 +175,14 @@
             $('#edit_sort_order').val(banner.sort_order);
             $('#edit_is_active').prop('checked', banner.is_active == 1);
             $('#current_banner_img').attr('href', banner.image_url);
+            
+            // 🌟 จัดการซ่อน/โชว์ ลิงก์ดูรูป Mobile กรณีที่ไม่มีรูป
+            if(banner.image_url_m) {
+                $('#current_banner_img_m_wrapper').show();
+                $('#current_banner_img_m').attr('href', banner.image_url_m);
+            } else {
+                $('#current_banner_img_m_wrapper').hide();
+            }
         });
 
         $('#location_filter').on('change', function() {

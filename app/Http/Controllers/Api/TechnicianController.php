@@ -312,7 +312,7 @@ class TechnicianController extends Controller
                     'id' => $updatedTask->id,
                     'service_request_number' => $updatedTask->service_request_number ?? 'SR-'.str_pad($updatedTask->id, 6, '0', STR_PAD_LEFT),
                     'status' => $updatedTask->status,
-                    'appointment_date' => $updatedTask->appointment_date,
+                    'preferred_date' => $updatedTask->preferred_date,
                     'completed_at' => \Carbon\Carbon::parse($updatedTask->completed_at)->format('d M Y - H:i น.'),
                 ],
                 'completion_summary' => [
@@ -470,9 +470,9 @@ class TechnicianController extends Controller
         // 3. คำนวณความตรงต่อเวลา (On-Time Percentage)
         // (อิงจากการเทียบ วันที่นัดหมาย กับ วันที่ปิดงาน ว่าอยู่ในวันเดียวกันหรือก่อนหน้าหรือไม่)
         $onTimeCount = $completedJobs->filter(function($job) {
-            if (!$job->completed_at || !$job->appointment_date) return false;
+            if (!$job->completed_at || !$job->preferred_date) return false;
             
-            $appointment = \Carbon\Carbon::parse($job->appointment_date)->startOfDay();
+            $appointment = \Carbon\Carbon::parse($job->preferred_date)->startOfDay();
             $completed = \Carbon\Carbon::parse($job->completed_at)->startOfDay();
             
             return $completed->lte($appointment); // ปิดงานก่อนหรือภายในวันที่กำหนด
