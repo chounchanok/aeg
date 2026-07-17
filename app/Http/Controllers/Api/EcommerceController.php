@@ -549,8 +549,18 @@ class EcommerceController extends Controller
 
             DB::commit();
 
+            // 🌟 1. ดึงข้อมูลออเดอร์ที่เพิ่งสร้างเสร็จ
             $order = DB::table('orders')->where('id', $orderId)->first();
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            $paymentUrl = null;
+
+            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            if ($request->payment_gateway === 'bbl_apptoapp') {
+                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
+                $paymentUrl = $bblController->initiatePayment($order);
+            } else {
+                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            }
 
             return $this->successResponse([
                 'order_id' => $orderId,
@@ -558,8 +568,8 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl
-            ], 'สร้างคำสั่งซื้อและหักส่วนลดสำเร็จ กรุณาชำระเงิน');
+                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
+            ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -668,8 +678,18 @@ class EcommerceController extends Controller
 
             DB::commit();
 
+            // 🌟 1. ดึงข้อมูลออเดอร์ที่เพิ่งสร้างเสร็จ
             $order = DB::table('orders')->where('id', $orderId)->first();
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            $paymentUrl = null;
+
+            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            if ($request->payment_gateway === 'bbl_apptoapp') {
+                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
+                $paymentUrl = $bblController->initiatePayment($order);
+            } else {
+                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            }
 
             return $this->successResponse([
                 'order_id' => $orderId,
@@ -677,7 +697,7 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl
+                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
             ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
@@ -1142,19 +1162,31 @@ class EcommerceController extends Controller
 
             DB::commit();
 
-            // สร้างลิงก์ Payment Gateway ให้ใหม่
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            // 🌟 1. ดึงข้อมูลออเดอร์ที่เพิ่งสร้างเสร็จ
+            $order = DB::table('orders')->where('id', $orderId)->first();
+            $paymentUrl = null;
+
+            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            if ($request->payment_gateway === 'bbl_apptoapp') {
+                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
+                $paymentUrl = $bblController->initiatePayment($order);
+            } else {
+                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            }
 
             return $this->successResponse([
-                'order_id' => $order->id,
+                'order_id' => $orderId,
                 'order_number' => $order->order_number,
-                'total_amount' => (float) $order->total_amount,
-                'payment_url' => $paymentUrl
-            ], 'สร้างลิงก์ชำระเงินใหม่สำเร็จ');
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'total_amount' => $totalAmount,
+                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
+            ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Checkout failed: ' . $e->getMessage(), 500);
         }
     }
 }
