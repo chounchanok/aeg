@@ -19,6 +19,11 @@ use App\Http\Controllers\Api\BblPaymentController;
 
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
 // ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
+
+Route::get('/smart-lockers/categorys', [SmartLockerController::class, 'getSmartLockers']);
+Route::get('/smart-lockers', [SmartLockerController::class, 'index']);
+Route::get('/smart-lockers/{id}', [SmartLockerController::class, 'show']);
+
 Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/calculate', [SmartLockerController::class, 'calculatePrice']); // 🌟 เส้นคำนวณราคา
     Route::post('/book', [SmartLockerController::class, 'book']);                // เส้นสร้างใบจอง
