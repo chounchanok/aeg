@@ -18,11 +18,11 @@ use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\BblPaymentController;
 
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
-Route::prefix('smart-lockers')->group(function () {
-    // ฝั่งที่ไม่ต้องล็อกอิน (โชว์รายการตู้)
-    Route::get('/categorys', [SmartLockerController::class, 'getSmartLockers']);
-    Route::get('/', [SmartLockerController::class, 'index']);
-    Route::get('/{id}', [SmartLockerController::class, 'show']);
+// ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
+Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
+    Route::post('/calculate', [SmartLockerController::class, 'calculatePrice']); // 🌟 เส้นคำนวณราคา
+    Route::post('/book', [SmartLockerController::class, 'book']);                // เส้นสร้างใบจอง
+    Route::post('/cancel/{id}', [SmartLockerController::class, 'cancelBooking']); // 🌟 เส้นยกเลิกจอง
 });
 
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
@@ -185,11 +185,6 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
 
     // ติดตามสถานะงานซ่อม
     Route::get('/{id}/tracking', [SupportController::class, 'getTrackingLogs']);
-});
-
-// ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
-Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
-    Route::post('/book', [SmartLockerController::class, 'book']);
 });
 
 // --- ประกันภัย (Insurance) ---

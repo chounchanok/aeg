@@ -29,6 +29,7 @@ class SmartLockerController extends Controller
                 'locker_number' => $locker->locker_number,
                 'type' => $locker->type,
                 'title' => ($lang == 'en' && !empty($locker->title_en)) ? $locker->title_en : $locker->title_th,
+                'description' => ($lang == 'en' && !empty($locker->description_en)) ? $locker->description_en : $locker->description_th,
                 'price' => $locker->price,
                 'image_url' => $locker->image_url,
                 'status' => $locker->status, // available, rented, maintenance
@@ -83,60 +84,157 @@ class SmartLockerController extends Controller
         return $this->successResponse($data, 'Locker detail retrieved');
     }
 
-    // 3. API จองตู้เซฟ
+    // ==========================================
+    // 1. API คำนวณราคา (ก่อนกดจอง)
+    // ==========================================
+    public function calculatePrice(Request $request)
+    {
+        $request->validate([
+            'smart_locker_id' => 'required|integer',
+            'duration_months' => 'required|integer|min:1'
+        ]);
+
+        $locker = DB::table('smart_lockers')->where('id', $request->smart_locker_id)->first();
+        
+        if (!$locker) {
+            return $this->errorResponse('ไม่พบข้อมูลตู้เซฟ', 404);
+        }
+
+        // คำนวณราคา
+        $serviceFee = $locker->price * $request->duration_months;
+        $deposit = 0; // ถ้ามีค่ามัดจำสามารถดึงจาก $locker->deposit_amount ได้
+        
+        $subtotal = $serviceFee + $deposit;
+        $vatAmount = $serviceFee * 0.07;
+        $grandTotal = $subtotal + $vatAmount;
+
+        return $this->successResponse([
+            'smart_locker_id' => $locker->id,
+            'duration_months' => $request->duration_months,
+            'summary' => [
+                'service_fee' => (float) $serviceFee,
+                'deposit' => (float) $deposit,
+                'subtotal' => (float) $subtotal,
+                'vat_amount' => (float) $vatAmount,
+                'grand_total' => (float) $grandTotal
+            ]
+        ], 'คำนวณราคาสำเร็จ');
+    }
+
+    // ==========================================
+    // 2. API จองตู้เซฟ (เปลี่ยนสถานะตู้เป็น Pending)
+    // ==========================================
     public function book(Request $request)
     {
         $request->validate([
             'smart_locker_id' => 'required|integer',
             'payment_gateway' => 'required|string',
-            'duration_months' => 'required|integer|min:1' // ระยะเวลาเช่า (เดือน)
+            'duration_months' => 'required|integer|min:1'
         ]);
 
         $user = $request->user();
         
-        // เช็คว่าตู้ยังว่างอยู่ไหม
         $locker = DB::table('smart_lockers')->where('id', $request->smart_locker_id)->first();
+        
+        // 🌟 ดักสถานะตู้ ต้องเป็น available เท่านั้นถึงจะจองได้
         if (!$locker || $locker->status !== 'available') {
-            return $this->errorResponse('ขออภัย ตู้เซฟนี้ไม่พร้อมให้บริการ หรือถูกจองไปแล้ว', 400);
+            return $this->errorResponse('ขออภัย ตู้เซฟนี้ถูกจองหรือยังไม่พร้อมให้บริการ', 400);
         }
 
-        $totalAmount = $locker->price * $request->duration_months;
+        $serviceFee = $locker->price * $request->duration_months;
+        $deposit = 0; 
+        $subtotal = $serviceFee + $deposit;
+        $vatAmount = $serviceFee * 0.07;
+        $grandTotal = $subtotal + $vatAmount;
 
         DB::beginTransaction();
         try {
-            // สร้าง Booking
             $bookingId = DB::table('locker_bookings')->insertGetId([
-                'booking_number' => 'LCK-' . date('Ym') . '-' . strtoupper(Str::random(5)),
+                'booking_number' => 'LCK-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(5)),
                 'user_id' => $user->id,
                 'smart_locker_id' => $locker->id,
-                'total_amount' => $totalAmount,
+                'total_amount' => $grandTotal,
                 'payment_gateway' => $request->payment_gateway,
                 'status' => 'pending_payment',
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            // ล็อกสถานะตู้ไว้ชั่วคราว (กันคนอื่นมากดจองซ้ำระหว่างรอจ่ายเงิน)
+            // 🌟 ล็อกสถานะตู้ไว้ชั่วคราวเป็น pending (รอชำระเงิน)
             DB::table('smart_lockers')->where('id', $locker->id)->update([
-                'status' => 'rented',
+                'status' => 'pending', 
                 'updated_at' => now()
             ]);
 
             DB::commit();
 
             $booking = DB::table('locker_bookings')->where('id', $bookingId)->first();
-            $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
+            $paymentUrl = null;
+
+            if ($request->payment_gateway === 'bbl_apptoapp') {
+                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
+                $paymentOrder = (object) [
+                    'order_number' => $booking->booking_number,
+                    'total_amount' => $booking->total_amount
+                ];
+                $paymentUrl = $bblController->initiatePayment($paymentOrder);
+            } else {
+                $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
+            }
 
             return $this->successResponse([
                 'booking_id' => $bookingId,
                 'booking_number' => $booking->booking_number,
-                'total_amount' => $totalAmount,
                 'payment_url' => $paymentUrl
-            ], 'จองตู้เซฟสำเร็จ กรุณาชำระเงิน');
+            ], 'สร้างรายการจองสำเร็จ กรุณาชำระเงิน');
 
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('เกิดข้อผิดพลาดในการจอง: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ==========================================
+    // 3. API ยกเลิกการจอง (คืนตู้ให้กลับเป็น Available)
+    // ==========================================
+    public function cancelBooking(Request $request, $id)
+    {
+        $user = $request->user();
+        
+        $booking = DB::table('locker_bookings')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$booking) {
+            return $this->errorResponse('ไม่พบข้อมูลการจองนี้', 404);
+        }
+
+        // ยกเลิกได้เฉพาะรายการที่ยังไม่ได้จ่ายเงิน
+        if ($booking->status !== 'pending_payment') {
+            return $this->errorResponse('ไม่สามารถยกเลิกรายการนี้ได้ เนื่องจากชำระเงินแล้วหรือถูกยกเลิกไปแล้ว', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. เปลี่ยนสถานะบิลเป็น ยกเลิก (cancelled)
+            DB::table('locker_bookings')->where('id', $id)->update([
+                'status' => 'cancelled',
+                'updated_at' => now()
+            ]);
+
+            // 2. 🌟 ปลดล็อกตู้ ให้กลับมาว่างเหมือนเดิม
+            DB::table('smart_lockers')->where('id', $booking->smart_locker_id)->update([
+                'status' => 'available',
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(null, 'ยกเลิกการจองและคืนสถานะตู้เซฟเรียบร้อยแล้ว');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('เกิดข้อผิดพลาดในการยกเลิก: ' . $e->getMessage(), 500);
         }
     }
 }

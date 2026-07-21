@@ -40,7 +40,9 @@
                             </td>
                             <td>฿{{ number_format($locker->price, 2) }}</td>
                             <td class="text-center">
-                                @if($locker->status == 'available')
+                                @if($locker->status == 'pending')
+                                    <span class="text-info"><i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i> รอชำระเงิน</span>
+                                @elseif($locker->status == 'available')
                                     <span class="text-success"><i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i> ว่าง</span>
                                 @elseif($locker->status == 'rented')
                                     <span class="text-warning"><i data-lucide="lock" class="w-4 h-4 inline mr-1"></i> ถูกเช่า</span>
@@ -96,6 +98,7 @@
                         <label class="form-label">สถานะการเช่า</label>
                         <select name="status" class="form-select">
                             <option value="available">ว่าง (Available)</option>
+                            <option value="pending">รอชำระเงิน (Pending)</option>
                             <option value="rented">ถูกเช่าแล้ว (Rented)</option>
                             <option value="maintenance">ซ่อมบำรุง (Maintenance)</option>
                         </select>
@@ -146,6 +149,7 @@
                         <label class="form-label">สถานะการเช่า</label>
                         <select name="status" id="edit_status" class="form-select">
                             <option value="available">ว่าง (Available)</option>
+                            <option value="pending">รอชำระเงิน (Pending)</option>
                             <option value="rented">ถูกเช่าแล้ว (Rented)</option>
                             <option value="maintenance">ซ่อมบำรุง (Maintenance)</option>
                         </select>
