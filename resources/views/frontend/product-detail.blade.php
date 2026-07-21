@@ -436,9 +436,12 @@
                 <div class="col-lg-6">
                     <div class="detail-content">
                         <h1 class="detail-title">{{ $product->name }}</h1>
+                        @if($product->is_contact_only == 0)
                         <h2 class="detail-subtitle">฿{{ number_format($product->price, 2) }}</h2>
+                        @endif
                         <p class="detail-desc">{{ $product->description ?? 'ยังไม่มีรายละเอียดสินค้า' }}</p>
 
+                        @if($product->is_contact_only == 0)
                         <form action="{{ route('cart.add') }}" method="POST">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -455,6 +458,12 @@
                                 </button>
                             </div>
                         </form>
+                        @else
+                        <div class="btn-container-centered">
+                            <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">ย้อนกลับ</button>
+                            <button type="button" class="btn-gradient">ติดต่อฝ่ายขาย</button>
+                        </div>
+                        @endif
 
                     </div>
                 </div>

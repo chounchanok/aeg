@@ -49,6 +49,7 @@ Route::get('/insurance', [InsuranceController::class, 'index'])->name('insurance
 Route::get('/insurance/{id}', [InsuranceController::class, 'show'])->where('id', '[0-9]+')->name('insurance-detail');
 Route::get('/insurance/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('insurance-contact');
 Route::get('/safe-contact/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('safe-contact');
+Route::get('/product-contact/{id}/contact', [ProductController::class, 'contact'])->where('id', '[0-9]+')->name('product-contact');
 
 
 // --- Static Pages (หน้าทั่วไป) ---

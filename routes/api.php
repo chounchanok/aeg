@@ -106,6 +106,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
 Route::prefix('main')->group(function () {
     Route::get('/banners', [MainPageController::class, 'getBanners']);
     Route::get('/recommended-services', [MainPageController::class, 'getRecommendedServices']);
+    Route::get('/recommended-product', [MainPageController::class, 'getRecommendedProducts']);
 });
 
 Route::prefix('ease-club')->group(function () {

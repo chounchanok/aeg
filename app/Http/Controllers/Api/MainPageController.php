@@ -56,6 +56,17 @@ class MainPageController extends Controller
         return $this->successResponse($services, 'Recommended services retrieved');
     }
 
+    public function getRecommendedProducts()
+    {
+        // ดึงข้อมูลสินค้าแนะนำจากหมวดหมู่ที่กำหนด (เช่น recommended)
+        $products = DB::table('products')
+                    ->inRandomOrder()
+                    ->limit(4)
+                    ->get();
+        
+            return $this->successResponse($products, 'Recommended products retrieved');
+    }
+
     public function getServiceCategories(Request $request)
     {
         $lang = $request->header('Accept-Language', 'th');
