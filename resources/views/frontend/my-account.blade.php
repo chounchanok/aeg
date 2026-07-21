@@ -35,25 +35,50 @@
                     <div class="card-custom mt-3">
                         <div class="row align-items-center">
                             <div class="col-lg-5 mb-4 mb-lg-0">
-                                <div class="member-card-visual">
-                                    <div class="d-flex justify-content-between">
-                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                                            <span style="color:#0a1931; font-weight: 800; font-size: 8px;">AEG</span>
+                                
+                                <!-- 🌟 เขียน PHP เช็คเงื่อนไข Level เพื่อดึงรูปภาพ -->
+                                @php
+                                    $memberLevel = strtolower($profile->level ?? 'standard');
+                                    $bgImage = '';
+
+                                    if ($memberLevel == 'advance') {
+                                        $bgImage = asset('assets/image/card-advance.webp');
+                                    } elseif ($memberLevel == 'platinum') {
+                                        $bgImage = asset('assets/image/card-platinum.webp');
+                                    } elseif ($memberLevel == 'beyond') {
+                                        $bgImage = asset('assets/image/card-beyond.webp');
+                                    } else {
+                                        $bgImage = 'none'; // ถ้าเป็น Standard ให้ใช้สี Gradient เดิม
+                                    }
+                                @endphp
+
+                                <!-- 🌟 ใส่ภาพ Background ลงไปใน Style -->
+                                <div class="member-card-visual" style="{{ $bgImage !== 'none' ? "background-image: url('{$bgImage}'); background-size: cover; background-position: center;" : '' }}">
+                                    
+                                    <!-- 🌟 ถ้าไม่มีรูป (เป็น Standard) ถึงจะโชว์ตัวหนังสือ HTML -->
+                                    @if($bgImage === 'none')
+                                        <div class="d-flex justify-content-between">
+                                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                <span style="color:#0a1931; font-weight: 800; font-size: 8px;">AEG</span>
+                                            </div>
+                                            <div class="card-label-top">{{ $profile->level ?? 'Standard Member' }}</div>
                                         </div>
-                                        <div class="card-label-top">{{ Auth::user()->tier ?? 'Standard Member' }}</div>
-                                    </div>
-                                    <div class="card-brand-main">
-                                        <h2>EASE</h2>
-                                        <span>CLUB</span>
-                                    </div>
-                                    <div class="card-footer-label">MEMBERSHIP</div>
-                                    <div class="position-absolute bottom-0 end-0 p-3">
-                                        <svg width="40" height="40" viewBox="0 0 40 40" style="opacity: 0.3;">
-                                            <rect width="40" height="40" rx="5" fill="white" />
-                                        </svg>
-                                    </div>
+                                        <div class="card-brand-main">
+                                            <h2>EASE</h2>
+                                            <span>CLUB</span>
+                                        </div>
+                                        <div class="card-footer-label">MEMBERSHIP</div>
+                                        <div class="position-absolute bottom-0 end-0 p-3">
+                                            <svg width="40" height="40" viewBox="0 0 40 40" style="opacity: 0.3;">
+                                                <rect width="40" height="40" rx="5" fill="white" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                    
                                 </div>
                             </div>
+                            
+                            <!-- โค้ดข้อมูลส่วนตัวฝั่งขวา (เหมือนเดิม) -->
                             <div class="col-lg-7">
                                 <h3 class="section-title">ข้อมูลส่วนตัว</h3>
                                 <div class="row">

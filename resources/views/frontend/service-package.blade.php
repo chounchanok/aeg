@@ -347,19 +347,36 @@
                                         </ul>
                                         <div class="price-section">
                                             <p class="price-info">ดูแลรักษาเบื้องต้น 1 จุด</p>
-                                            <p class="price-info">ราคาเริ่มต้นรวมจุดละ <span class="fw-bold">{{ number_format($product->price) }} บาท</span></p>
-                                            <p class="price-warning">หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน
-                                                เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ</p>
-                                            <p class="price-warning">*
-                                                บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม</p>
+                                            <p class="price-info">ราคาเริ่มต้นรวมจุดละ <span class="fw-bold text-danger">{{ number_format($product->price) }} บาท / เดือน</span></p>
+                                            <p class="price-warning">หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ</p>
+                                            <p class="price-warning">* บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม</p>
                                         </div>
+
+                                        <!-- 🌟 ส่วนที่เพิ่มใหม่: เลือกจำนวนและระยะเวลา -->
+                                        <div class="row mt-4">
+                                            <div class="col-sm-6 mb-3">
+                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">จำนวน (จุด/เครื่อง)</label>
+                                                <input type="number" name="quantity" class="form-control form-control-custom quantity-input" value="1" min="1" disabled style="margin-bottom: 0;">
+                                            </div>
+                                            <div class="col-sm-6 mb-3">
+                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">ระยะเวลารับบริการ</label>
+                                                <select name="duration_months" class="form-select form-control-custom duration-input" disabled style="margin-bottom: 0;">
+                                                    <option value="1">1 เดือน</option>
+                                                    <option value="3">3 เดือน</option>
+                                                    <option value="6">6 เดือน</option>
+                                                    <option value="12">1 ปี (12 เดือน)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <!-- 🌟 สิ้นสุดส่วนที่เพิ่มใหม่ -->
+
                                     </div>
                                 </div>
                             </div>
 
                             <div class="btn-action-group">
                                 <input type="hidden" name="product_id" value="{{ $product->id }}" class="product-id-input" disabled>
-                                <input type="hidden" name="quantity" value="1">
+                                <!-- 🌟 ลบ <input type="hidden" name="quantity" value="1"> ตัวเก่าทิ้งไปเลยครับ เพราะเราใช้ตัวใหม่ข้างบนแล้ว -->
                                 <button type="button" onclick="history.back();" class="btn-custom border-0">ย้อนกลับ</button>
                                 <button type="submit" class="btn-custom border-0">เพิ่มลงตะกร้า</button>
                             </div>
@@ -374,27 +391,25 @@
 @push('scripts')
     <script>
         function updateServiceInfo() {
-            // ดึงค่า ID บริการที่ถูกเลือกจาก Dropdown
             const selectedService = document.getElementById('serviceSelector').value;
-
-            // ดึงบล็อกบริการทั้งหมดที่มี (อ้างอิงผ่าน class แทน id)
             const serviceBlocks = document.querySelectorAll('.service-detail-block');
 
-            // วนลูปเช็คเพื่อเปิด/ปิดการแสดงผล
             serviceBlocks.forEach(function(block) {
                 const serviceId = block.getAttribute('data-service');
                 const productInput = block.querySelector('.product-id-input');
+                const quantityInput = block.querySelector('.quantity-input'); // 🌟 ดึงช่องจำนวน
+                const durationInput = block.querySelector('.duration-input'); // 🌟 ดึงช่องระยะเวลา
 
                 if (serviceId === selectedService && selectedService !== "") {
-                    // โชว์บล็อกที่ตรงกัน
                     block.style.display = 'block';
-                    // 🌟 เปิดให้ input ของสินค้านี้ทำงาน เพื่อที่จะส่งค่าเข้าตะกร้าได้
                     if (productInput) productInput.disabled = false;
+                    if (quantityInput) quantityInput.disabled = false; // 🌟 เปิดให้แก้ไขได้
+                    if (durationInput) durationInput.disabled = false; // 🌟 เปิดให้แก้ไขได้
                 } else {
-                    // ซ่อนบล็อกอื่นๆ
                     block.style.display = 'none';
-                    // 🌟 ปิด input อื่นๆ ป้องกันการส่งค่าทับกัน
                     if (productInput) productInput.disabled = true;
+                    if (quantityInput) quantityInput.disabled = true; // 🌟 ปิดไว้กันส่งค่าซ้ำซ้อน
+                    if (durationInput) durationInput.disabled = true; // 🌟 ปิดไว้
                 }
             });
         }

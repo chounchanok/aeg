@@ -348,7 +348,7 @@
 
                     <!-- Action Button Link to Contact -->
                     <div class="btn-consult-wrapper">
-                        <a href="{{ route('safe-contact', 1) }}" class="btn-gradient-pill">ปรึกษาผู้เชี่ยวชาญ</a>
+                        <a href="{{ route('safe-contact', 5) }}" class="btn-gradient-pill">ปรึกษาผู้เชี่ยวชาญ</a>
                     </div>
                 </div>
             </div>

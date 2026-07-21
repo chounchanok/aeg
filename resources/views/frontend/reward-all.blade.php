@@ -95,6 +95,13 @@
             overflow-x: auto;
             flex-wrap: nowrap;
             padding-bottom: 15px;
+            scrollbar-width: none; /* 🌟 ซ่อน Scrollbar ของ Firefox */
+            -ms-overflow-style: none; /* 🌟 ซ่อน Scrollbar ของ IE/Edge */
+        }
+
+        /* 🌟 ซ่อน Scrollbar ของ Chrome/Safari/มือถือ */
+        .privilege-nav::-webkit-scrollbar {
+            display: none; 
         }
 
         .privilege-nav .nav-link {
@@ -247,13 +254,34 @@
                 height: 200px;
             }
 
+            /* 🌟 ปรับให้เมนูชิดซ้าย จะได้ปัดเลื่อนซ้ายขวาได้โดยไม่ตกขอบ */
+            .privilege-nav {
+                justify-content: flex-start; 
+                padding-left: 5px;
+            }
+
             .privilege-nav .nav-link {
-                width: 100px;
+                width: 150px;
             }
 
             .nav-icon-wrapper {
-                width: 70px;
-                height: 70px;
+                width: 65px;
+                height: 65px;
+            }
+
+            /* 🌟 ลด Padding กล่องสีชมพูเพื่อไม่ให้ดันการ์ดทะลุจอ */
+            .privilege-unified-box {
+                padding: 40px 15px; 
+                border-radius: 20px;
+            }
+
+            /* 🌟 ย่อขนาดตัวอักษรของการ์ดลงนิดนึงให้อ่านง่ายบนมือถือ */
+            .reward-title {
+                font-size: 1.3rem; 
+            }
+            
+            .points-text {
+                font-size: 1.3rem;
             }
         }
     </style>

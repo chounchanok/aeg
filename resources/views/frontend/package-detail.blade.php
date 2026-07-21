@@ -239,7 +239,7 @@
 
                 <div class="detail-top-hero">
                     <div class="detail-img-box">
-                        <img src="{{ $package->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ $package->product_name }}">
+                        <img src="{{ $package->image_url ?? asset('assets/image/logo2.webp') }}" alt="{{ $package->product_name }}">
                     </div>
                     <div class="detail-info-side">
                         <div class="detail-header-flex">

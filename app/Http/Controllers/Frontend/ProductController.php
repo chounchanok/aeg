@@ -63,4 +63,94 @@ class ProductController extends Controller
 
         return view('frontend.product-detail', compact('product'));
     }
+
+    public function contact($id)
+    {
+        // ดึงข้อมูลประกันเพื่อเอาไปโชว์หัวข้อในหน้าติดต่อ
+        $product = DB::table('products')->where('id', $id)->where('is_active', true)->firstOrFail();
+        
+        return view('frontend.product-contact', compact('product'));
+    }
+
+    // ==========================================
+    // บันทึกข้อมูลฟอร์มติดต่อฝ่ายขาย
+    // ==========================================
+    public function submitContact(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|integer',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'contact_time' => 'required|string',
+            'message' => 'nullable|string'
+        ]);
+
+        try {
+            // บันทึกลง Database
+            DB::table('product_contacts')->insert([
+                'product_id' => $request->product_id,
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'contact_time' => $request->contact_time,
+                'message' => $request->message,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // ส่ง JSON กลับไปให้ Frontend (เพื่อเรียกโชว์ Modal)
+            return response()->json([
+                'success' => true, 
+                'message' => 'ส่งข้อมูลติดต่อสำเร็จ'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // 🌟 ดึงข้อมูลตู้เซฟไปโชว์หน้าฟอร์ม
+    public function safeContact($id)
+    {
+        $locker = DB::table('smart_lockers')->where('id', $id)->where('is_active', true)->first();
+        if (!$locker) abort(404, 'ไม่พบข้อมูลตู้เซฟนี้');
+        
+        return view('frontend.safe-contact', compact('locker'));
+    }
+
+    // 🌟 บันทึกข้อมูลฟอร์มติดต่อตู้เซฟ
+    public function submitSafeContact(Request $request)
+    {
+        $request->validate([
+            'smart_locker_id' => 'required|integer',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'contact_time' => 'required|string',
+            'message' => 'nullable|string'
+        ]);
+
+        try {
+            DB::table('safe_contacts')->insert([
+                'smart_locker_id' => $request->smart_locker_id,
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'contact_time' => $request->contact_time,
+                'message' => $request->message,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -112,7 +112,7 @@ body {
    4. Page: My Account
    ========================================= */
 .card-custom { background: var(--card-bg); border-radius: 25px; padding: 30px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04); }
-.member-card-visual { background: var(--ease-gradient); height: 200px; padding: 20px; border-radius: 15px; color: white; position: relative; }
+.member-card-visual { background: var(--ease-gradient); height: 220px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
 .card-label-top { font-weight: 700; font-size: 0.9rem; }
 .card-brand-main { margin-top: 30px; }
 .card-brand-main h2 { font-weight: 800; margin: 0; }

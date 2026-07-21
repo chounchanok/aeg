@@ -48,9 +48,15 @@ Route::get('/run-link', function () {
 Route::get('/insurance', [InsuranceController::class, 'index'])->name('insurance');
 Route::get('/insurance/{id}', [InsuranceController::class, 'show'])->where('id', '[0-9]+')->name('insurance-detail');
 Route::get('/insurance/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('insurance-contact');
-Route::get('/safe-contact/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('safe-contact');
-Route::get('/product-contact/{id}/contact', [ProductController::class, 'contact'])->where('id', '[0-9]+')->name('product-contact');
+Route::post('/insurance-contact/submit', [InsuranceController::class, 'submitContact'])->name('insurance-contact.submit'); // 🌟 เพิ่มเส้นรับค่าฟอร์มประกัน
 
+// ระบบตู้เซฟ (Safe / Locker)
+Route::get('/safe-contact/{id}/contact', [ProductController::class, 'safeContact'])->where('id', '[0-9]+')->name('safe-contact'); // 🌟 ย้ายมาใช้ ProductController แทน
+Route::post('/safe-contact/submit', [ProductController::class, 'submitSafeContact'])->name('safe-contact.submit'); // 🌟 เพิ่มเส้นรับค่าฟอร์มตู้เซฟ
+
+// ระบบสินค้าทั่วไป
+Route::get('/product-contact/{id}/contact', [ProductController::class, 'contact'])->where('id', '[0-9]+')->name('product-contact');
+Route::post('/product-contact/submit', [ProductController::class, 'submitContact'])->name('product-contact.submit');
 
 // --- Static Pages (หน้าทั่วไป) ---
 Route::view('/faq', 'frontend.faq')->name('faq');

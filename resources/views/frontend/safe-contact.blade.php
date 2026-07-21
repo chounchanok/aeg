@@ -314,11 +314,13 @@
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
-                <p class="text-center mb-4 text-muted">เรื่อง: {{ $insurance->title_th }}</p>
+                <!-- 🌟 เปลี่ยนจาก $insurance เป็น $locker -->
+                <p class="text-center mb-4 text-muted">เรื่อง: {{ $locker->title_th ?? $locker->locker_number }}</p>
 
                 <form id="contactForm">
                     @csrf
-                    <input type="hidden" name="insurance_id" value="{{ $insurance->id }}">
+                    <!-- 🌟 เปลี่ยนเป็น smart_locker_id -->
+                    <input type="hidden" name="smart_locker_id" value="{{ $locker->id }}">
 
                     <div class="row">
                         <div class="col-12">
@@ -374,7 +376,8 @@
             btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
             btnSubmit.disabled = true;
 
-            fetch("{{ route('insurance-contact.submit') }}", {
+            // 🌟 ยิงไปที่ Route ของตู้เซฟ
+            fetch("{{ route('safe-contact.submit') }}", {
                 method: "POST",
                 headers: { "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value, "Accept": "application/json" },
                 body: new FormData(form)

@@ -118,13 +118,15 @@
 
         .nav-tabs-custom {
             display: flex;
-            justify-content: center;
+            /* 🌟 เปลี่ยนจาก center เป็น flex-start เพื่อให้เริ่มเรียงจากซ้าย */
+            justify-content: flex-start; 
             gap: 20px;
             border: none;
-            overflow-x: auto;
-            flex-wrap: nowrap;
+            overflow-x: auto; /* เปิดให้ scroll แนวนอนได้ */
+            flex-wrap: nowrap; /* ห้ามให้มันตกลงมาบรรทัดใหม่ */
             padding-bottom: 15px;
-            scrollbar-width: none;
+            scrollbar-width: none; /* ซ่อน Scrollbar ของ Firefox */
+            -ms-overflow-style: none; /* ซ่อน Scrollbar ของ IE/Edge */
         }
 
         .nav-tabs-custom::-webkit-scrollbar {
@@ -172,14 +174,14 @@
 
         .category-text-en {
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.75rem;
             margin-bottom: 4px;
             color: #bbb;
         }
 
         .category-text-th {
             font-weight: 400;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: #ccc;
         }
 
@@ -249,7 +251,7 @@
             font-size: 1.15rem;
             margin-bottom: 4px;
             color: #1a2d5e;
-            white-space: nowrap;
+            white-space: break-spaces;
         }
 
         .product-title-th {
@@ -257,6 +259,7 @@
             font-size: 1rem;
             color: #1a2d5e;
             margin-bottom: 20px;
+            white-space: break-spaces;
         }
 
         .btn-action-sales {
@@ -358,7 +361,7 @@
 
             .nav-tabs-custom {
                 justify-content: flex-start;
-                padding-left: 15px;
+                padding-left: 15px; /* เผื่อขอบด้านซ้ายนิดหน่อยตอนเล่นมือถือ */
             }
 
             .product-image-frame {

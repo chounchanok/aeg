@@ -225,11 +225,29 @@
 
     /* 5. Age Services */
     .age-service-box {
-        background-color: #EBEDF4 !important;
-        border-radius: 15px;
-        padding: 20px;
+        flex-wrap: wrap; /* ยอมให้เนื้อหาปัดลงบรรทัดใหม่ */
+        padding: 15px;
+    }
+    .age-service-box .flex-grow-1 {
+        width: calc(100% - 75px); /* หักความกว้างรูปภาพและ margin ออก */
+    }
+    .age-service-box h5.text-truncate {
+        max-width: 100% !important; /* ปล่อยให้ข้อความยาวได้เต็มที่ */
+        font-size: 1rem;
+        white-space: normal; /* อนุญาตให้ข้อความขึ้นบรรทัดใหม่ได้ถ้าชื่อยาวไป */
+    }
+    .age-service-box .border-start {
+        border-left: none !important; /* ลบเส้นกั้นแนวตั้งเดิมทิ้ง */
+        border-top: 1px dashed #dee2e6; /* เปลี่ยนเป็นเส้นประแนวนอนแทน */
+        width: 100%;
+        min-width: 100% !important;
+        margin-left: 0 !important;
+        margin-top: 15px;
+        padding-left: 0 !important;
+        padding-top: 15px;
+        text-align: left !important;
         display: flex;
-        align-items: center;
+        justify-content: space-between; /* กระจาย "วันที่เริ่ม" และ "วันที่จบ" ให้อยู่ซ้าย-ขวา */
     }
 
     .age-icon {
@@ -340,8 +358,33 @@
         }
 
         .carousel-item img {
-            height: 250px;
+            height: 200px; /* ย่อแบนเนอร์บนสุดลงมาให้พอดีจอมือถือ */
         }
+
+        /* --- 🌟 แก้ไขการแสดงผลการ์ดต่างๆ บน Mobile ให้ไม่ยืดเพี้ยน --- */
+        
+        /* 1. การ์ด 4 หมวดหมู่หลัก */
+        .service-card img {
+            height: 200px !important; /* ของเดิม 370px ทำให้รูปยาวเทอะทะ */
+        }
+        
+        /* 2. การ์ดบริการแนะนำ (ที่เป็น 2 คอลัมน์) */
+        .rec-card {
+            height: 220px !important; /* ของเดิม 400px ทำให้การ์ดผอมยาวแปลกๆ */
+        }
+        .rec-overlay {
+            padding: 10px;
+        }
+        .rec-overlay h5 {
+            font-size: 0.9rem; /* ย่อตัวหนังสือไม่ให้ล้นกล่อง */
+            margin-bottom: 0;
+        }
+
+        /* 3. การ์ดสิทธิพิเศษแนะนำ */
+        .privilege-card img {
+            height: 180px !important; /* ย่อรูปของรางวัลลงให้สวยงาม */
+        }
+        /* ------------------------------------------- */
 
         .footer-column {
             text-align: center !important;
@@ -356,11 +399,8 @@
             text-align: center;
             margin-top: 15px;
         }
-
-        .rec-card {
-            height: 400px;
-        }
     }
+
 </style>
 @endpush
 
@@ -407,7 +447,7 @@
                 <div class="service-card"><img src="{{ asset('assets/image/g2.webp') }}" alt="แพ็กเกจบริการ">
                     <div class="service-card-body">
                         <h5 class="fw-bold">แพ็กเกจบริการ</h5>
-                        <a href="{{ route('products', ['group' => 'package']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <a href="{{ route('services') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
                     </div>
                 </div>
             </div>

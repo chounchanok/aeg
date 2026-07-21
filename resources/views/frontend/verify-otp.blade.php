@@ -130,9 +130,13 @@
                         </div>
                         
                         <h2 class="auth-title">ยืนยันรหัส OTP</h2>
+                        <!-- 🌟 เปลี่ยนให้เป็นแบบนี้ครับ -->
                         <p class="auth-subtitle">
                             กรุณากรอกรหัส OTP 6 หลัก <br>
-                            ที่เราได้ส่งไปยังเบอร์โทรศัพท์ของคุณ
+                            ที่เราได้ส่งไปยังเบอร์ <span class="fw-bold text-dark">{{ substr_replace($phone, 'XXXX', 3, 4) }}</span><br>
+                            <span class="badge bg-light text-secondary border mt-2 px-3 py-2" style="font-size: 0.9rem;">
+                                Ref Code: <span class="text-danger fw-bold">{{ $refCode ?? 'N/A' }}</span>
+                            </span>
                         </p>
 
                         @if(session('error'))

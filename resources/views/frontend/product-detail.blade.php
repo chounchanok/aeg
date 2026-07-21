@@ -461,7 +461,7 @@
                         @else
                         <div class="btn-container-centered">
                             <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">ย้อนกลับ</button>
-                            <button type="button" class="btn-gradient">ติดต่อฝ่ายขาย</button>
+                            <button type="button" class="btn-gradient" onclick="window.location.href='{{ route('product-contact', $product->id) }}'">ติดต่อฝ่ายขาย</button>
                         </div>
                         @endif
 

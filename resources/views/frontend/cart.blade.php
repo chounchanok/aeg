@@ -415,8 +415,13 @@
                             </div>
                             <div class="item-details">
                                 <h3 class="item-title">{{ $item->name }}</h3>
-                                <p class="item-subtitle">
-                                    จำนวน: {{ $item->quantity }} ชิ้น | ราคา: {{ number_format($item->price, 2) }} ฿
+                                <!-- 🌟 ให้แก้เป็นแบบนี้ครับ -->
+                                <p class="text-muted mb-2" style="font-size: 0.9rem;">
+                                    จำนวน: {{ $item->quantity }} ชิ้น 
+                                    @if($item->duration_months > 1)
+                                        <span class="text-danger">| ระยะเวลา: {{ $item->duration_months }} เดือน</span> 
+                                    @endif
+                                    | ราคา: {{ number_format($item->price, 2) }} ฿
                                 </p>
 
                                 <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST" class="mt-2" onclick="event.stopPropagation();">

@@ -204,7 +204,7 @@
             opacity: 0.95;
         }
 
-        /* --- Success Modal Styles (Match Insurance-Contact 2.jpg) --- */
+        /* --- Success Modal Styles (Match product-Contact 2.jpg) --- */
         .modal-success-content {
             border-radius: 30px !important;
             border: none;
@@ -314,23 +314,27 @@
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
-                <p class="text-center mb-4 text-muted">เรื่อง: {{ $insurance->title_th }}</p>
+                <p class="text-center mb-4 text-muted">เรื่อง: {{ $product->name_th }}</p>
 
                 <form id="contactForm">
-                    @csrf
-                    <input type="hidden" name="insurance_id" value="{{ $insurance->id }}">
+                    @csrf <!-- 🌟 ขาดไม่ได้สำหรับ Laravel -->
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
 
                     <div class="row">
                         <div class="col-12">
+                            <!-- 🌟 เติม name="name" -->
                             <input type="text" name="name" class="form-control form-control-custom" placeholder="• ชื่อผู้ติดต่อ" required>
                         </div>
                         <div class="col-md-6">
+                            <!-- 🌟 เติม name="phone" -->
                             <input type="tel" name="phone" class="form-control form-control-custom" placeholder="• เบอร์โทรศัพท์ Telephone Number" required>
                         </div>
                         <div class="col-md-6">
+                            <!-- 🌟 เติม name="email" -->
                             <input type="email" name="email" class="form-control form-control-custom" placeholder="• อีเมล / Email" required>
                         </div>
                         <div class="col-12">
+                            <!-- 🌟 เติม name="contact_time" -->
                             <select name="contact_time" class="form-select form-control-custom form-select-custom" required>
                                 <option value="" selected disabled>• ช่วงเวลาที่สะดวกให้ติดต่อกลับ</option>
                                 <option value="morning">เช้า (09:00 - 12:00)</option>
@@ -339,6 +343,7 @@
                             </select>
                         </div>
                         <div class="col-12">
+                            <!-- 🌟 เติม name="message" -->
                             <textarea name="message" class="form-control form-control-custom textarea-custom" placeholder="• สอบถามรายละเอียดเพิ่มเติม / Request More Information"></textarea>
                         </div>
                     </div>
@@ -368,27 +373,44 @@
 @push('scripts')
     <script>
         document.getElementById('contactForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+            e.preventDefault(); // หยุดการรีเฟรชหน้าเว็บ
+
             let form = this;
+            let formData = new FormData(form);
             let btnSubmit = document.getElementById('btnSubmit');
+
+            // เปลี่ยนข้อความปุ่มระหว่างส่ง
             btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
             btnSubmit.disabled = true;
 
-            fetch("{{ route('insurance-contact.submit') }}", {
+            // ยิงข้อมูลไปที่ Laravel Backend
+            fetch("{{ route('product-contact.submit') }}", {
                 method: "POST",
-                headers: { "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value, "Accept": "application/json" },
-                body: new FormData(form)
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                    "Accept": "application/json"
+                },
+                body: formData
             })
-            .then(res => res.json())
+            .then(response => response.json())
             .then(data => {
                 btnSubmit.innerHTML = 'ส่งข้อความถึงเรา';
                 btnSubmit.disabled = false;
+
                 if (data.success) {
+                    // ถ้าสำเร็จ ให้ล้างข้อมูลฟอร์ม และโชว์ Modal
                     form.reset();
-                    new bootstrap.Modal(document.getElementById('successModal')).show();
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
                 } else {
                     alert('เกิดข้อผิดพลาด: ' + data.message);
                 }
+            })
+            .catch(error => {
+                btnSubmit.innerHTML = 'ส่งข้อความถึงเรา';
+                btnSubmit.disabled = false;
+                console.error("Error:", error);
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
             });
         });
     </script>
