@@ -436,12 +436,12 @@
                 <div class="col-lg-6">
                     <div class="detail-content">
                         <h1 class="detail-title">{{ $product->name }}</h1>
-                        @if($product->is_contact_only == 0)
+                        @if($product->is_contact_only != 0 && $product->is_contact_only != 1)
                         <h2 class="detail-subtitle">฿{{ number_format($product->price, 2) }}</h2>
                         @endif
                         <p class="detail-desc">{{ $product->description ?? 'ยังไม่มีรายละเอียดสินค้า' }}</p>
 
-                        @if($product->is_contact_only == 0)
+                        @if($product->is_contact_only != 0 && $product->is_contact_only != 1)
                         <form action="{{ route('cart.add') }}" method="POST">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">

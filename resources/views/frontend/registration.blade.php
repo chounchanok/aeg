@@ -195,10 +195,10 @@
                     <span class="fw-medium">+66</span>
                 </div>
                 <input type="tel" name="phone" class="form-control phone-input-field" value="{{ old('phone') }}" placeholder="เบอร์มือถือ" required>
-                @error('phone')
-                    <div class="text-danger mt-1 text-sm">{{ $message }}</div>
-                @enderror
             </div>
+            @error('phone')
+                <div class="text-danger mt-1 text-sm">{{ $message }}</div>
+            @enderror
 
             <button type="submit" class="btn btn-otp-custom">ขอรหัส OTP</button>
         </form>

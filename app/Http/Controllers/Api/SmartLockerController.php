@@ -172,12 +172,8 @@ class SmartLockerController extends Controller
             $paymentUrl = null;
 
             if ($request->payment_gateway === 'bbl_apptoapp') {
-                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
-                $paymentOrder = (object) [
-                    'order_number' => $booking->booking_number,
-                    'total_amount' => $booking->total_amount
-                ];
-                $paymentUrl = $bblController->initiatePayment($paymentOrder);
+                // 🌟 คืนค่าเป็นลิงก์ WebView ของระบบเรา ให้น้องโอมเอาไปเปิด
+                $paymentUrl = url('/payment/bbl/redirect/' . $booking->booking_number);
             } else {
                 $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
             }

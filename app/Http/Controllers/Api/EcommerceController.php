@@ -553,10 +553,9 @@ class EcommerceController extends Controller
             $order = DB::table('orders')->where('id', $orderId)->first();
             $paymentUrl = null;
 
-            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
             if ($request->payment_gateway === 'bbl_apptoapp') {
-                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
-                $paymentUrl = $bblController->initiatePayment($order);
+                $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
                 $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
@@ -568,7 +567,7 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
+                'payment_url' => $paymentUrl // 🌟 ส่งลิงก์ WebView กลับไปให้แอป
             ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
@@ -682,10 +681,9 @@ class EcommerceController extends Controller
             $order = DB::table('orders')->where('id', $orderId)->first();
             $paymentUrl = null;
 
-            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
             if ($request->payment_gateway === 'bbl_apptoapp') {
-                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
-                $paymentUrl = $bblController->initiatePayment($order);
+                $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
                 $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
@@ -697,7 +695,7 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
+                'payment_url' => $paymentUrl // 🌟 ส่งลิงก์ WebView กลับไปให้แอป
             ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {
@@ -1166,10 +1164,9 @@ class EcommerceController extends Controller
             $order = DB::table('orders')->where('id', $orderId)->first();
             $paymentUrl = null;
 
-            // 🌟 2. เรียกใช้ BBL Controller ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
+            // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
             if ($request->payment_gateway === 'bbl_apptoapp') {
-                $bblController = app(\App\Http\Controllers\Api\BblPaymentController::class);
-                $paymentUrl = $bblController->initiatePayment($order);
+                $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
                 $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
@@ -1181,7 +1178,7 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'payment_url' => $paymentUrl // 🌟 จะได้ลิงก์ของ BBL กลับไป
+                'payment_url' => $paymentUrl // 🌟 ส่งลิงก์ WebView กลับไปให้แอป
             ], 'Order created successfully. Please proceed to payment.');
 
         } catch (\Exception $e) {

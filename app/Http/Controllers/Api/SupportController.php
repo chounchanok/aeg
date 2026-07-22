@@ -189,6 +189,7 @@ class SupportController extends Controller
     {
         // 1. ตรวจสอบข้อมูลให้ตรงกับ UI ใหม่
         $request->validate([
+            'topic' => 'required|string', // เลือก ธุรกิจ หรือ ส่วนตัว
             'user_type' => 'required|in:business,personal', // เลือก ธุรกิจ หรือ ส่วนตัว
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -203,6 +204,7 @@ class SupportController extends Controller
         DB::table('contact_admin_requests')->insert([
             // ถ้า User ล็อกอินอยู่ จะเก็บ ID ให้ด้วย ถ้าไม่ล็อกอินก็เป็น null
             'user_id' => auth('sanctum')->check() ? auth('sanctum')->id() : null,
+            'topic' => $request->topic,
             'user_type' => $request->user_type,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,

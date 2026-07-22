@@ -441,7 +441,7 @@
                                         </div>
                                     </a>
                                     <div class="product-title-en">{{ $product->name }}</div>
-                                    @if($product->is_contact_only == 1)
+                                    @if($product->is_contact_only == 1 || $product->is_contact_only == 0)
                                         <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">ติดต่อฝ่ายขาย</a>
                                     @else
                                     <div class="product-title-th">฿{{ number_format($product->price, 2) }}</div>

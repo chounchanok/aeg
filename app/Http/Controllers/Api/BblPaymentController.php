@@ -169,4 +169,49 @@ class BblPaymentController extends Controller
 
         return $response->json();
     }
+
+    // ฟังก์ชันสำหรับให้ WebView เข้ามาเปิดเพื่อเด้งไป BBL
+    public function redirect($order_number)
+    {
+        $amount = 0;
+        
+        // 1. เช็คว่าเป็นบิลสินค้า (ORD-) หรือบิลตู้เซฟ (LCK-)
+        if (str_starts_with($order_number, 'ORD-')) {
+            $order = DB::table('orders')->where('order_number', $order_number)->first();
+            if ($order) $amount = $order->grand_total;
+        } elseif (str_starts_with($order_number, 'LCK-')) {
+            $order = DB::table('locker_bookings')->where('booking_number', $order_number)->first();
+            if ($order) $amount = $order->total_amount;
+        }
+
+        if (!$order) {
+            return abort(404, 'ไม่พบข้อมูลรายการสั่งซื้อ/จองตู้เซฟ');
+        }
+
+        // 2. ตั้งค่าข้อมูล Merchant (Sandbox)
+        $merchantId = "23797";
+        $currCode = "764";
+        $payType = "N";
+        $secureHashSecret = env('BBL_SECURE_HASH_SECRET', 'YOUR_SECRET_KEY'); // 🌟 อย่าลืมใส่ Secret จากเว็บ BBL นะครับ
+
+        // 3. แปลงยอดเงินเป็นทศนิยม 2 ตำแหน่ง
+        $amountFormatted = number_format($amount, 2, '.', '');
+
+        // 4. คำนวณ Secure Hash
+        $hashString = "{$merchantId}|{$order_number}|{$currCode}|{$amountFormatted}|{$payType}|{$secureHashSecret}";
+        $secureHash = hash('sha512', $hashString);
+
+        // 5. ส่งข้อมูลไปวาดลงหน้า Blade ที่เราเพิ่งสร้าง
+        return view('payment.bbl-redirect', [
+            'merchantId' => $merchantId,
+            'amount' => $amountFormatted,
+            'orderRef' => $order_number,
+            'currCode' => $currCode,
+            'payType' => $payType,
+            'secureHash' => $secureHash,
+            'successUrl' => url('/payment/bbl/result?status=success'), // ลิงก์ตอนจ่ายเสร็จ
+            'failUrl' => url('/payment/bbl/result?status=fail'),
+            'cancelUrl' => url('/payment/bbl/result?status=cancel'),
+        ]);
+    }
 }
