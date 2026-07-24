@@ -178,7 +178,7 @@ class BblPaymentController extends Controller
         // 1. เช็คว่าเป็นบิลสินค้า (ORD-) หรือบิลตู้เซฟ (LCK-)
         if (str_starts_with($order_number, 'ORD-')) {
             $order = DB::table('orders')->where('order_number', $order_number)->first();
-            if ($order) $amount = $order->grand_total;
+            if ($order) $amount = $order->total_amount;
         } elseif (str_starts_with($order_number, 'LCK-')) {
             $order = DB::table('locker_bookings')->where('booking_number', $order_number)->first();
             if ($order) $amount = $order->total_amount;

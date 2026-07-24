@@ -554,7 +554,7 @@ class EcommerceController extends Controller
             $paymentUrl = null;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl_apptoapp') {
+            if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
@@ -682,7 +682,7 @@ class EcommerceController extends Controller
             $paymentUrl = null;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl_apptoapp') {
+            if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
@@ -1165,7 +1165,7 @@ class EcommerceController extends Controller
             $paymentUrl = null;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl_apptoapp') {
+            if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
             } else {
                 // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต

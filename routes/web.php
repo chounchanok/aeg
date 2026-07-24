@@ -31,6 +31,22 @@ use App\Http\Controllers\Admin\InsuranceAdminController;
 use App\Http\Controllers\Admin\ReviewAdminController;
 use App\Http\Controllers\Admin\SupportChatAdminController;
 
+use App\Http\Controllers\Api\BblPaymentController;
+
+// 🌟 เส้นทางสำหรับให้แอปเปิด WebView
+Route::get('/payment/bbl/redirect/{order_number}', [BblPaymentController::class, 'redirect'])->name('bbl.redirect');
+
+// 🌟 เส้นทางสำหรับโชว์ผลลัพธ์หลังจากลูกค้าจ่ายเงินเสร็จ 
+Route::get('/payment/bbl/result', function (\Illuminate\Http\Request $request) {
+    $status = $request->query('status');
+    $msg = "ดำเนินการสำเร็จ";
+    if ($status === 'fail') $msg = "การชำระเงินถูกปฏิเสธ";
+    if ($status === 'cancel') $msg = "คุณได้ยกเลิกการชำระเงิน";
+    
+    // โชว์หน้าจอธรรมดา หรือจะ Redirect กลับไปหน้าอื่นก็ได้ครับ
+    return "<h2>สถานะ: {$msg}</h2><p>กรุณากลับไปที่แอปพลิเคชัน</p>";
+});
+
 Route::get('dark-mode-switcher', function() { return back(); })->name('dark-mode-switcher');
 Route::get('color-scheme-switcher', function() { return back(); })->name('color-scheme-switcher');
 
