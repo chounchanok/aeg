@@ -299,32 +299,37 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // 3. Social Login (Line / Gmail)
+    // 3. Social Login (Line / Gmail / Apple / Facebook / WhatsApp)
     // ==========================================
     public function socialLogin(Request $request)
     {
-
         if ($request->has('provider')) {
             $request->merge([
                 'provider' => strtolower($request->provider)
             ]);
         }
 
-        // 1. รับค่าที่ Mobile App ส่งมาให้
+        // 1. รับค่าที่ Mobile App ส่งมาให้ (🌟 เพิ่ม facebook และ whatsapp)
         $request->validate([
-            'provider' => 'required|in:line,google,apple',
-            'provider_id' => 'required|string', // ID ที่ได้จาก Google/LINE SDK
+            'provider' => 'required|in:line,google,apple,facebook,whatsapp',
+            'provider_id' => 'required|string', 
             'name' => 'required|string',
             'email' => 'nullable|email',
         ]);
 
         $provider = $request->provider;
         $providerId = $request->provider_id;
+        
+        // 🌟 แมตช์ชื่อคอลัมน์ในฐานข้อมูลตาม Provider
         $column = 'google_id';
         if ($provider === 'line') {
             $column = 'line_id';
         } elseif ($provider === 'apple') {
             $column = 'apple_id';
+        } elseif ($provider === 'facebook') {
+            $column = 'facebook_id';
+        } elseif ($provider === 'whatsapp') {
+            $column = 'whatsapp_id';
         }
 
         try {
@@ -360,7 +365,7 @@ class AuthController extends Controller
                 // สร้าง Profile พื้นฐาน
                 DB::table('customer_profiles')->insert([
                     'user_id' => $user->id,
-                    'first_name' => $request->name ?? 'Apple User'.$user->id,
+                    'first_name' => $request->name ?? ucfirst($provider) . ' User ' . $user->id,
                     'created_at' => now(),
                 ]);
 

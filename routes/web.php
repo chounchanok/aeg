@@ -47,6 +47,10 @@ Route::get('/payment/bbl/result', function (\Illuminate\Http\Request $request) {
     return "<h2>สถานะ: {$msg}</h2><p>กรุณากลับไปที่แอปพลิเคชัน</p>";
 });
 
+// --- WhatsApp Web OTP Login ---
+Route::post('auth/whatsapp/request-otp', [AuthController::class, 'requestWhatsappOtp'])->name('whatsapp.request-otp');
+Route::post('auth/whatsapp/verify-otp', [AuthController::class, 'verifyWhatsappOtp'])->name('whatsapp.verify-otp');
+
 Route::get('dark-mode-switcher', function() { return back(); })->name('dark-mode-switcher');
 Route::get('color-scheme-switcher', function() { return back(); })->name('color-scheme-switcher');
 
