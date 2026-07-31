@@ -98,7 +98,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     Route::post('/payment-success', [EcommerceController::class, 'paymentSuccess']);
 
     // ระบบดึงออเดอร์ที่ค้างชำระ และขอชำระเงินใหม่
-    Route::get('/orders/pending', [EcommerceController::class, 'getPendingPayments']);
+    Route::get('/orders-pending', [EcommerceController::class, 'getPendingPayments']);
     Route::post('/orders/{id}/retry-payment', [EcommerceController::class, 'retryPayment']);
 });
 

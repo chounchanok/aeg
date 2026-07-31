@@ -129,7 +129,10 @@ class SmartLockerController extends Controller
         $request->validate([
             'smart_locker_id' => 'required|integer',
             'payment_gateway' => 'required|string',
-            'duration_months' => 'required|integer|min:1'
+            'duration_months' => 'required|integer|min:1',
+            'start_date' => 'required|date|after_or_equal:today',
+            'address_id' => 'required|integer',
+            'custom_address_text' => 'nullable|string|required_without:address_id'
         ]);
 
         $user = $request->user();
@@ -155,6 +158,10 @@ class SmartLockerController extends Controller
                 'smart_locker_id' => $locker->id,
                 'total_amount' => $grandTotal,
                 'payment_gateway' => $request->payment_gateway,
+                'start_date' => $request->start_date ?? now(),
+                'end_date' => $request->start_date ? now()->addMonths($request->duration_months) : now()->addMonths($request->duration_months),
+                'address_id' => $request->address_id,
+                'custom_address_text' => $request->custom_address_text ?? null,
                 'status' => 'pending_payment',
                 'created_at' => now(),
                 'updated_at' => now()
@@ -162,7 +169,7 @@ class SmartLockerController extends Controller
 
             // 🌟 ล็อกสถานะตู้ไว้ชั่วคราวเป็น pending (รอชำระเงิน)
             DB::table('smart_lockers')->where('id', $locker->id)->update([
-                'status' => 'pending', 
+                'status' => 'pending_payment', 
                 'updated_at' => now()
             ]);
 
@@ -171,7 +178,7 @@ class SmartLockerController extends Controller
             $booking = DB::table('locker_bookings')->where('id', $bookingId)->first();
             $paymentUrl = null;
 
-            if ($request->payment_gateway === 'bbl_apptoapp') {
+            if ($request->payment_gateway === 'bbl') {
                 // 🌟 คืนค่าเป็นลิงก์ WebView ของระบบเรา ให้น้องโอมเอาไปเปิด
                 $paymentUrl = url('/payment/bbl/redirect/' . $booking->booking_number);
             } else {

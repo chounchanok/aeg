@@ -100,16 +100,19 @@ class BblPaymentController extends Controller
         $data = $request->all();
         Log::info('BBL Webhook Received: ', $data);
 
-        $orderNumber = $data['reference1'] ?? null;
-        $status = $data['paymentStatus'] ?? null;
+        // 1. ดึงข้อมูลจาก BBL Payload ของจริง
+        $orderNumber = $data['Ref'] ?? null;
+        $status = $data['successcode'] ?? null;
+        $transactionId = $data['PayRef'] ?? null;
 
-        if ($orderNumber && $status === 'success') {
+        // successcode "0" หมายถึงการชำระเงินสำเร็จ
+        if ($orderNumber && $status === '0') {
             
             // 🌟 กรณีเป็นบิลสั่งซื้อสินค้า E-Commerce (ขึ้นต้นด้วย ORD-)
             if (str_starts_with($orderNumber, 'ORD-')) {
                 DB::table('orders')->where('order_number', $orderNumber)->update([
-                    'status' => 'paid',
-                    'gateway_transaction_id' => $data['paymentReferenceId'] ?? null,
+                    'status' => 'completed',
+                    'gateway_transaction_id' => $transactionId,
                     'gateway_response' => json_encode($data),
                     'updated_at' => now()
                 ]);
@@ -122,8 +125,8 @@ class BblPaymentController extends Controller
                 if ($booking && $booking->status === 'pending_payment') {
                     // 1. อัปเดตบิลให้เป็นจ่ายเงินแล้ว
                     DB::table('locker_bookings')->where('id', $booking->id)->update([
-                        'status' => 'paid',
-                        'gateway_transaction_id' => $data['paymentReferenceId'] ?? null,
+                        'status' => 'completed',
+                        'gateway_transaction_id' => $transactionId,
                         'gateway_response' => json_encode($data),
                         'updated_at' => now()
                     ]);
@@ -137,10 +140,8 @@ class BblPaymentController extends Controller
             }
         }
 
-        return response()->json([
-            'responseCode' => '000',
-            'responseMsg' => 'success'
-        ]);
+        // 2. 🌟 สำคัญ: BBL iPay บังคับให้ตอบกลับเป็นคำว่า "OK" (ห้ามเป็น JSON)
+        return response("OK", 200)->header('Content-Type', 'text/plain');
     }
 
     // ==========================================
