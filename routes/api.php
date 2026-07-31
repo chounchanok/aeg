@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
 // BBL Webhook
-Route::post('/ecommerce/payment/bbl-webhook', [BblPaymentController::class, 'webhook']);
+Route::post('/payment/webhook', [BblPaymentController::class, 'webhook']);
 
 // --- Public Routes ---
 // 1. เช็คเบอร์ว่ามีในระบบไหม ถ้าไม่มีให้ส่ง OTP ไปเบอร์นั้น
