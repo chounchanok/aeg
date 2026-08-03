@@ -108,6 +108,7 @@ Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
 Route::middleware('guest')->group(function() {
     Route::get('login', [AuthController::class, 'loginView'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.check');
+    Route::post('auth/whatsapp/check-login', [AuthController::class, 'checkWhatsappLogin'])->name('whatsapp.check-login');
 
     Route::get('register', [AuthController::class, 'registerView'])->name('register');
     Route::post('register', [AuthController::class, 'registerSubmit'])->name('register.submit');

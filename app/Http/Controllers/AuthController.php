@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use App\Models\User;
 use Carbon\Carbon;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
@@ -429,166 +430,102 @@ class AuthController extends Controller
         }
     }
 
-    // ==========================================
-    // WhatsApp OTP Login (Web)
-    // ==========================================
-    public function requestWhatsappOtp(Request $request)
+    // 1. ฟังก์ชันสำหรับรับ Webhook จาก Meta
+    public function whatsappWebhook(Request $request)
     {
-        $request->validate(['phone' => 'required|string']);
-
-        // 1. จัดฟอร์แมตเบอร์ สำหรับเซฟในระบบ (08X...)
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
-        if (str_starts_with($phone, '66') && strlen($phone) == 11) $phone = '0' . substr($phone, 2);
-        
-        // 2. จัดฟอร์แมตเบอร์ สำหรับส่ง API ของ WhatsApp (668X...)
-        $waPhone = $phone;
-        if (str_starts_with($waPhone, '0')) {
-            $waPhone = '66' . substr($waPhone, 1);
-        }
-
-        // 3. สร้างรหัส 6 หลัก
-        $otp = rand(100000, 999999);
-
-        // 4. เซฟลง Database
-        DB::table('otp_codes')->updateOrInsert(
-            ['phone' => $phone],
-            ['code' => $otp, 'expires_at' => \Carbon\Carbon::now()->addMinutes(5), 'created_at' => now()]
-        );
-
-        // 5. ส่งเข้า Meta WhatsApp Cloud API
-        $phoneId = env('WHATSAPP_PHONE_NUMBER_ID'); // ID ของเบอร์ส่งข้อความ (สำคัญ!)
-        $token = env('WHATSAPP_ACCESS_TOKEN');
-
-        try {
-
-            $response = \Illuminate\Support\Facades\Http::withToken($token)
-                ->post("https://graph.facebook.com/v18.0/{$phoneId}/messages", [
-                    'messaging_product' => 'whatsapp',
-                    'recipient_type' => 'individual',
-                    'to' => $waPhone,
-                    // 🌟 เปลี่ยนจาก text เป็น template
-                    'type' => 'template', 
-                    'template' => [
-                        'name' => 'ease_club_otp', // 🌟 ชื่อเทมเพลตที่ลูกค้าตั้งในระบบ Meta
-                        'language' => [
-                            'code' => 'th' // 🌟 ภาษาของเทมเพลต (th = ไทย, en_US = อังกฤษ)
-                        ],
-                        'components' => [
-                            [
-                                'type' => 'body',
-                                'parameters' => [
-                                    [
-                                        'type' => 'text',
-                                        'text' => (string) $otp // ส่งเลข OTP 6 หลักไปเสียบในเทมเพลต
-                                    ]
-                                ]
-                            ],
-                            [
-                                'type' => 'button',
-                                'sub_type' => 'url',
-                                'index' => '0',
-                                'parameters' => [
-                                    [
-                                        'type' => 'text',
-                                        'text' => (string) $otp // สำหรับปุ่ม Copy Code (ถ้าลูกค้าตั้งไว้ในเทมเพลต)
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]);
-
-            // ตรวจสอบ Error จาก Meta แบบละเอียด
-            if ($response->successful()) {
-                return response()->json(['status' => 'success', 'message' => 'ส่ง OTP ผ่าน WhatsApp สำเร็จ']);
+        // ส่วนที่ 1: ยืนยันตัวตนกับ Meta (ตอนตั้งค่า Webhook ครั้งแรก)
+        if ($request->isMethod('get')) {
+            $verifyToken = 'ease_club_2026'; // รหัสผ่านที่เราจะเอาไปกรอกในเว็บ Meta
+            if ($request->input('hub_verify_token') === $verifyToken) {
+                return response($request->input('hub_challenge'), 200);
             }
-
-            // 🌟 เพิ่ม Log ตรงนี้เพื่อดูว่า Meta ฟ้อง Error อะไรเป๊ะๆ
-            \Illuminate\Support\Facades\Log::error('WhatsApp API Error:', $response->json());
-            
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'ไม่สามารถส่งข้อความได้: ' . ($response->json()['error']['message'] ?? 'Unknown Error')
-            ], 500);
-
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            return response('Invalid token', 403);
         }
+
+        // ส่วนที่ 2: รับข้อความที่ลูกค้าพิมพ์เข้ามา
+        $data = $request->all();
+        
+        if (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
+            $message = $data['entry'][0]['changes'][0]['value']['messages'][0];
+            $phone = $message['from']; // เบอร์ที่ส่งมา เช่น 66812345678
+            $text = $message['text']['body'] ?? ''; // ข้อความที่พิมพ์มา
+
+            // ถ้าข้อความขึ้นต้นด้วย Login- ให้เก็บลง Cache (อายุ 5 นาที)
+            if (str_starts_with(trim($text), 'Login-')) {
+                // แปลงเบอร์ 66 เป็น 0
+                if (str_starts_with($phone, '66')) {
+                    $phone = '0' . substr($phone, 2);
+                }
+                
+                // บันทึกว่า ข้อความรหัสนี้ ผูกกับเบอร์โทรอะไร
+                Cache::put('wa_login_' . trim($text), $phone, now()->addMinutes(5));
+            }
+        }
+
+        return response('OK', 200);
     }
 
-    public function verifyWhatsappOtp(Request $request)
+    // 2. ฟังก์ชันสำหรับให้หน้าเว็บ Polling เช็คสถานะ
+    public function checkWhatsappLogin(Request $request)
     {
-        $request->validate([
-            'phone' => 'required|string',
-            'code' => 'required|string'
-        ]);
+        $loginText = $request->login_text; // เช่น "Login-123456"
+        
+        // เช็คว่าใน Cache มีเบอร์โทรที่ผูกกับข้อความนี้หรือยัง
+        $phone = Cache::get('wa_login_' . $loginText);
 
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
-        if (str_starts_with($phone, '66') && strlen($phone) == 11) $phone = '0' . substr($phone, 2);
+        if ($phone) {
+            // ล้าง Cache ทิ้งทันทีเพื่อความปลอดภัย
+            Cache::forget('wa_login_' . $loginText);
 
-        // 1. เช็ค OTP
-        $otpRecord = DB::table('otp_codes')
-            ->where('phone', $phone)
-            ->where('code', $request->code)
-            ->where('expires_at', '>', Carbon::now())
-            ->first();
+            // ค้นหาหรือสร้างผู้ใช้งาน
+            $user = User::where('phone', $phone)->orWhere('whatsapp_id', $phone)->first();
 
-        if (!$otpRecord) {
-            return response()->json(['status' => 'error', 'message' => 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ']);
-        }
+            if (!$user) {
+                DB::beginTransaction();
+                try {
+                    $dummyUsername = 'wa_' . substr($phone, -6);
+                    $user = User::create([
+                        'username' => $dummyUsername,
+                        'email' => $dummyUsername . '@temp.com',
+                        'phone' => $phone,
+                        'password' => \Hash::make(\Str::random(16)),
+                        'whatsapp_id' => $phone,
+                        'role' => 'customer',
+                        'is_active' => true,
+                        'phone_verified_at' => now(), 
+                    ]);
 
-        // 2. เคลียร์ OTP
-        DB::table('otp_codes')->where('phone', $phone)->delete();
+                    DB::table('customer_profiles')->insert([
+                        'user_id' => $user->id,
+                        'first_name' => 'WhatsApp User',
+                        'phone' => $phone,
+                        'created_at' => now(),
+                    ]);
 
-        // 3. จัดการบัญชี User
-        $user = User::where('phone', $phone)->orWhere('whatsapp_id', $phone)->first();
-
-        if (!$user) {
-            // สร้างลูกค้าใหม่ ถ้ายังไม่เคยสมัคร
-            DB::beginTransaction();
-            try {
-                $dummyUsername = 'wa_' . substr($phone, -6);
-                
-                $user = User::create([
-                    'username' => $dummyUsername,
-                    'email' => $dummyUsername . '@temp.com',
-                    'phone' => $phone,
-                    'password' => Hash::make(Str::random(16)),
-                    'whatsapp_id' => $phone,
-                    'role' => 'customer',
-                    'is_active' => true,
-                    'phone_verified_at' => now(), 
-                ]);
-
-                DB::table('customer_profiles')->insert([
-                    'user_id' => $user->id,
-                    'first_name' => 'WhatsApp User',
-                    'phone' => $phone,
-                    'created_at' => now(),
-                ]);
-
-                DB::table('customer_wallets')->insert([
-                    'user_id' => $user->id,
-                    'current_points' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-
-                DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json(['status' => 'error', 'message' => 'สร้างบัญชีไม่สำเร็จ']);
+                    DB::table('customer_wallets')->insert([
+                        'user_id' => $user->id,
+                        'current_points' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json(['status' => 'error', 'message' => 'System error']);
+                }
+            } elseif (empty($user->whatsapp_id)) {
+                $user->update(['whatsapp_id' => $phone]);
             }
-        } elseif (empty($user->whatsapp_id)) {
-            // มีบัญชีแล้ว แต่เพิ่งล็อกอิน WhatsApp ครั้งแรก ก็ผูกบัญชีให้เลย
-            $user->update(['whatsapp_id' => $phone]);
+
+            // ล็อกอิน
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return response()->json(['status' => 'success']);
         }
 
-        // 4. เข้าสู่ระบบ
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return response()->json(['status' => 'success', 'message' => 'เข้าสู่ระบบสำเร็จ']);
+        // ถ้ายิงมาเช็คแล้วยังไม่มีการสแกน ให้บอกหน้าเว็บว่ารอไปก่อน
+        return response()->json(['status' => 'pending']);
     }
 
 

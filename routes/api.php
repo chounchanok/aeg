@@ -24,6 +24,9 @@ Route::get('/smart-lockers/categorys', [SmartLockerController::class, 'getSmartL
 Route::get('/smart-lockers', [SmartLockerController::class, 'index']);
 Route::get('/smart-lockers/{id}', [SmartLockerController::class, 'show']);
 
+// เส้นทางสำหรับรับข้อความ Webhook จาก Meta WhatsApp
+Route::match(['get', 'post'], 'webhook/whatsapp', [App\Http\Controllers\AuthController::class, 'whatsappWebhook']);
+
 Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/calculate', [SmartLockerController::class, 'calculatePrice']); // 🌟 เส้นคำนวณราคา
     Route::post('/book', [SmartLockerController::class, 'book']);                // เส้นสร้างใบจอง
