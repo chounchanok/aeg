@@ -598,12 +598,14 @@
     </div>
 
     <!-- Floating Chat -->
+    @if(!Auth::user())
     <div class="floating-chat" style="position: fixed; bottom: 40px; right: 40px; z-index: 1000;">
         <div class="chat-circle"
             style="width: 60px; height: 60px; background: white; border-radius: 50%; box-shadow: 0 5px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0;">
             <i class="fas fa-comment-dots text-danger fs-3"></i>
         </div>
     </div>
+    @endif
 
     <!-- Footer Section -->
     <footer>

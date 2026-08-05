@@ -445,6 +445,9 @@ class AuthController extends Controller
         // ส่วนที่ 2: รับข้อความที่ลูกค้าพิมพ์เข้ามา
         $data = $request->all();
         
+        // 🌟 เพิ่ม Log บันทึกทุกครั้งที่มีคนยิง Webhook (POST) เข้ามา
+        \Illuminate\Support\Facades\Log::info('WhatsApp Webhook Received: ', $data);
+        
         if (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
             $message = $data['entry'][0]['changes'][0]['value']['messages'][0];
             $phone = $message['from']; // เบอร์ที่ส่งมา เช่น 66812345678

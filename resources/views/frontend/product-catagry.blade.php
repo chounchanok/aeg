@@ -118,19 +118,51 @@
 
         .nav-tabs-custom {
             display: flex;
-            /* 🌟 เปลี่ยนจาก center เป็น flex-start เพื่อให้เริ่มเรียงจากซ้าย */
             justify-content: flex-start; 
             gap: 20px;
             border: none;
-            overflow-x: auto; /* เปิดให้ scroll แนวนอนได้ */
-            flex-wrap: nowrap; /* ห้ามให้มันตกลงมาบรรทัดใหม่ */
+            overflow-x: auto;
+            flex-wrap: nowrap;
             padding-bottom: 15px;
-            scrollbar-width: none; /* ซ่อน Scrollbar ของ Firefox */
-            -ms-overflow-style: none; /* ซ่อน Scrollbar ของ IE/Edge */
+            /* ซ่อน Scrollbar ตอนปกติ (สำหรับ Firefox และ IE) */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
         }
 
+        /* เมื่อ Hover ให้แสดง Scrollbar แบบบาง (สำหรับ Firefox) */
+        .nav-tabs-custom:hover {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        /* --- ตั้งค่า Scrollbar สำหรับ Chrome/Safari/Edge --- */
         .nav-tabs-custom::-webkit-scrollbar {
-            display: none;
+            height: 8px; /* ขนาดความหนาของ Scrollbar แนวนอน */
+        }
+
+        .nav-tabs-custom::-webkit-scrollbar-track {
+            background: transparent; /* ซ่อนพื้นหลังตอนปกติ */
+            border-radius: 10px;
+        }
+
+        .nav-tabs-custom::-webkit-scrollbar-thumb {
+            background: transparent; /* ซ่อนตัวเลื่อนตอนปกติ */
+            border-radius: 10px;
+        }
+
+        /* 🌟 พระเอกอยู่ตรงนี้: แสดงสีเมื่อเอาเมาส์ชี้ที่กรอบหมวดหมู่ */
+        .nav-tabs-custom:hover::-webkit-scrollbar-track {
+            background: #f1f5f9; /* สีพื้นหลังอ่อนๆ */
+        }
+
+        .nav-tabs-custom:hover::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* สีตัวเลื่อน */
+        }
+        
+        /* เปลี่ยนสีให้เข้มขึ้นอีกนิดตอนเอาเม้าส์ชี้ที่ตัวเลื่อน (Thumb) โดยตรง */
+        .nav-tabs-custom:hover::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         .nav-tabs-custom .nav-link {
@@ -336,6 +368,73 @@
             text-decoration: none;
         }
 
+        /* --- Custom Pagination Styles --- */
+        .custom-pagination nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        
+        /* ซ่อนปุ่ม Prev/Next แบบหน้าจอมือถือที่ชอบซ้อนกัน */
+        .custom-pagination nav .d-sm-none {
+            display: none !important;
+        }
+
+        /* 🌟 พระเอกอยู่ตรงนี้: จัด Flex ให้ปุ่มอยู่บน ข้อความอยู่ล่าง */
+        .custom-pagination nav .d-sm-flex {
+            display: flex !important;
+            flex-direction: column-reverse !important; /* ดันปุ่มขึ้นไปอยู่ก่อนข้อความ */
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 15px;
+        }
+
+        /* แต่งข้อความ Showing... */
+        .custom-pagination p.small {
+            color: #888 !important;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        /* แต่งปุ่ม Pagination */
+        .custom-pagination .pagination {
+            margin-bottom: 0;
+            gap: 8px;
+        }
+
+        .custom-pagination .page-item .page-link {
+            color: var(--primary-dark);
+            border: 1px solid #eee;
+            border-radius: 12px !important;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .custom-pagination .page-item .page-link:hover {
+            background-color: #f8f9fa;
+            color: var(--primary-red);
+            border-color: #ddd;
+            transform: translateY(-2px);
+        }
+
+        /* แต่งปุ่มหน้าปัจจุบัน (Active) ให้เป็นสี Gradient ของเว็บ */
+        .custom-pagination .page-item.active .page-link {
+            background: var(--btn-gradient);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(196, 30, 58, 0.25);
+        }
+
+        .custom-pagination .page-item.disabled .page-link {
+            color: #ccc;
+            background-color: #fafafa;
+            border-color: #f5f5f5;
+        }
+
         @media (max-width: 1200px) {
             .category-box {
                 width: 180px;
@@ -458,7 +557,7 @@
 
                     </div>
 
-                    <div class="d-flex justify-content-center mt-5">
+                    <div class="custom-pagination mt-5 w-100">
                         {{ $products->links('pagination::bootstrap-5') }}
                     </div>
 
@@ -467,9 +566,11 @@
         </div>
     </main>
 
+    @if(!Auth::user())
     <div class="position-fixed" style="bottom: 40px; right: 40px; z-index: 1000;">
         <div class="bg-white rounded-circle shadow d-flex align-items-center justify-content-center border" style="width: 65px; height: 65px;">
             <i class="fas fa-comment-dots text-danger fs-3"></i>
         </div>
     </div>
+    @endif
 @endsection

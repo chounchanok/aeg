@@ -475,11 +475,13 @@
         </div>
     </div>
 
+    @if(!Auth::user())
     <div class="floating-icon">
         <div class="chat-btn">
             <i class="fas fa-comment-dots text-danger fs-3"></i>
         </div>
     </div>
+    @endif
 
 @endsection
 

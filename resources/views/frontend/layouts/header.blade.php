@@ -137,6 +137,28 @@
             <div class="cart-section">
                 <a href="{{ route('cart') }}" class="cart-icon"><i class="fas fa-shopping-cart"></i></a>
 
+                <div class="dropdown header-dropdown">
+                    <button class="btn-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @auth
+                            <li><a class="dropdown-item" href="{{ route('my-account') }}"><i class="fas fa-id-card-alt me-2"></i>ข้อมูลของฉัน</a></li>
+                            <li><a class="dropdown-item" href="{{ route('repair-history') }}"><i class="fas fa-tools me-2"></i>ประวัติการแจ้งซ่อม</a></li>
+                            <li><hr class="dropdown-divider border-secondary"></li>
+                            <li>
+                                <a class="dropdown-item text-warning" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ
+                                </a>
+                                <form id="logout-form" action="{{ route('logout.post') }}" method="POST" class="d-none">@csrf</form>
+                            </li>
+                        @else
+                            <li><a class="dropdown-item" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ</a></li>
+                            <li><a class="dropdown-item" href="{{ route('register') }}"><i class="fas fa-user-plus me-2"></i>ลงทะเบียน</a></li>
+                        @endauth
+                    </ul>
+                </div>
+
                 <div class="points-badge shadow-sm">
                     <i class="fas fa-coins" style="color: #f1c40f;"></i>
                     {{ Auth::check() ? (\Illuminate\Support\Facades\DB::table('customer_wallets')->where('user_id', Auth::id())->value('current_points') ?? 0) : 0 }}
