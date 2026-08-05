@@ -156,6 +156,7 @@ Route::middleware('auth')->group(function() {
     // --- User Profile & Account ---
     Route::get('/my-account', [ProfileController::class, 'index'])->name('my-account');
     Route::post('/my-account/update', [ProfileController::class, 'update'])->name('my-account.update');
+    Route::post('/my-account/delete', [ProfileController::class, 'destroy'])->name('my-account.delete');
 
     // 🌟 3 เส้นทางที่เพิ่มใหม่สำหรับจัดการที่อยู่หน้าเว็บ
     Route::post('/my-account/address', [ProfileController::class, 'storeAddress'])->name('my-account.address.store');

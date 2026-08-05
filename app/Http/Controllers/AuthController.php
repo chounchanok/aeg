@@ -348,9 +348,14 @@ class AuthController extends Controller
         return back()->withErrors(['email' => trans($response)]);
     }
 
-    // โยนผู้ใช้ไปหน้าขออนุญาตของ Google / LINE
+    // โยนผู้ใช้ไปหน้าขออนุญาตของ Google / LINE / Facebook
     public function redirectToProvider($provider)
     {
+        // 🌟 บังคับระบุสิทธิ์ public_profile พ่วงกับ email สำหรับ Facebook Business App
+        if ($provider === 'facebook') {
+            return Socialite::driver('facebook')->scopes(['public_profile', 'email'])->redirect();
+        }
+        
         return Socialite::driver($provider)->redirect();
     }
 
