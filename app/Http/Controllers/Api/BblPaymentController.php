@@ -193,12 +193,13 @@ class BblPaymentController extends Controller
         $merchantId = "23797";
         $currCode = "764";
         $payType = "N";
+        $payMethod = "ALL";
         $secureHashSecret = env('BBL_SECURE_HASH_SECRET', 'YOUR_SECRET_KEY'); // 🌟 อย่าลืมใส่ Secret จากเว็บ BBL นะครับ
 
         // 3. แปลงยอดเงินเป็นทศนิยม 2 ตำแหน่ง
         $amountFormatted = number_format($amount, 2, '.', '');
 
-        // 4. คำนวณ Secure Hash
+        // 4. คำนวณ Secure Hash (ถ้า BBL บังคับให้เพิ่มใน Hash ต้องเอา $payMethod มาต่อท้ายตรงนี้ด้วย)
         $hashString = "{$merchantId}|{$order_number}|{$currCode}|{$amountFormatted}|{$payType}|{$secureHashSecret}";
         $secureHash = hash('sha512', $hashString);
 
@@ -209,6 +210,7 @@ class BblPaymentController extends Controller
             'orderRef' => $order_number,
             'currCode' => $currCode,
             'payType' => $payType,
+            'payMethod' => $payMethod,
             'secureHash' => $secureHash,
             'successUrl' => url('/payment/bbl/result?status=success'), // ลิงก์ตอนจ่ายเสร็จ
             'failUrl' => url('/payment/bbl/result?status=fail'),

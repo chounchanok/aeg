@@ -1134,6 +1134,7 @@ class EcommerceController extends Controller
             'payment_gateway' => 'required|string', // เผื่อลูกค้าอยากเปลี่ยนวิธีจ่ายเงิน เช่น จากบัตรเครดิต เป็น promptpay
         ]);
 
+        $orderId = $id;
         $user = $request->user();
 
         // เช็คว่าออเดอร์นี้เป็นของลูกค้าคนนี้จริง และสถานะยังไม่ได้จ่ายเงิน
@@ -1163,6 +1164,9 @@ class EcommerceController extends Controller
             // 🌟 1. ดึงข้อมูลออเดอร์ที่เพิ่งสร้างเสร็จ
             $order = DB::table('orders')->where('id', $orderId)->first();
             $paymentUrl = null;
+            $subtotal = (float)$order->subtotal;
+            $discount = (float)$order->discount;
+            $totalAmount = (float)$order->total_amount;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
             if ($request->payment_gateway === 'bbl') {

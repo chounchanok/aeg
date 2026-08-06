@@ -31,6 +31,7 @@
         <input type="hidden" name="failUrl" value="{{ $failUrl }}">
         <input type="hidden" name="cancelUrl" value="{{ $cancelUrl }}">
         <input type="hidden" name="payType" value="{{ $payType }}">
+        <input type="hidden" name="payMethod" value="{{ $payMethod }}">
         <input type="hidden" name="lang" value="E">
         <input type="hidden" name="secureHash" value="{{ $secureHash }}">
     </form>
