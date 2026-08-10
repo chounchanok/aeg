@@ -34,10 +34,13 @@ class ProfileController extends Controller
             'first_name' => 'nullable|string',
             'last_name' => 'nullable|string',
             'phone' => 'nullable|string',
+            'gender' => 'nullable|string',
+            'birthday' => 'nullable|date',
+            'other' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' // ตรวจสอบไฟล์รูปภาพ
         ]);
 
-        $updateData = $request->only(['first_name', 'last_name', 'phone']);
+        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other']);
 
         // จัดการอัปโหลดไฟล์รูปภาพ (ถ้ามีการส่งมา)
         if ($request->hasFile('profile_image')) {

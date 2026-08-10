@@ -45,7 +45,9 @@ class TechnicianController extends Controller
                 'service_requests.problem_description',
                 'customer_products.product_name',
                 'customer_addresses.province',
-                'customer_addresses.district'
+                'customer_addresses.district',
+                'customer_addresses.latitude',
+                'customer_addresses.longitude'
             )
             ->orderBy('service_requests.preferred_date', 'asc')
             ->get();

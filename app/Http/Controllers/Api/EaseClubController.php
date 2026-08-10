@@ -62,6 +62,16 @@ class EaseClubController extends Controller
             ? \Carbon\Carbon::parse($userInfo->points_expiry_date)->format('Y-m-d')
             : \Carbon\Carbon::now()->endOfYear()->format('Y-m-d');
 
+        if($userInfo->tier_name == 'Advance'){
+            $profile_image_card = asset('assets/image/card-advance.webp');
+        } elseif($userInfo->tier_name == 'Platinum'){
+            $profile_image_card = asset('assets/image/card-platinum.webp');
+        } elseif($userInfo->tier_name == 'Beyond'){
+            $profile_image_card = asset('assets/image/card-beyond.webp');
+        } else {
+            $profile_image_card = null;
+        }
+
         // 4. จัดเรียงข้อมูล Response ให้ Mobile App นำไปใช้ง่ายๆ
         $data = [
             'member_id' => $memberId,
@@ -70,6 +80,7 @@ class EaseClubController extends Controller
             'current_points' => $userInfo->current_points ?? 0,
             'points_expiry_date' => $expiryDate,
             'profile_image_url' => $userInfo->profile_image_url ?? null,
+            'profile_image_card' => $profile_image_card
         ];
 
         return $this->successResponse($data, 'User info retrieved successfully');

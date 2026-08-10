@@ -121,6 +121,7 @@ class SmartLockerController extends Controller
         ], 'คำนวณราคาสำเร็จ');
     }
 
+    
     // ==========================================
     // 2. API จองตู้เซฟ (เปลี่ยนสถานะตู้เป็น Pending)
     // ==========================================
@@ -150,6 +151,11 @@ class SmartLockerController extends Controller
         $vatAmount = $serviceFee * 0.07;
         $grandTotal = $subtotal + $vatAmount;
 
+        // 🌟 แปลงวันที่และบังคับ Type เป็น Integer เพื่อไม่ให้ Carbon Error
+        $startDate = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : now();
+        $durationMonths = (int) $request->duration_months;
+        $endDate = $startDate->copy()->addMonths($durationMonths);
+
         DB::beginTransaction();
         try {
             $bookingId = DB::table('locker_bookings')->insertGetId([
@@ -158,8 +164,8 @@ class SmartLockerController extends Controller
                 'smart_locker_id' => $locker->id,
                 'total_amount' => $grandTotal,
                 'payment_gateway' => $request->payment_gateway,
-                'start_date' => $request->start_date ?? now(),
-                'end_date' => $request->start_date ? now()->addMonths($request->duration_months) : now()->addMonths($request->duration_months),
+                'start_date' => $startDate, // ใช้ตัวแปรที่แปลงแล้ว
+                'end_date' => $endDate,     // ใช้ตัวแปรที่คำนวณแล้ว
                 'address_id' => $request->address_id,
                 'custom_address_text' => $request->custom_address_text ?? null,
                 'status' => 'pending_payment',
