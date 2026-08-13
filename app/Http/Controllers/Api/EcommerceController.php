@@ -450,12 +450,8 @@ class EcommerceController extends Controller
         $user = $request->user();
         $selectedCartItemIds = $request->cart_id;
 
-        $cart = DB::table('carts')->where('user_id', $user->id)->first();
-        if (!$cart) return $this->errorResponse('Cart not found', 404);
-
         $cartItems = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
-            ->where('cart_items.cart_id', $cart->id)
             ->whereIn('cart_items.id', $selectedCartItemIds)
             ->select(
                 'cart_items.id as cart_item_id', 'products.id as product_id',
@@ -888,11 +884,16 @@ class EcommerceController extends Controller
     // ระบบ Reward (กดแลกแต้มเป็นโค้ด และ ดูคลังโค้ด)
     // ==========================================
 
-    // 1. ฟังก์ชันกดแลกของรางวัล (หักแต้มแล้วได้โค้ด)
+    // 1. ฟังก์ชันกดแลกของรางวัล (หักแต้มแล้วได้โค้ด / แลกสินค้า)
     public function redeemReward(Request $request)
     {
+        // 🌟 เพิ่ม Validation สำหรับรับค่าที่อยู่จัดส่งและชื่อผู้รับ
         $request->validate([
-            'reward_id' => 'required|integer'
+            'reward_id' => 'required|integer',
+            'customer_name' => 'nullable|string',
+            'customer_phone' => 'nullable|string',
+            'address_id' => 'nullable|integer',
+            'address_text' => 'nullable|string',
         ]);
 
         $user = $request->user();
@@ -905,34 +906,58 @@ class EcommerceController extends Controller
             return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
         }
 
+        // 🌟 เช็คว่าเป็น "คูปอง" หรือ "สินค้า" (สมมติว่าหมวด 1 คือคูปอง)
+        $isCoupon = ($reward->category_id == 1 && $reward->discount_amount > 0);
+
+        // 🌟 ถ้าเป็น "สินค้า" ต้องตรวจสอบว่าส่งข้อมูลผู้รับมาครบหรือไม่
+        if (!$isCoupon) {
+            if (empty($request->address_id) && empty($request->address_text)) {
+                return $this->errorResponse('กรุณาระบุที่อยู่สำหรับจัดส่งของรางวัล', 400);
+            }
+            if (empty($request->customer_name) || empty($request->customer_phone)) {
+                return $this->errorResponse('กรุณาระบุชื่อและเบอร์โทรศัพท์ผู้รับ', 400);
+            }
+        }
+
         DB::beginTransaction();
         try {
             // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
             DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
 
-            // 🌟 2. เพิ่มการบันทึกประวัติลง point_transactions
+            // 2. บันทึกประวัติการใช้แต้มลง point_transactions
             DB::table('point_transactions')->insert([
                 'user_id' => $user->id,
-                'amount' => ($reward->points_required*-1), // จำนวนแต้มที่ใช้ไป
-                'type' => 'redeem', // สถานะการใช้แต้ม (เช่น earn=ได้แต้ม, redeem=ใช้แต้ม)
-                'description' => 'แลกรับส่วนลด: ' . $reward->title_th, // คำอธิบายที่จะโชว์ในแอป
-                // ถ้าในตารางพี่แชมเปญมีเก็บ reference ไว้โยงข้อมูล ก็เปิดคอมเมนต์ด้านล่างนี้ได้ครับ
-                // 'reference_type' => 'reward', 
-                // 'reference_id' => $reward->id,
+                'amount' => ($reward->points_required * -1),
+                'type' => 'redeem',
+                'description' => 'แลกรับของรางวัล: ' . $reward->title_th,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            // 2. สุ่มโค้ด RWD- ตามด้วยอักษรภาษาอังกฤษและตัวเลข 8 หลัก
+            // 3. บันทึกประวัติการแลกใน reward_redemptions (บันทึกทั้งคูปองและสินค้า)
+            DB::table('reward_redemptions')->insert([
+                'user_id' => $user->id,
+                'reward_id' => $reward->id,
+                'points_used' => $reward->points_required,
+                'status' => 'success',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // 4. สุ่มโค้ด RWD-
             $code = 'RWD-' . strtoupper(\Illuminate\Support\Str::random(8));
 
-            // 3. บันทึกโค้ดเข้ากระเป๋าลูกค้า
+            // 5. บันทึกข้อมูลของรางวัลเข้ากระเป๋าลูกค้า
             DB::table('customer_reward_codes')->insert([
                 'user_id' => $user->id,
                 'reward_id' => $reward->id,
                 'code' => $code,
-                'discount_amount' => $reward->discount_amount,
+                'discount_amount' => $isCoupon ? $reward->discount_amount : 0, // คูปองเก็บค่าส่วนลด สินค้าเก็บ 0
                 'status' => 'active',
+                'customer_name' => $isCoupon ? null : $request->customer_name,
+                'customer_phone' => $isCoupon ? null : $request->customer_phone,
+                'address_id' => $isCoupon ? null : $request->address_id,
+                'address_text' => $isCoupon ? null : $request->address_text,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -941,19 +966,19 @@ class EcommerceController extends Controller
 
             return $this->successResponse([
                 'code' => $code,
-                'discount_amount' => $reward->discount_amount,
+                'discount_amount' => $isCoupon ? $reward->discount_amount : 0,
                 'reward_title' => $reward->title_th,
                 'reward_point' => $wallet->current_points - $reward->points_required,
-            ], 'แลกของรางวัลสำเร็จ โค้ดส่วนลดถูกเก็บไว้ในกระเป๋าของคุณแล้ว');
+                'is_coupon' => $isCoupon
+            ], 'แลกของรางวัลสำเร็จ');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return dd($e->getMessage());
-            // return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล', 500);
+            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล: ' . $e->getMessage(), 500);
         }
     }
 
-    // 2. ฟังก์ชันดูโค้ดที่ยังไม่ได้ใช้งาน
+    // 2. ฟังก์ชันดูของรางวัลที่เคยแลกทั้งหมด
     public function getMyRewardCodes(Request $request)
     {
         $user = $request->user();
@@ -961,19 +986,25 @@ class EcommerceController extends Controller
         $codes = DB::table('customer_reward_codes')
             ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
             ->where('customer_reward_codes.user_id', $user->id)
-            ->where('customer_reward_codes.status', 'active') // 🌟 ดึงเฉพาะที่ยังไม่ได้ใช้
+            // 🌟 ดึงข้อมูลทั้งหมดที่เคยแลก (เอาบรรทัดเช็ค 'active' ออกแล้ว)
             ->select(
                 'customer_reward_codes.id',
                 'customer_reward_codes.code',
+                'customer_reward_codes.status', // 🌟 ส่งสถานะกลับไป (เช่น active, used)
                 'customer_reward_codes.discount_amount',
+                'customer_reward_codes.customer_name',
+                'customer_reward_codes.customer_phone',
+                'customer_reward_codes.address_id',
+                'customer_reward_codes.address_text',
                 'customer_reward_codes.created_at as redeemed_date',
+                'rewards.category_id', // 🌟 ส่งไปเพื่อให้แอปแยกว่าอันไหนคูปอง อันไหนสินค้า
                 'rewards.title_th as reward_title',
                 'rewards.image_url'
             )
             ->orderBy('customer_reward_codes.created_at', 'desc')
             ->get();
 
-        return $this->successResponse($codes, 'ดึงรายการโค้ดส่วนลดที่ใช้งานได้สำเร็จ');
+        return $this->successResponse($codes, 'ดึงรายการของรางวัลที่เคยแลกสำเร็จ');
     }
 
     // ==========================================

@@ -33,6 +33,10 @@ Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/cancel/{id}', [SmartLockerController::class, 'cancelBooking']); // 🌟 เส้นยกเลิกจอง
 });
 
+// ขอ OTP และ ยืนยัน OTP ผ่าน WhatsApp
+Route::post('/request-whatsapp-otp', [AuthController::class, 'requestWhatsappOtp']);
+Route::post('/verify-whatsapp-otp', [AuthController::class, 'verifyWhatsappOtp']);
+
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
 // BBL Webhook
