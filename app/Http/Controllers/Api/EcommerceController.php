@@ -978,8 +978,36 @@ class EcommerceController extends Controller
         }
     }
 
-    // 2. ฟังก์ชันดูของรางวัลที่เคยแลกทั้งหมด
+    // 2. ฟังก์ชันดูโค้ดที่ยังไม่ได้ใช้งาน
     public function getMyRewardCodes(Request $request)
+    {
+        $user = $request->user();
+        
+        $codes = DB::table('customer_reward_codes')
+            ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
+            ->where('customer_reward_codes.user_id', $user->id)
+            ->where('customer_reward_codes.status', 'active')
+            ->select(
+                'customer_reward_codes.id',
+                'customer_reward_codes.code',
+                'customer_reward_codes.status', // 🌟 ส่งสถานะกลับไป (เช่น active, used)
+                'customer_reward_codes.discount_amount',
+                'customer_reward_codes.customer_name',
+                'customer_reward_codes.customer_phone',
+                'customer_reward_codes.address_id',
+                'customer_reward_codes.address_text',
+                'customer_reward_codes.created_at as redeemed_date',
+                'rewards.category_id', // 🌟 ส่งไปเพื่อให้แอปแยกว่าอันไหนคูปอง อันไหนสินค้า
+                'rewards.title_th as reward_title',
+                'rewards.image_url'
+            )
+            ->orderBy('customer_reward_codes.created_at', 'desc')
+            ->get();
+
+        return $this->successResponse($codes, 'ดึงรายการโค้ดส่วนลดที่ใช้งานได้สำเร็จ');
+    }
+
+    public function getMyRewardCodesAll(Request $request)
     {
         $user = $request->user();
         

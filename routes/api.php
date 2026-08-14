@@ -33,9 +33,8 @@ Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/cancel/{id}', [SmartLockerController::class, 'cancelBooking']); // 🌟 เส้นยกเลิกจอง
 });
 
-// ขอ OTP และ ยืนยัน OTP ผ่าน WhatsApp
-Route::post('/request-whatsapp-otp', [AuthController::class, 'requestWhatsappOtp']);
-Route::post('/verify-whatsapp-otp', [AuthController::class, 'verifyWhatsappOtp']);
+// API สำหรับให้แอปมือถือเช็คสถานะการเข้าสู่ระบบ WhatsApp
+Route::post('/auth/check-whatsapp-login', [AuthController::class, 'checkWhatsappLoginApi']);
 
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
@@ -129,6 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- ระบบ Reward Codes ---
     Route::post('/rewards/redeem', [EcommerceController::class, 'redeemReward']);
     Route::get('/rewards/my-codes', [EcommerceController::class, 'getMyRewardCodes']);
+    Route::get('/rewards/my-codes-all', [EcommerceController::class, 'getMyRewardCodesAll']);
 
     // Main Page (ส่วนบุคคล)
     Route::prefix('main')->group(function () {

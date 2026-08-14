@@ -536,153 +536,82 @@ class AuthController extends Controller
     }
 
     // ==========================================
-    // 🌟 1. ขอ OTP ผ่าน WhatsApp สำหรับ Mobile App (ฟังก์ชันใหม่)
+    // ตรวจสอบสถานะการล็อกอิน WhatsApp (สำหรับ Mobile App)
     // ==========================================
-    public function requestWhatsappOtp(Request $request)
+    public function checkWhatsappLoginApi(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string|min:10'
+            'login_text' => 'required|string' // เช่น "Login-123456"
         ]);
 
-        // 1. เช็คว่าเบอร์นี้เคยสมัครหรือยัง
-        if (DB::table('users')->where('phone', $request->phone)->exists()) {
-            return $this->errorResponse('เบอร์โทรศัพท์นี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ', 400);
-        }
+        $loginText = trim($request->login_text);
+        
+        // 1. เช็คว่า Webhook ได้รับข้อความและบันทึกเบอร์ลง Cache หรือยัง
+        $phone = \Illuminate\Support\Facades\Cache::get('wa_login_' . $loginText);
 
-        // 2. จัดการฟอร์แมตเบอร์โทรเป็นรูปแบบสากล (66...) สำหรับ WhatsApp
-        $formattedPhone = preg_replace('/[^0-9]/', '', $request->phone);
-        if (str_starts_with($formattedPhone, '0')) {
-            $formattedPhone = '66' . substr($formattedPhone, 1);
-        }
+        // ถ้าเจอเบอร์โทร แสดงว่าลูกค้ากด "ส่ง" ในแอป WhatsApp แล้ว
+        if ($phone) {
+            // ล้าง Cache ทิ้งทันทีเพื่อป้องกันการใช้ซ้ำ
+            \Illuminate\Support\Facades\Cache::forget('wa_login_' . $loginText);
 
-        try {
-            // 3. สร้างรหัส OTP 6 หลัก
-            $otpCode = (string) random_int(100000, 999999);
-            // สร้าง Reference Code 5 หลัก
-            $refCode = strtoupper(\Illuminate\Support\Str::random(5));
+            // 2. ค้นหาผู้ใช้งานจากเบอร์โทร (หรือสร้างใหม่ถ้ายังไม่เคยมี)
+            $user = User::where('phone', $phone)->orWhere('whatsapp_id', $phone)->first();
 
-            // 4. บันทึกลงตาราง otp_codes (รหัส OTP และ Reference Code)
-            DB::table('otp_codes')->updateOrInsert(
-                ['phone' => $request->phone], // ใช้เบอร์ที่ลูกค้ากรอกมาเป็นตัวค้นหา
-                [
-                    'code' => $otpCode, 
-                    'expires_at' => \Carbon\Carbon::now()->addMinutes(5),
-                    'created_at' => now()
+            if (!$user) {
+                DB::beginTransaction();
+                try {
+                    $dummyUsername = 'wa_' . substr($phone, -6);
+                    $user = User::create([
+                        'username' => $dummyUsername,
+                        'email' => $dummyUsername . '@temp.com',
+                        'phone' => $phone,
+                        'password' => Hash::make(\Illuminate\Support\Str::random(16)),
+                        'whatsapp_id' => $phone,
+                        'role' => 'customer',
+                        'is_active' => true,
+                        'phone_verified_at' => now(), 
+                    ]);
+
+                    DB::table('customer_profiles')->insert([
+                        'user_id' => $user->id,
+                        'first_name' => 'WhatsApp User',
+                        'phone' => $phone,
+                        'created_at' => now(),
+                    ]);
+
+                    DB::table('customer_wallets')->insert([
+                        'user_id' => $user->id,
+                        'current_points' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return $this->errorResponse('ไม่สามารถสร้างบัญชีผู้ใช้งานได้: ' . $e->getMessage(), 500);
+                }
+            } elseif (empty($user->whatsapp_id)) {
+                $user->update(['whatsapp_id' => $phone]);
+            }
+
+            // 3. สร้าง Token ให้แอปมือถือเอาไปใช้
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->successResponse([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'phone' => $user->phone
                 ]
-            );
-
-            // 5. เรียกใช้ฟังก์ชันยิงข้อความ WhatsApp
-            $whatsappResponse = $this->sendWhatsappOtp($formattedPhone, $otpCode, $refCode);
-
-            if ($whatsappResponse['status'] === 'success') {
-                return $this->successResponse([
-                    'ref_code' => $refCode, 
-                    'phone' => $request->phone
-                ], 'ส่งรหัส OTP ผ่าน WhatsApp เรียบร้อยแล้ว');
-            } else {
-                return $this->errorResponse('ไม่สามารถส่ง WhatsApp OTP ได้: ' . $whatsappResponse['message'], 500);
-            }
-
-        } catch (\Exception $e) {
-            return $this->errorResponse('เกิดข้อผิดพลาดในการเชื่อมต่อระบบส่งข้อความ: ' . $e->getMessage(), 500);
+            ], 'เข้าสู่ระบบผ่าน WhatsApp สำเร็จ');
         }
-    }
 
-    // ==========================================
-    // 🌟 2. ยืนยัน OTP สำหรับ WhatsApp (ฟังก์ชันใหม่)
-    // ==========================================
-    public function verifyWhatsappOtp(Request $request)
-    {
-        $request->validate([
-            'phone' => 'required|string',
-            'code' => 'required|string|size:6', 
+        // 4. ถ้ายังไม่มีข้อมูลใน Cache (ลูกค้ายังไม่กดส่ง) ให้บอกแอปว่ารอก่อน
+        return response()->json([
+            'status' => 'pending', 
+            'message' => 'Waiting for user to send the message'
         ]);
-
-        // ค้นหา OTP ที่เราสร้างเอง (และยังไม่หมดอายุ)
-        $otpRecord = DB::table('otp_codes')
-            ->where('phone', $request->phone)
-            ->where('code', $request->code)
-            ->where('expires_at', '>', Carbon::now())
-            ->first();
-
-        if (!$otpRecord) {
-            return $this->errorResponse('รหัส OTP ไม่ถูกต้อง หรือหมดอายุ', 400);
-        }
-
-        // ยืนยันสำเร็จ ลบ OTP ทิ้ง
-        DB::table('otp_codes')->where('phone', $request->phone)->delete();
-
-        // แจ้งแอปพลิเคชันว่ายืนยันตัวตนผ่านแล้ว
-        return $this->successResponse([
-            'phone' => $request->phone,
-            'is_verified' => true
-        ], 'ยืนยันรหัส OTP สำเร็จ กรุณากรอกข้อมูลเพื่อลงทะเบียน');
-    }
-
-    // ==========================================
-    // 🌟 3. ฟังก์ชันสำหรับเรียก API WhatsApp ของ Meta
-    // ==========================================
-    private function sendWhatsappOtp($phone, $otpCode, $refCode)
-    {
-        // 💡 ตั้งค่าตัวแปรเหล่านี้ในไฟล์ .env 
-        $phoneNumberId = env('WHATSAPP_PHONE_NUMBER_ID', '66617693645');
-        $accessToken = env('WHATSAPP_ACCESS_TOKEN', 'YOUR_PERMANENT_ACCESS_TOKEN'); 
-        $templateName = env('WHATSAPP_OTP_TEMPLATE', 'ease_club_otp_template'); 
-
-        $apiUrl = "https://graph.facebook.com/v19.0/{$phoneNumberId}/messages";
-
-        try {
-            $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
-                ->post($apiUrl, [
-                    'messaging_product' => 'whatsapp',
-                    'to' => $phone,
-                    'type' => 'template',
-                    'template' => [
-                        'name' => $templateName,
-                        'language' => [
-                            'code' => 'th'
-                        ],
-                        'components' => [
-                            [
-                                'type' => 'body',
-                                'parameters' => [
-                                    [
-                                        'type' => 'text',
-                                        'text' => $otpCode // ส่งรหัส 6 หลักไปใส่ในตัวแปร {{1}}
-                                    ],
-                                    [
-                                        'type' => 'text',
-                                        'text' => $refCode // ส่งรหัสอ้างอิงไปใส่ในตัวแปร {{2}} (ถ้ามี)
-                                    ]
-                                ]
-                            ],
-                            [
-                                "type" => "button",
-                                "sub_type" => "url",
-                                "index" => "0",
-                                "parameters" => [
-                                    [
-                                        "type" => "text",
-                                        "text" => $otpCode
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]);
-
-            $responseData = $response->json();
-            \Illuminate\Support\Facades\Log::info('WhatsApp OTP Response: ', $responseData);
-
-            if ($response->successful()) {
-                return ['status' => 'success', 'message' => 'Message sent successfully'];
-            } else {
-                $errorMsg = $responseData['error']['message'] ?? 'Unknown error';
-                return ['status' => 'error', 'message' => $errorMsg];
-            }
-
-        } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => $e->getMessage()];
-        }
     }
 }
