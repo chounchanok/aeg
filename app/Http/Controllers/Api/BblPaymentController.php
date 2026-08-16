@@ -172,7 +172,7 @@ class BblPaymentController extends Controller
     }
 
     // ฟังก์ชันสำหรับให้ WebView เข้ามาเปิดเพื่อเด้งไป BBL
-    public function redirect($order_number)
+    public function redirect($order_number, $type)
     {
         $amount = 0;
         
@@ -193,7 +193,13 @@ class BblPaymentController extends Controller
         $merchantId = "23797";
         $currCode = "764";
         $payType = "N";
-        $payMethod = "ALL";
+        if($type === 'qrcode') {
+            $payMethod = "PROMPTPAY”"; // สำหรับ App
+        }elseif($type === 'creditcard') {
+            $payMethod = "CC"; // สำหรับ App
+        }else{
+            $payMethod = "ALL"; // สำหรับ App
+        }
         $secureHashSecret = env('BBL_SECURE_HASH_SECRET', 'YOUR_SECRET_KEY'); // 🌟 อย่าลืมใส่ Secret จากเว็บ BBL นะครับ
 
         // 3. แปลงยอดเงินเป็นทศนิยม 2 ตำแหน่ง

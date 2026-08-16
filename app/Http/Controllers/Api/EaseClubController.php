@@ -156,49 +156,93 @@ class EaseClubController extends Controller
 
     public function redeemReward(Request $request, $rewardId)
     {
-        $user = $request->user();
-        $reward = DB::table('rewards')->where('id', $rewardId)->first();
+        // 🌟 เพิ่ม Validation สำหรับรับค่าที่อยู่จัดส่งและชื่อผู้รับ
+        $request->validate([
+            'customer_name' => 'nullable|string',
+            'customer_phone' => 'nullable|string',
+            'address_id' => 'nullable|integer',
+            'address_text' => 'nullable|string',
+        ]);
 
-        if (!$reward) return $this->errorResponse('Reward not found', 404);
-        if ($reward->stock_quantity <= 0) return $this->errorResponse('Out of stock', 400);
+        $user = $request->user();
+        $reward = DB::table('rewards')->where('id', $rewardId)->where('is_active', true)->first();
+
+        if (!$reward) return $this->errorResponse('ไม่พบของรางวัลนี้', 404);
 
         $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-
-        if(empty($wallet)){
-            return $this->errorResponse('User wallet not found', 404);
+        if (!$wallet || $wallet->current_points < $reward->points_required) {
+            return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
         }
 
-        if ($wallet->current_points < $reward->points_required) {
-            return $this->errorResponse('Insufficient points', 400);
+        // 🌟 เช็คว่าเป็น "คูปอง" หรือ "สินค้า" (สมมติว่าหมวด 1 คือคูปอง)
+        $isCoupon = ($reward->category_id == 1 && $reward->discount_amount > 0);
+
+        // 🌟 ถ้าเป็น "สินค้า" ต้องตรวจสอบว่าส่งข้อมูลผู้รับมาครบหรือไม่
+        if (!$isCoupon) {
+            if (empty($request->address_id) && empty($request->address_text)) {
+                return $this->errorResponse('กรุณาระบุที่อยู่สำหรับจัดส่งของรางวัล', 400);
+            }
+            if (empty($request->customer_name) || empty($request->customer_phone)) {
+                return $this->errorResponse('กรุณาระบุชื่อและเบอร์โทรศัพท์ผู้รับ', 400);
+            }
         }
 
-        // เริ่ม Transaction ตัดพอยท์และบันทึกประวัติ
-        DB::transaction(function () use ($user, $wallet, $reward) {
-            // หักพอยท์
-            DB::table('customer_wallets')->where('id', $wallet->id)->decrement('current_points', $reward->points_required);
+        DB::beginTransaction();
+        try {
+            // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
+            DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
 
-            // ลดสต็อก
-            DB::table('rewards')->where('id', $reward->id)->decrement('stock_quantity', 1);
-
-            // บันทึกประวัติการแลก
-            DB::table('reward_redemptions')->insert([
+            // 2. บันทึกประวัติการใช้แต้มลง point_transactions
+            DB::table('point_transactions')->insert([
                 'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'points_used' => $reward->points_required,
+                'amount' => ($reward->points_required * -1),
+                'type' => 'redeem',
+                'description' => 'แลกรับของรางวัล: ' . $reward->title_th,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            // บันทึก Point Transaction
-            DB::table('point_transactions')->insert([
+            // 3. บันทึกประวัติการแลกใน reward_redemptions (บันทึกทั้งคูปองและสินค้า)
+            DB::table('reward_redemptions')->insert([
                 'user_id' => $user->id,
-                'amount' => -$reward->points_required,
-                'type' => 'redeem',
-                'description' => 'Redeemed reward: ' . $reward->title_th,
-                'created_at' => now()
+                'reward_id' => $reward->id,
+                'points_used' => $reward->points_required,
+                'status' => 'success',
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
-        });
 
-        return $this->successResponse(null, 'Reward redeemed successfully');
+            // 4. สุ่มโค้ด RWD-
+            $code = 'RWD-' . strtoupper(\Illuminate\Support\Str::random(8));
+
+            // 5. บันทึกข้อมูลของรางวัลเข้ากระเป๋าลูกค้า
+            DB::table('customer_reward_codes')->insert([
+                'user_id' => $user->id,
+                'reward_id' => $reward->id,
+                'code' => $code,
+                'discount_amount' => $isCoupon ? $reward->discount_amount : 0, // คูปองเก็บค่าส่วนลด สินค้าเก็บ 0
+                'status' => 'active',
+                'customer_name' => $isCoupon ? null : $request->customer_name,
+                'customer_phone' => $isCoupon ? null : $request->customer_phone,
+                'address_id' => $isCoupon ? null : $request->address_id,
+                'address_text' => $isCoupon ? null : $request->address_text,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse([
+                'code' => $code,
+                'discount_amount' => $isCoupon ? $reward->discount_amount : 0,
+                'reward_title' => $reward->title_th,
+                'reward_point' => $wallet->current_points - $reward->points_required,
+                'is_coupon' => $isCoupon
+            ], 'แลกของรางวัลสำเร็จ');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล: ' . $e->getMessage(), 500);
+        }
     }
 }
