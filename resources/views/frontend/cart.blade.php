@@ -464,7 +464,7 @@
                         <i class="fas fa-xmark"></i>
                     </button>
                     <div class="qr-image-container">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=AEG-Checkout-Proceed"
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{  urlencode(route('app.download')) }}"
                             alt="QR Code">
                     </div>
                 </div>
