@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
 
 // Controllers
 use App\Http\Controllers\AuthController;
@@ -32,6 +33,22 @@ use App\Http\Controllers\Admin\ReviewAdminController;
 use App\Http\Controllers\Admin\SupportChatAdminController;
 
 use App\Http\Controllers\Api\BblPaymentController;
+
+Route::get('/download-app', function (Request $request) {
+    $userAgent = $request->header('User-Agent');
+
+    // ตรวจสอบว่าเป็น iOS (iPhone, iPad, iPod)
+    if (preg_match('/iPhone|iPad|iPod/i', $userAgent)) {
+        return redirect()->away('https://apps.apple.com/us/app/anglo-east-surety/id6786582784');
+    } 
+    // ตรวจสอบว่าเป็น Android
+    elseif (preg_match('/Android/i', $userAgent)) {
+        return redirect()->away('https://play.google.com/store/apps/details?id=com.aeginc.angloeast');
+    }
+
+    // กรณีสแกนหรือเปิดผ่านคอมพิวเตอร์ (Desktop) ให้กลับไปหน้าหลัก
+    return redirect('/');
+})->name('app.download');
 
 // 🌟 เส้นทางสำหรับให้แอปเปิด WebView
 Route::get('/payment/bbl/redirect/{order_number}/{type}', [BblPaymentController::class, 'redirect'])->name('bbl.redirect');

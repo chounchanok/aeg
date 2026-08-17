@@ -183,7 +183,7 @@
 
     /* 3. Hero Carousel */
     .carousel-item img {
-        height: 400px;
+        height: auto;
         object-fit: cover;
         border-radius: 15px;
     }
@@ -358,7 +358,7 @@
         }
 
         .carousel-item img {
-            height: 200px; /* ย่อแบนเนอร์บนสุดลงมาให้พอดีจอมือถือ */
+            height: auto; /* ย่อแบนเนอร์บนสุดลงมาให้พอดีจอมือถือ */
         }
 
         /* --- 🌟 แก้ไขการแสดงผลการ์ดต่างๆ บน Mobile ให้ไม่ยืดเพี้ยน --- */
@@ -413,7 +413,14 @@
                 @if(isset($banners) && $banners->count() > 0)
                     @foreach($banners as $index => $banner)
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                            <img src="{{ $banner->image_url }}" class="d-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            
+                            <!-- 🌟 1. รูปสำหรับจอคอมพิวเตอร์ (ซ่อนในมือถือ) -->
+                            <img src="{{ $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            
+                            <!-- 🌟 2. รูปสำหรับจอมือถือ (ซ่อนในจอคอม) -->
+                            <!-- ใส่ ?? $banner->image_url เผื่อไว้ในกรณีที่บางแบนเนอร์ลืมอัปโหลดรูปมือถือ ระบบจะดึงรูปคอมมาโชว์แทนเพื่อไม่ให้ภาพพังครับ -->
+                            <img src="{{ $banner->image_url_m ?? $banner->image_url }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            
                         </div>
                     @endforeach
                 @else

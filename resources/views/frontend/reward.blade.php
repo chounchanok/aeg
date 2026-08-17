@@ -437,7 +437,7 @@
                         <i class="fas fa-xmark"></i>
                     </button>
                     <div class="qr-frame">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=AEG-Redeem-Reward" alt="QR" class="w-100">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data={{ urlencode(route('app.download')) }}" alt="QR" class="w-100">
                     </div>
                 </div>
                 <div class="modal-qr-footer">

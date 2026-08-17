@@ -342,17 +342,19 @@
                             @foreach($rewardsByCategory[$category_cal->id] as $reward)
                                 <div class="col-md-6 col-lg-4">
                                     <div class="reward-card">
-                                        <div class="reward-img-container"><img src="{{ $reward->image_url ?? asset('assets/image/asd.webp') }}"></div>
-                                        <div class="reward-body">
-                                            <h3 class="reward-title">{{ $reward->title_th ?? 'Reward Title' }}</h3>
-                                            <p class="reward-desc">{{ $reward->description_th ?? 'Reward Description' }}</p>
-                                            <div class="reward-points-wrapper"><img src="{{ asset('assets/image/objects.webp') }}" class="coin-icon"><span class="points-text">{{ $reward->points_required ?? 0 }}</span></div>
-                                            <div class="dashed-line"></div>
-                                            <div class="reward-expiry-wrapper">
-                                                <img src="{{ asset('assets/image/clock-icon.webp') }}" class="clock-icon">
-                                                <span class="expiry-text">จำนวนคงเหลือ : <span class="expiry-date">{{ $reward->stock_quantity }} สิทธิ์</span></span>
+                                        <a href="{{ route('rewards-detail', $reward->id ?? 0) }}" style="text-decoration: none !important;">
+                                            <div class="reward-img-container"><img src="{{ $reward->image_url ?? asset('assets/image/asd.webp') }}"></div>
+                                            <div class="reward-body">
+                                                <h3 class="reward-title">{{ $reward->title_th ?? 'Reward Title' }}</h3>
+                                                <p class="reward-desc">{{ $reward->description_th ?? 'Reward Description' }}</p>
+                                                <div class="reward-points-wrapper"><img src="{{ asset('assets/image/objects.webp') }}" class="coin-icon"><span class="points-text">{{ $reward->points_required ?? 0 }}</span></div>
+                                                <div class="dashed-line"></div>
+                                                <div class="reward-expiry-wrapper">
+                                                    <img src="{{ asset('assets/image/clock-icon.webp') }}" class="clock-icon">
+                                                    <span class="expiry-text">จำนวนคงเหลือ : <span class="expiry-date">{{ $reward->stock_quantity }} สิทธิ์</span></span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </a>
                                     </div>
                                 </div>
                             @endforeach

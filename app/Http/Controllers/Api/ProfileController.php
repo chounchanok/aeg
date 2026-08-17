@@ -158,11 +158,12 @@ class ProfileController extends Controller
                 $usageStatus = $isExpired ? 'หมดอายุ' : 'ปกติ';
             }
 
+            $setting = DB::table('general_setting')->where('id', 1)->first();
             // 🌟 [ข้อ 2 & 3] ตรวจสอบสถานะการรีวิว
             $reviewData = isset($reviews[$pkg->id]) ? $reviews[$pkg->id] : null;
             $isReviewed = $reviewData ? true : false;
             $reviewStatusText = $isReviewed ? 'รีวิวเรียบร้อยแล้ว' : 'ยังไม่ได้รีวิว';
-            $earnedCoins = $isReviewed ? 1 : 0;
+            $earnedCoins = $setting->review_point;
 
             // 🌟 [ข้อ 4] วันเริ่มต้นการดูแล
             $careStartDate = null;

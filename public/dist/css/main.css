@@ -112,7 +112,49 @@ body {
    4. Page: My Account
    ========================================= */
 .card-custom { background: var(--card-bg); border-radius: 25px; padding: 30px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04); }
-.member-card-visual { background: var(--ease-gradient); height: 220px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+.member-card-visual { background: var(--ease-gradient); height: 230px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+@media (max-width: 1290px) {
+    .member-card-visual { background: var(--ease-gradient); height: 200px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 1030px) {
+    .member-card-visual { background: var(--ease-gradient); height: 200px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 1000px) {
+    .member-card-visual { background: var(--ease-gradient); height: 365px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 850px) {
+    .member-card-visual { background: var(--ease-gradient); height: 360px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 830px) {
+    .member-card-visual { background: var(--ease-gradient); height: 360px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 770px) {
+    .member-card-visual { background: var(--ease-gradient); height: 355px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 760px) {
+    .member-card-visual { background: var(--ease-gradient); height: 260px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 550px) {
+    .member-card-visual { background: var(--ease-gradient); height: 260px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 450px) {
+    .member-card-visual { background: var(--ease-gradient); height: 200px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 420px) {
+    .member-card-visual { background: var(--ease-gradient); height: 190px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 400px) {
+    .member-card-visual { background: var(--ease-gradient); height: 178px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 380px) {
+    .member-card-visual { background: var(--ease-gradient); height: 165px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 345px) {
+    .member-card-visual { background: var(--ease-gradient); height: 150px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
+@media (max-width: 321px) {
+    .member-card-visual { background: var(--ease-gradient); height: 136px; padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
+}
 .card-label-top { font-weight: 700; font-size: 0.9rem; }
 .card-brand-main { margin-top: 30px; }
 .card-brand-main h2 { font-weight: 800; margin: 0; }

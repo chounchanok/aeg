@@ -163,7 +163,8 @@ class EcommerceController extends Controller
         ]);
 
         // แจก 1 Point
-        DB::table('customer_wallets')->where('user_id', $userId)->increment('current_points', 1);
+        $setting = DB::table('settings')->where('id', 1)->first();
+        DB::table('customer_wallets')->where('user_id', $userId)->increment('current_points', $setting->review_point);
 
         return $this->successResponse(null, 'Review submitted successfully');
     }
