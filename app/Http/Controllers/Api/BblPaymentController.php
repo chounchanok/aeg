@@ -190,7 +190,7 @@ class BblPaymentController extends Controller
         }
 
         // 2. ตั้งค่าข้อมูล Merchant (Sandbox)
-        $merchantId = "23797";
+        $merchantId = "15565";
         $currCode = "764";
         $payType = "N";
         if($type === 'qrcode') {
