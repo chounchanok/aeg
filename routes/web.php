@@ -34,7 +34,7 @@ use App\Http\Controllers\Admin\SupportChatAdminController;
 use App\Http\Controllers\Api\BblPaymentController;
 
 // 🌟 เส้นทางสำหรับให้แอปเปิด WebView
-Route::get('/payment/bbl/redirect/{order_number}', [BblPaymentController::class, 'redirect'])->name('bbl.redirect');
+Route::get('/payment/bbl/redirect/{order_number}/{type}', [BblPaymentController::class, 'redirect'])->name('bbl.redirect');
 
 // 🌟 เส้นทางสำหรับโชว์ผลลัพธ์หลังจากลูกค้าจ่ายเงินเสร็จ 
 Route::get('/payment/bbl/result', function (\Illuminate\Http\Request $request) {

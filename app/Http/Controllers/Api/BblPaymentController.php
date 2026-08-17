@@ -194,7 +194,7 @@ class BblPaymentController extends Controller
         $currCode = "764";
         $payType = "N";
         if($type === 'qrcode') {
-            $payMethod = "PROMPTPAY”"; // สำหรับ App
+            $payMethod = "PROMPTPAY"; // สำหรับ App
         }elseif($type === 'creditcard') {
             $payMethod = "CC"; // สำหรับ App
         }else{

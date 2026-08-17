@@ -550,12 +550,12 @@ class EcommerceController extends Controller
             $paymentUrl = null;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl') {
+            // if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
-            } else {
-                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
-                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
-            }
+            // } else {
+            //     // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+            //     $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            // }
 
             return $this->successResponse([
                 'order_id' => $orderId,
@@ -678,12 +678,12 @@ class EcommerceController extends Controller
             $paymentUrl = null;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl') {
+            // if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
-            } else {
-                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
-                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
-            }
+            // } else {
+            //     // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+            //     $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            // }
 
             return $this->successResponse([
                 'order_id' => $orderId,
@@ -1228,12 +1228,12 @@ class EcommerceController extends Controller
             $totalAmount = (float)$order->total_amount;
 
             // 🌟 2. ส่งลิงก์ WebView ถ้าลูกค้าเลือกจ่ายผ่าน BBL App to App
-            if ($request->payment_gateway === 'bbl') {
+            // if ($request->payment_gateway === 'bbl') {
                 $paymentUrl = url('/payment/bbl/redirect/' . $order->order_number);
-            } else {
-                // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
-                $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
-            }
+            // } else {
+            //     // สำหรับ Payment Gateway ตัวอื่นๆ ในอนาคต
+            //     $paymentUrl = "https://placeholder-gateway.com/pay/" . $order->order_number;
+            // }
 
             return $this->successResponse([
                 'order_id' => $orderId,

@@ -184,12 +184,12 @@ class SmartLockerController extends Controller
             $booking = DB::table('locker_bookings')->where('id', $bookingId)->first();
             $paymentUrl = null;
 
-            if ($request->payment_gateway === 'bbl') {
+            // if ($request->payment_gateway === 'bbl') {
                 // 🌟 คืนค่าเป็นลิงก์ WebView ของระบบเรา ให้น้องโอมเอาไปเปิด
                 $paymentUrl = url('/payment/bbl/redirect/' . $booking->booking_number);
-            } else {
-                $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
-            }
+            // } else {
+            //     $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
+            // }
 
             return $this->successResponse([
                 'booking_id' => $bookingId,
