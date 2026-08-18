@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                    <p class="copyright-text mb-0">© 2024 AEG EASE CLUB. All rights reserved.</p>
+                    <p class="copyright-text mb-0">© 2026 AEG EASE CLUB. All rights reserved.</p>
                 </div>
             </div>
         </div>

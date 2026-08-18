@@ -22,7 +22,7 @@
     <div class="text">กำลังเชื่อมต่อกับระบบชำระเงิน Bangkok Bank...</div>
 
     <!-- ฟอร์มสำหรับส่งข้อมูลไป BBL (ถูกซ่อนไว้) -->
-    <form id="bblForm" method="post" action="https://psipay.bangkokbank.com/b2c/eng/payment/payForm.jsp" style="display: none;">
+    <form id="bblForm" method="post" action="https://ipay.bangkokbank.com/b2c/eng/payment/payForm.jsp" style="display: none;">
         <input type="hidden" name="merchantId" value="{{ $merchantId }}">
         <input type="hidden" name="amount" value="{{ $amount }}">
         <input type="hidden" name="orderRef" value="{{ $orderRef }}">
