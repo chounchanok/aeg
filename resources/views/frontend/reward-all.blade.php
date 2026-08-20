@@ -292,12 +292,25 @@
     <div class="container mt-4">
         <div id="heroCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <img src="assets/image/slider.webp" class="d-block w-100" alt="Banner 1">
-                </div>
-                <div class="carousel-item">
-                    <img src="assets/image/slider.webp" class="d-block w-100" alt="Banner 2">
-                </div>
+                @if(isset($banners) && $banners->count() > 0)
+                    @foreach($banners as $index => $banner)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                            
+                            <!-- 🌟 1. รูปสำหรับจอคอมพิวเตอร์ (ซ่อนในมือถือ) -->
+                            <img src="{{ $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            
+                            <!-- 🌟 2. รูปสำหรับจอมือถือ (ซ่อนในจอคอม) -->
+                            <!-- ใส่ ?? $banner->image_url เผื่อไว้ในกรณีที่บางแบนเนอร์ลืมอัปโหลดรูปมือถือ ระบบจะดึงรูปคอมมาโชว์แทนเพื่อไม่ให้ภาพพังครับ -->
+                            <img src="{{ $banner->image_url_m ?? $banner->image_url }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            
+                        </div>
+                    @endforeach
+                @else
+                    <!-- รูป Default หากยังไม่มีข้อมูลแบนเนอร์ -->
+                    <div class="carousel-item active">
+                        <img src="{{ asset('assets/image/slider.webp') }}" class="d-block w-100" alt="Default Banner">
+                    </div>
+                @endif
             </div>
             <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>

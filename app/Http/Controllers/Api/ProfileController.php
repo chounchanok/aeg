@@ -20,9 +20,17 @@ class ProfileController extends Controller
         $user = $request->user();
         $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
 
+        // 🌟 คลายล็อก String จาก Database ให้กลับเป็น Array ก่อนส่งกลับ
+        if ($profile && !empty($profile->service_interesting)) {
+            // ถอดรหัส JSON ถ้าพังให้คืนค่าเป็น Array ว่าง []
+            $profile->service_interesting = json_decode($profile->service_interesting, true) ?? [];
+        }
+
         return $this->successResponse([
             'user' => $user,
-            'profile' => $profile
+            'profile' => $profile,
+            'question_company_type' => ['ร้านทอง', 'ร้านเพชรพลอยและอัญมณี', 'โรงรับจำนำ', 'โรงงาน/คลังสินค้า', 'สำนักงาน', 'อาคารและสิ่งปลูกสร้าง', 'บ้าน', 'อื่นๆ'],
+            'question_service_interesting' => ['ระบบสัญญาณกันขโมย', 'ระบบควบคุมการเข้า-ออก', 'ระบบสัญญาณเตือนอัคคีภัย', 'ระบบกล้องวงจรปิด', 'ประกันภัยอัญมณี ทองและทรัพย์สินมูลค่าสูง', 'ประกันวินาศภัยสิ่งปลูกสร้าง', 'ประกันวินาศภัยเพื่อการขนส่งสินค้ามูลค่าสูง', 'AEG Gold Cap-Lock', 'ตู้นิรภัยให้เช่า', 'ขนส่งสินค้ามูลค่าสูง']
         ], 'Profile retrieved');
     }
 
@@ -37,10 +45,18 @@ class ProfileController extends Controller
             'gender' => 'nullable|string',
             'birthday' => 'nullable|date',
             'other' => 'nullable|string',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' // ตรวจสอบไฟล์รูปภาพ
+            'company_type' => 'nullable|string',
+            'service_interesting' => 'nullable|array',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' 
         ]);
 
-        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other']);
+        // แยก service_interesting ออกมาก่อน เพราะเราต้องจัดฟอร์แมตมันใหม่
+        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other', 'company_type']);
+
+        // 🌟 ดักจับ Array และบังคับเข้ารหัส JSON แบบอ่านภาษาไทยออก ก่อนเซฟลง Database
+        if ($request->has('service_interesting')) {
+            $updateData['service_interesting'] = json_encode($request->service_interesting, JSON_UNESCAPED_UNICODE);
+        }
 
         // จัดการอัปโหลดไฟล์รูปภาพ (ถ้ามีการส่งมา)
         if ($request->hasFile('profile_image')) {
@@ -57,6 +73,11 @@ class ProfileController extends Controller
             );
 
         $updatedProfile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
+
+        // 🌟 คลายล็อกกลับเป็น Array สวยๆ ก่อนส่ง Response ไปแสดงผลที่หน้าแอป
+        if ($updatedProfile && !empty($updatedProfile->service_interesting)) {
+            $updatedProfile->service_interesting = json_decode($updatedProfile->service_interesting, true) ?? [];
+        }
 
         return $this->successResponse($updatedProfile, 'Profile updated successfully');
     }
@@ -217,25 +238,39 @@ class ProfileController extends Controller
     // ==========================================
     public function getFavorites(Request $request)
     {
-        $favorites = DB::table('favorites')
+        $favorites_rewards = DB::table('favorites')
             ->join('rewards', 'favorites.product_id', '=', 'rewards.id')
             ->where('favorites.user_id', $request->user()->id)
+            ->where('favorites.item_type', 'reward')
             ->select('rewards.*', 'favorites.created_at as favorited_at')
             ->get();
 
-        return $this->successResponse($favorites, 'Favorites retrieved');
+        $favotites_products = DB::table('favorites')
+            ->join('products', 'favorites.product_id', '=', 'products.id')
+            ->where('favorites.user_id', $request->user()->id)
+            ->where('favorites.item_type', 'product')
+            ->select('products.*', 'favorites.created_at as favorited_at')
+            ->get();
+
+        return $this->successResponse([
+            'rewards' => $favorites_rewards,
+            'products' => $favotites_products
+        ], 'Favorites retrieved');
     }
 
     public function toggleFavorite(Request $request)
     {
-        $request->validate(['product_id' => 'required|integer']);
+        $request->validate(['product_id' => 'required|integer',
+            'item_type' => 'nullable|string|in:product,reward']); // เพิ่มการตรวจสอบ item_type
 
         $userId = $request->user()->id;
         $productId = $request->product_id;
+        $itemType = $request->item_type ?? 'product'; // กำหนดค่า default เป็น 'product' ถ้าไม่ได้ส่งมา
 
         // เช็คว่าเคยกดหัวใจไว้หรือยัง
         $existing = DB::table('favorites')
             ->where('user_id', $userId)
+            ->where('item_type', $itemType)
             ->where('product_id', $productId)
             ->first();
 
@@ -246,6 +281,7 @@ class ProfileController extends Controller
         } else {
             // ถ้ายังไม่มีให้ เพิ่ม (Favorite)
             DB::table('favorites')->insert([
+                'item_type' => $request->item_type ?? 'product', // กำหนดค่า default เป็น 'product' ถ้าไม่ได้ส่งมา
                 'user_id' => $userId,
                 'product_id' => $productId,
                 'created_at' => now(),

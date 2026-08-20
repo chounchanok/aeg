@@ -27,15 +27,21 @@ class InsuranceAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // อัปโหลดรูปได้สูงสุด 5MB
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:102400', // อัปโหลดรูปได้สูงสุด 100MB
+            'image_inside' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:102400', // อัปโหลดรูปได้สูงสุด 100MB
         ]);
 
-        $data = $request->except(['_token', 'image']);
+        $data = $request->except(['_token', 'image', 'image_inside']);
 
         // จัดการอัปโหลดรูปภาพ
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('insurances', 'public');
             $data['image_url'] = url('storage/' . $path);
+        }
+
+        if ($request->hasFile('image_inside')) {
+            $path = $request->file('image_inside')->store('insurances', 'public');
+            $data['image_inside_url'] = url('storage/' . $path);
         }
 
         Insurance::create($data);
@@ -55,11 +61,12 @@ class InsuranceAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:102400',
+            'image_inside' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:102400',
         ]);
 
         $insurance = Insurance::findOrFail($id);
-        $data = $request->except(['_token', '_method', 'image']);
+        $data = $request->except(['_token', '_method', 'image', 'image_inside']);
 
         // จัดการอัปโหลดรูปภาพใหม่ (ถ้ามีการแนบมา)
         if ($request->hasFile('image')) {
@@ -73,6 +80,20 @@ class InsuranceAdminController extends Controller
             $path = $request->file('image')->store('insurances', 'public');
             $data['image_url'] = url('storage/' . $path);
         }
+
+
+        if ($request->hasFile('image_inside')) {
+            // ลบรูปเก่าทิ้งก่อน (เพื่อไม่ให้รก Server)
+            if ($insurance->image_inside_url) {
+                $oldPath = str_replace(url('storage') . '/', '', $insurance->image_inside_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            // อัปโหลดรูปใหม่
+            $path = $request->file('image_inside')->store('insurances', 'public');
+            $data['image_inside_url'] = url('storage/' . $path);
+        }
+        // dd($request->hasFile('image_inside'), $data);
 
         $insurance->update($data);
 

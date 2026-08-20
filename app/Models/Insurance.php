@@ -15,6 +15,7 @@ class Insurance extends Model
         'description_th',
         'description_en',
         'image_url',
+        'image_inside_url',
         'is_active',
         'sort_order'
     ];

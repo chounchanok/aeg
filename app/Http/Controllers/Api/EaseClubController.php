@@ -99,32 +99,39 @@ class EaseClubController extends Controller
 
     public function getRewardsByCategory(Request $request, $categoryId)
     {
-        // 1. ดึง Rewards ทั้งหมดใน Category นี้ออกมา
-        $rewards = DB::table('rewards')->where('category_id', $categoryId)->get();
+        $query = DB::table('rewards')->where('category_id', $categoryId);
 
-        // 2. ตรวจสอบว่ามีการ Login อยู่หรือไม่
-        $userId = $request->user() ? $request->user()->id : null;
+        // 🌟 1. ดึงข้อมูล User ก่อน (รองรับทั้งตอนล็อกอินและเป็น Guest)
+        $user = $request->user('sanctum');
 
-        if ($userId) {
-            // ดึง ID ของสินค้าที่ User คนนี้เคยกด Favorite ไว้ทั้งหมดมาเป็น Array
-            // (เพื่อป้องกันปัญหา N+1 Query ที่ต้องยิง DB ซ้ำๆ ในลูป)
-            $favoritedIds = DB::table('favorites')
-                ->where('user_id', $userId)
+        // 🌟 2. แทรกเงื่อนไขการเรียงลำดับ (Order By)
+        if ($user) {
+            // เช็คว่าของรางวัลนี้อยู่ในตาราง favorites ไหม ถ้ามีให้นับเป็น 1 แล้วดันขึ้นบนสุด
+            // (ใช้คอลัมน์ product_id เพราะตาราง favorites เก็บ ID รางวัลไว้ในคอลัมน์นี้เหมือนกัน)
+            $query->orderByRaw("(SELECT COUNT(*) FROM favorites WHERE favorites.product_id = rewards.id AND favorites.user_id = ?) DESC", [$user->id]);
+        }
+        
+        // ให้เรียงตามวันที่สร้างเป็นลำดับที่ 2
+        $query->orderBy('created_at', 'desc');
+
+        // 3. ดึง Rewards ออกมาจากฐานข้อมูล
+        $rawRewards = $query->get();
+
+        // 4. ดึง ID ของรางวัลที่ User คนนี้เคยกด Favorite ไว้ทั้งหมดมาเป็น Array
+        $favoriteRewardIds = [];
+        if ($user) {
+            $favoriteRewardIds = DB::table('favorites')
+                ->where('user_id', $user->id)
+                ->whereIn('product_id', $rawRewards->pluck('id'))
                 ->pluck('product_id')
                 ->toArray();
-
-            // เอา Array ของ IDs มาเช็คและแนบค่า is_favorited กลับไป
-            $rewards->map(function ($reward) use ($favoritedIds) {
-                $reward->is_favorited = in_array($reward->id, $favoritedIds);
-                return $reward;
-            });
-        } else {
-            // ถ้าไม่ได้ Login ให้ is_favorited เป็น false ทั้งหมด
-            $rewards->map(function ($reward) {
-                $reward->is_favorited = false;
-                return $reward;
-            });
         }
+
+        // 5. เอา Array ของ IDs มาเช็คและแนบค่า is_favorite กลับไป
+        $rewards = $rawRewards->map(function ($reward) use ($favoriteRewardIds) {
+            $reward->is_favorite = in_array($reward->id, $favoriteRewardIds);
+            return $reward;
+        });
 
         return $this->successResponse($rewards, 'Rewards retrieved successfully');
     }

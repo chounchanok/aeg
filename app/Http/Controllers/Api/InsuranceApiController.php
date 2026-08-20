@@ -62,7 +62,7 @@ class InsuranceApiController extends Controller
             'title_en' => $insurance->title_en,
             'description_th' => $insurance->description_th,
             'description_en' => $insurance->description_en,
-            'image_url' => $insurance->image_url,
+            'image_url' => $insurance->image_inside_url,
         ];
 
         return $this->successResponse($data, 'Insurance details retrieved successfully');

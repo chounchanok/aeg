@@ -102,6 +102,77 @@
                         </div>
                     </div>
 
+                    <!-- ข้อมูลเพิ่มเติม -->
+                    <div class="card-custom mt-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="section-title">ข้อมูลเพิ่มเติม</h3>
+                            <span id="saveIndicator" class="badge bg-success" style="opacity: 0; transition: opacity 0.5s;">
+                                <i class="fas fa-check-circle me-1"></i> บันทึกแล้ว
+                            </span>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <!-- 1. กล่องเลือกประเภทธุรกิจ -->
+                            <div class="col-12 mb-3">
+                                <label for="company_type" class="fw-bold mb-1">ประเภทธุรกิจ</label>
+                                <select class="form-select" id="company_type" name="company_type">
+                                    <option value="">-- เลือกประเภทธุรกิจ --</option>
+                                    <option value="ร้านทอง" {{ ($profile->company_type ?? '') == 'ร้านทอง' ? 'selected' : '' }}>ร้านทอง</option>
+                                    <option value="ร้านเพชรพลอยและอัญมณี" {{ ($profile->company_type ?? '') == 'ร้านเพชรพลอยและอัญมณี' ? 'selected' : '' }}>ร้านเพชรพลอยและอัญมณี</option>
+                                    <option value="โรงรับจำนำ" {{ ($profile->company_type ?? '') == 'โรงรับจำนำ' ? 'selected' : '' }}>โรงรับจำนำ</option>
+                                    <option value="โรงงาน/คลังสินค้า" {{ ($profile->company_type ?? '') == 'โรงงาน/คลังสินค้า' ? 'selected' : '' }}>โรงงาน/คลังสินค้า</option>
+                                    <option value="สำนักงาน" {{ ($profile->company_type ?? '') == 'สำนักงาน' ? 'selected' : '' }}>สำนักงาน</option>
+                                    <option value="อาคารและสิ่งปลูกสร้าง" {{ ($profile->company_type ?? '') == 'อาคารและสิ่งปลูกสร้าง' ? 'selected' : '' }}>อาคารและสิ่งปลูกสร้าง</option>
+                                    <option value="บ้าน" {{ ($profile->company_type ?? '') == 'บ้าน' ? 'selected' : '' }}>บ้าน</option>
+                                    <option value="อื่นๆ" {{ ($profile->company_type ?? '') == 'อื่นๆ' ? 'selected' : '' }}>อื่น ๆ</option>
+                                </select>
+                            </div>
+
+                            <!-- 2. กล่องเลือกบริการที่สนใจ (แบบ Dropdown Checkbox) -->
+                            <div class="col-12">
+                                <label class="fw-bold mb-1">บริการที่สนใจ</label>
+                                
+                                @php
+                                    $rawJson = $profile->service_interesting ?? '[]';
+                                    $savedServices = json_decode($rawJson, true);
+                                    if (!is_array($savedServices)) $savedServices = [];
+
+                                    $allServices = [
+                                        'ระบบสัญญาณกันขโมย', 'ระบบควบคุมการเข้า-ออก', 'ระบบสัญญาณเตือนอัคคีภัย', 
+                                        'ระบบกล้องวงจรปิด', 'ประกันภัยอัญมณี ทองและทรัพย์สินมูลค่าสูง', 
+                                        'ประกันวินาศภัยสิ่งปลูกสร้าง', 'ประกันวินาศภัยเพื่อการขนส่งสินค้ามูลค่าสูง', 
+                                        'AEG Gold Cap-Lock', 'ตู้นิรภัยให้เช่า', 'ขนส่งสินค้ามูลค่าสูง'
+                                    ];
+                                @endphp
+
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center" type="button" id="serviceDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="background: white;">
+                                        <span id="serviceBtnText" class="text-truncate">-- เลือกบริการที่สนใจ --</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <ul class="dropdown-menu w-100 p-2 shadow-sm" aria-labelledby="serviceDropdownBtn" style="max-height: 250px; overflow-y: auto;">
+                                        @foreach($allServices as $index => $serviceName)
+                                        <li>
+                                            <!-- 🌟 เปลี่ยนมาใช้ d-flex align-items-center เพื่อบังคับให้อยู่บรรทัดเดียวกัน -->
+                                            <div class="p-2 rounded d-flex align-items-center hover-bg-light" style="cursor: pointer;">
+                                                
+                                                <!-- 🌟 เอา w-100 ออก แล้วใส่ flex-grow-1 เพื่อให้ข้อความใช้พื้นที่ที่เหลือพอดี -->
+                                                <label class="form-check-label ms-2 mb-0 flex-grow-1" for="chkService{{ $index }}" style="cursor: pointer; user-select: none;">
+                                                    {{ $serviceName }}
+                                                </label>
+                                                
+                                                <!-- 🌟 เพิ่ม flex-shrink-0 ป้องกันไม่ให้ checkbox หดตัวเบี้ยว -->
+                                                <input class="form-check-input service-checkbox m-0 flex-shrink-0" type="checkbox" value="{{ $serviceName }}" id="chkService{{ $index }}" {{ in_array($serviceName, $savedServices) ? 'checked' : '' }} style="cursor: pointer;">
+                                                
+                                            </div>
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- My Address Card -->
                     <div class="card-custom mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -265,11 +336,11 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">ชื่อผู้ติดต่อ</label>
-                                <input type="text" class="form-control" name="contact_name" placeholder="ชื่อ-นามสกุล" required>
+                                <input type="text" class="form-control" name="contact_name" placeholder="ชื่อ-นามสกุล" value="{{ $profile->first_name }} {{ $profile->last_name }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">เบอร์โทรศัพท์</label>
-                                <input type="text" class="form-control" name="contact_phone" placeholder="08X-XXX-XXXX" required>
+                                <input type="text" class="form-control" name="contact_phone" placeholder="08X-XXX-XXXX" value="{{ $profile->phone }}" required>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)</label>
@@ -306,3 +377,75 @@
 
 @section('scripts')
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const companyTypeSelect = document.getElementById('company_type');
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+        const serviceBtnText = document.getElementById('serviceBtnText');
+        const saveIndicator = document.getElementById('saveIndicator');
+
+        // ฟังก์ชันอัปเดตข้อความบนปุ่ม Dropdown
+        function updateDropdownText() {
+            let checkedItems = Array.from(serviceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            if (checkedItems.length > 0) {
+                // ถ้าเลือกเกิน 2 อัน ให้แสดงจำนวนแทน เพื่อไม่ให้ข้อความล้น
+                serviceBtnText.innerText = checkedItems.length > 2 
+                    ? `เลือกแล้ว ${checkedItems.length} บริการ` 
+                    : checkedItems.join(', ');
+                serviceBtnText.classList.add('text-dark', 'fw-bold');
+            } else {
+                serviceBtnText.innerText = '-- เลือกบริการที่สนใจ --';
+                serviceBtnText.classList.remove('text-dark', 'fw-bold');
+            }
+        }
+
+        // ฟังก์ชันส่ง AJAX ไปบันทึกข้อมูล
+        function autoSaveAdditionalInfo() {
+            let companyType = companyTypeSelect.value;
+            let checkedServices = Array.from(serviceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+            // แสดงคำว่า "กำลังบันทึก..." (ถ้าต้องการ)
+
+            fetch("{{ route('my-account.update-additional') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    company_type: companyType,
+                    service_interesting: checkedServices
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    // โชว์ป้ายเขียว "บันทึกแล้ว" 2 วินาทีแล้วจางหายไป
+                    saveIndicator.style.opacity = "1";
+                    setTimeout(() => {
+                        saveIndicator.style.opacity = "0";
+                    }, 2000);
+                }
+            })
+            .catch(error => console.error("Error saving data:", error));
+        }
+
+        // ตั้งค่าเมื่อโหลดหน้าแรกให้ข้อความปุ่มตรงกับที่ติ๊กไว้
+        updateDropdownText();
+
+        // ดักจับ Event OnChange ของประเภทธุรกิจ
+        companyTypeSelect.addEventListener('change', autoSaveAdditionalInfo);
+
+        // ดักจับ Event OnChange ของ Checkbox บริการ
+        serviceCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                updateDropdownText(); // เปลี่ยนตัวหนังสือ
+                autoSaveAdditionalInfo(); // เซฟลง DB
+            });
+        });
+    });
+</script>
+@endpush

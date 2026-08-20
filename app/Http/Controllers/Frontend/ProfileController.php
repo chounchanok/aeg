@@ -161,4 +161,36 @@ class ProfileController extends Controller
         DB::table('customer_addresses')->where('id', $id)->where('user_id', Auth::id())->delete();
         return back()->with('success', 'ลบที่อยู่เรียบร้อยแล้ว');
     }
+
+    // ==========================================
+    // บันทึกข้อมูลเพิ่มเติมอัตโนมัติ (AJAX Auto-Save)
+    // ==========================================
+    public function updateAdditionalInfo(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'company_type' => 'nullable|string',
+            'service_interesting' => 'nullable|array'
+        ]);
+
+        $profileData = [
+            'company_type' => $request->company_type,
+            'updated_at' => now()
+        ];
+
+        // จัดการ Array เหมือนตอน Update ปกติ
+        if ($request->has('service_interesting') && is_array($request->service_interesting)) {
+            $profileData['service_interesting'] = json_encode($request->service_interesting, JSON_UNESCAPED_UNICODE);
+        } else {
+            $profileData['service_interesting'] = json_encode([], JSON_UNESCAPED_UNICODE); 
+        }
+
+        DB::table('customer_profiles')->updateOrInsert(
+            ['user_id' => $user->id],
+            $profileData
+        );
+
+        return response()->json(['status' => 'success', 'message' => 'บันทึกข้อมูลอัตโนมัติเรียบร้อยแล้ว']);
+    }
 }

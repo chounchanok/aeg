@@ -30,10 +30,22 @@ class EcommerceController extends Controller
             $query->where('service_category_id', $request->category_id);
         }
 
-        // ดึงข้อมูลสินค้าออกมาก่อน
-        $rawProducts = $query->orderBy('created_at', 'desc')->get();
+        // 🌟 ดึงข้อมูล User ก่อน เพื่อเอาไปใช้เช็ค Favorite
+        $user = $request->user('sanctum');
 
-        // 🌟 ดึงรูปภาพทั้งหมดของสินค้าที่อยู่ใน list (เทคนิคแก้ปัญหาเว็บช้า N+1 Query)
+        // 🌟 แทรกเงื่อนไขการเรียงลำดับ (Order By)
+        if ($user) {
+            // ถ้าล็อกอินอยู่ ให้เช็คว่าสินค้านี้อยู่ในตาราง favorites ของ User คนนี้ไหม (ถ้ามีให้นับเป็น 1 แล้วเรียงจากมากไปน้อย)
+            $query->orderByRaw("(SELECT COUNT(*) FROM favorites WHERE favorites.product_id = products.id AND favorites.user_id = ?) DESC", [$user->id]);
+        }
+        
+        // ให้เรียงตามวันที่สร้างใหม่ล่าสุด เป็นลำดับที่ 2 เสมอ
+        $query->orderBy('created_at', 'desc');
+
+        // ดึงข้อมูลสินค้าออกมา
+        $rawProducts = $query->get();
+
+        // 🌟 1. ดึงรูปภาพทั้งหมดของสินค้าที่อยู่ใน list
         $productIds = $rawProducts->pluck('id');
         $allImages = DB::table('product_images')
             ->whereIn('product_id', $productIds)
@@ -41,12 +53,26 @@ class EcommerceController extends Controller
             ->get()
             ->groupBy('product_id');
 
-        // ตัวอย่างความไหลลื่นใน Api/EcommerceController.php ในส่วนแมตช์ข้อมูล
-        $products = $rawProducts->map(function ($p) use ($lang, $allImages) {
+        // 🌟 2. ดึงข้อมูล Favorite ของ User ปัจจุบัน (รองรับทั้งตอนล็อกอินและเป็น Guest)
+        $user = $request->user('sanctum');
+        $favoriteProductIds = [];
+        
+        if ($user) {
+            // ถ้า User ล็อกอินอยู่ ให้ดึงรายการ product_id ที่เคยกดใจไว้
+            $favoriteProductIds = DB::table('favorites')
+                ->where('user_id', $user->id)
+                ->whereIn('product_id', $productIds) // ดึงเฉพาะรายการที่ตรงกับสินค้าหน้าปัจจุบัน
+                ->where('item_type', 'product') // (เผื่อในอนาคตมีคอลัมน์ type แยกสินค้ากับรางวัล สามารถเปิดใช้บรรทัดนี้ได้ครับ)
+                ->pluck('product_id')
+                ->toArray();
+        }
+
+        // แมตช์ข้อมูลเพื่อส่งกลับ
+        $products = $rawProducts->map(function ($p) use ($lang, $allImages, $favoriteProductIds) {
             // ดึงรูปภาพ Array จากตารางย่อย product_images
             $images = isset($allImages[$p->id]) ? $allImages[$p->id]->pluck('image_url')->toArray() : [];
 
-            // เผื่อกรณีสินค้าเก่าไม่มีในตาราง product_images ให้หยิบจากตารางหลักมาห่อเป็น Array แก้อาการภาพว่าง
+            // เผื่อกรณีสินค้าเก่าไม่มีในตาราง product_images
             if (empty($images) && !empty($p->image_url)) {
                 $images = [$p->image_url];
             }
@@ -58,10 +84,12 @@ class EcommerceController extends Controller
                 'type' => $p->type,
                 'price' => $p->price,
                 'compare_at_price' => $p->compare_at_price,
-                'image_url' => count($images) > 0 ? $images[0] : null, // ส่งรูปแรกสุดไปเป็นรูปหน้าปก
-                'images' => $images,                                   // ส่งก้อน Array ทั้งหมดไปทำ Slider
+                'image_url' => count($images) > 0 ? $images[0] : null,
+                'images' => $images,
                 'point_earn' => $p->point_earn,
                 'is_contact_only' => (bool) $p->is_contact_only,
+                // 🌟 3. ส่งสถานะ Favorite กลับไป (คืนค่า true/false)
+                'is_favorite' => in_array($p->id, $favoriteProductIds), 
             ];
         });
 
