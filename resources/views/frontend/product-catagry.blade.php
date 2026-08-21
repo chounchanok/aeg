@@ -494,7 +494,7 @@
                 <a href="{{ url('products/' . ($currentGroup ?? 'equipment')) }}" class="nav-link {{ is_null($currentCategoryId ?? null) ? 'active' : '' }}" style="text-decoration: none; border: none;">
                     <div class="category-box">
                         <div class="category-icon">
-                            <img src="{{ asset('assets/image/cat1.webp') }}" alt="All Products">
+                            <img src="{{ asset('assets/image/noun-category.png') }}" alt="All Products">
                         </div>
                         <div class="category-text-en">All Products</div>
                         <div class="category-text-th">ทั้งหมด</div>
@@ -506,7 +506,7 @@
                         @php
                             $catNameTh = $cat->title_th ?? $cat->title_en ?? 'หมวดหมู่';
                             $catNameEn = $cat->title_en ?? $cat->title_th ?? 'Category';
-                            $icon = $cat->image_url ? asset($cat->image_url) : asset('assets/image/cat1.webp');
+                            $icon = $cat->image_url ? asset($cat->image_url) : asset('assets/image/noun-category.png');
                         @endphp
 
                         <a href="{{ url('products/'.$cat->group.'/'.$cat->id) }}" class="nav-link {{ ($currentCategoryId ?? null) == $cat->id ? 'active' : '' }}" style="text-decoration: none; border: none;">

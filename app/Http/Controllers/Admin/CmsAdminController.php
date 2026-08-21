@@ -38,8 +38,8 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // 🌟 รับรูป Mobile (ไม่บังคับ)
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile (ไม่บังคับ)
         ]);
 
         $imageUrl = '';
@@ -76,8 +76,8 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'location' => 'required|in:main,ease_club,service',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // 🌟 รับรูป Mobile
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile
         ]);
 
         $banner = DB::table('banners')->where('id', $id)->first();
