@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponseTrait;
+use App\Services\FaqBotService;
 
 class SupportController extends Controller
 {
@@ -22,6 +24,39 @@ class SupportController extends Controller
             ->get();
 
         return $this->successResponse($faqs, 'FAQs retrieved');
+    }
+
+    // ==========================================
+    // 1.1 FAQ Bot (ให้ลูกค้าหาคำตอบได้เองก่อนคุยกับเจ้าหน้าที่)
+    // ใช้ได้ทั้งหน้าเว็บ (support-chat) และแอปมือถือ ไม่ต้องล็อกอินก็ถามได้
+    // ==========================================
+    public function askBot(Request $request, FaqBotService $bot)
+    {
+        $request->validate([
+            'message' => 'required|string|max:500',
+        ]);
+
+        $result = $bot->findAnswer($request->message);
+
+        // เก็บ log ไว้ดูว่าลูกค้าถามอะไรบ้าง และบอทตอบได้ไหม (ใช้ปรับปรุง FAQ ทีหลังได้)
+        $userId = Auth::guard('sanctum')->check()
+            ? Auth::guard('sanctum')->id()
+            : (Auth::check() ? Auth::id() : null);
+
+        DB::table('faq_bot_logs')->insert([
+            'user_id' => $userId,
+            'question' => $request->message,
+            'faq_id' => $result['faq_id'],
+            'is_matched' => $result['matched'],
+            'match_score' => $result['score'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $this->successResponse(
+            $result,
+            $result['matched'] ? 'พบคำตอบ' : 'ยังไม่พบคำตอบที่ตรงกับคำถามนี้'
+        );
     }
 
     // ==========================================

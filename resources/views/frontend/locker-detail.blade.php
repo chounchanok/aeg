@@ -446,7 +446,7 @@
             <div class="locker-detail-card">
                 <!-- Banner Image -->
                 <img src="assets/image/locker-banner-full.webp" alt="AEG Smart Locker Banner" class="locker-banner"
-                    onerror="this.src='https://images.unsplash.com/photo-1558223124-789a74288005?auto=format&fit=crop&w=1200&q=80'">
+                    onerror="this.src='assets/image/locker-banner-full.jpg';">
 
                 <div class="detail-body">
                     <h1 class="locker-main-title">AEG Smart Locker</h1>

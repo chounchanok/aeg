@@ -171,6 +171,13 @@
             border-top: 1px solid #f0f0f0;
         }
 
+        .faq-qa-item { margin-bottom: 18px; }
+        .faq-qa-item:last-child { margin-bottom: 0; }
+        .faq-qa-question { font-weight: 600; color: #1a2d5e; margin-bottom: 6px; display: flex; gap: 8px; }
+        .faq-qa-question i { color: var(--primary-red); margin-top: 3px; flex-shrink: 0; }
+        .faq-qa-answer { color: #666; padding-left: 22px; white-space: pre-line; }
+        .faq-empty { text-align: center; color: #999; padding: 40px 0; }
+
         /* --- Contact CTA Section --- */
         .contact-cta {
             text-align: center;
@@ -285,99 +292,31 @@
             </div>
 
             <div class="faq-container">
-                <div class="accordion" id="faqAccordion">
-
-                    <!-- หมวด 1 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq1">
-                                ระบบรักษาความปลอดภัย (Security System)
-                            </button>
-                        </h2>
-                        <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                ข้อมูลเกี่ยวกับระบบสัญญาณกันขโมย การทำงานของเซ็นเซอร์ และการแจ้งเตือนผ่านแอปพลิเคชัน
+                @forelse($topicsWithFaqs as $topic)
+                    <div class="accordion" id="faqAccordion{{ $topic->id }}" style="margin-bottom: 15px;">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faqTopic{{ $topic->id }}">
+                                    @if($topic->icon)<i class="{{ $topic->icon }} me-2"></i>@endif
+                                    {{ $topic->name_th }}@if($topic->name_en) ({{ $topic->name_en }})@endif
+                                </button>
+                            </h2>
+                            <div id="faqTopic{{ $topic->id }}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion{{ $topic->id }}">
+                                <div class="accordion-body">
+                                    @foreach($topic->faqs as $faq)
+                                        <div class="faq-qa-item">
+                                            <div class="faq-qa-question"><i class="fas fa-circle-question"></i> {{ $faq->question_th }}</div>
+                                            <div class="faq-qa-answer">{{ $faq->answer_th }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- หมวด 2 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq2">
-                                ประกันภัย (Insurance)
-                            </button>
-                        </h2>
-                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                รายละเอียดความคุ้มครอง ขั้นตอนการเคลม และประเภทของทรัพย์สินที่สามารถทำประกันได้
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- หมวด 3 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq3">
-                                ตู้เซฟนิรภัย (Safety Deposit Locker)
-                            </button>
-                        </h2>
-                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                ขั้นตอนการเช่าตู้เซฟ ระบบความปลอดภัยในห้องนิรภัย และเวลาที่สามารถเข้าใช้งานได้
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- หมวด 4 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq4">
-                                บริการช่าง (Technician Service)
-                            </button>
-                        </h2>
-                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                การนัดหมายบริการตรวจเช็กอุปกรณ์ การซ่อมบำรุง และค่าบริการเบื้องต้น
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- หมวด 5 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq5">
-                                สิทธิพิเศษสมาชิก (EASE CLUB)
-                            </button>
-                        </h2>
-                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                วิธีการสะสมแต้ม การแลกสิทธิประโยชน์ และระดับของสมาชิก Advance Member
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- หมวด 6 -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq6">
-                                การใช้งานแอปพลิเคชัน (Application)
-                            </button>
-                        </h2>
-                        <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                การดาวน์โหลดแอป การตั้งค่ารหัสผ่าน และการดูสถานะแบบ Real-time ผ่านมือถือ
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+                @empty
+                    <div class="faq-empty">ยังไม่มีข้อมูลคำถามที่พบบ่อยในขณะนี้</div>
+                @endforelse
             </div>
 
             <!-- Contact CTA (Match FAQ.jpg) -->

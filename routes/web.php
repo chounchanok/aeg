@@ -18,6 +18,7 @@ use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\InsuranceController;
 use App\Http\Controllers\Frontend\ServiceRequestController;
 use App\Http\Controllers\Frontend\SupportChatController;
+use App\Http\Controllers\Frontend\FaqController;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\ServiceRequestAdminController;
@@ -33,6 +34,8 @@ use App\Http\Controllers\Admin\ReviewAdminController;
 use App\Http\Controllers\Admin\SupportChatAdminController;
 
 use App\Http\Controllers\Api\BblPaymentController;
+use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\ChatbotController;
 
 Route::get('/download-app', function (Request $request) {
     $userAgent = $request->header('User-Agent');
@@ -95,8 +98,19 @@ Route::post('/safe-contact/submit', [ProductController::class, 'submitSafeContac
 Route::get('/product-contact/{id}/contact', [ProductController::class, 'contact'])->where('id', '[0-9]+')->name('product-contact');
 Route::post('/product-contact/submit', [ProductController::class, 'submitContact'])->name('product-contact.submit');
 
+// --- Chat Bot (public - ดูเมนู/ข้อมูลบริการได้แม้ไม่ได้ล็อกอิน ส่วนถามเพิ่มเติม/สนใจซื้อ เช็คสิทธิ์ในตัว controller) ---
+Route::post('/support-chat/bot/ask', [SupportController::class, 'askBot'])->name('support-chat.bot.ask');
+Route::prefix('support-chat/bot')->name('support-chat.bot.')->group(function () {
+    Route::get('/topics', [ChatbotController::class, 'topics'])->name('topics');
+    Route::get('/topics/{topicId}/services', [ChatbotController::class, 'services'])->name('services');
+    Route::get('/services/{serviceId}', [ChatbotController::class, 'serviceDetail'])->name('service-detail');
+    Route::post('/search', [ChatbotController::class, 'keywordSearch'])->name('search');
+    Route::post('/leads', [ChatbotController::class, 'submitLead'])->name('leads');
+    Route::post('/rating', [ChatbotController::class, 'submitRating'])->name('rating');
+});
+
 // --- Static Pages (หน้าทั่วไป) ---
-Route::view('/faq', 'frontend.faq')->name('faq');
+Route::get('/faq', [FaqController::class, 'index'])->name('faq'); // ดึง FAQ จริงจากชุดข้อมูล Chat Bot
 Route::view('/lockers', 'frontend.locker-service')->name('lockers');
 Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
 Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
@@ -277,6 +291,7 @@ Route::middleware('auth')->group(function() {
 
             Route::get('/faqs', [CmsAdminController::class, 'faqs'])->name('faqs');
             Route::post('/faqs', [CmsAdminController::class, 'storeFaq'])->name('faqs.store');
+            Route::post('/faqs/{id}/update', [CmsAdminController::class, 'updateFaq'])->name('faqs.update');
             Route::post('/faqs/{id}/delete', [CmsAdminController::class, 'deleteFaq'])->name('faqs.delete');
 
             Route::get('/ease-club', [CmsAdminController::class, 'easeClub'])->name('ease-club');

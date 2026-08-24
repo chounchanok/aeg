@@ -121,9 +121,29 @@ class CmsAdminController extends Controller
     // ==========================================
     public function faqs()
     {
-        $faqs = DB::table('faqs')->orderBy('sort_order', 'asc')->get();
+        // 🌟 เปลี่ยนมาใช้ชุดข้อมูลเดียวกับที่ Chat Bot ใช้ตอบ (chatbot_service_faqs)
+        // แทนตาราง faqs เดิม เพื่อให้แก้ไขจากที่นี่ที่เดียว มีผลทั้งหน้าเว็บ FAQ และคำตอบของบอท
+        $faqs = DB::table('chatbot_service_faqs as f')
+            ->join('chatbot_services as s', 'f.service_id', '=', 's.id')
+            ->join('chatbot_topics as t', 's.topic_id', '=', 't.id')
+            ->orderBy('t.sort_order', 'asc')
+            ->orderBy('s.sort_order', 'asc')
+            ->orderBy('f.sort_order', 'asc')
+            ->select(
+                'f.id', 'f.question_th', 'f.answer_th', 'f.sort_order', 'f.is_active',
+                's.id as service_id', 's.name_th as service_name',
+                't.id as topic_id', 't.name_th as topic_name'
+            )
+            ->get();
+
+        // สำหรับ dropdown หมวด > บริการ ในฟอร์มเพิ่ม/แก้ไข
+        $topics = DB::table('chatbot_topics')->where('is_active', true)->orderBy('sort_order')->get();
+        $services = DB::table('chatbot_services')->where('is_active', true)->orderBy('sort_order')->get();
+
         return view('admin.cms.faqs', [
             'faqs' => $faqs,
+            'topics' => $topics,
+            'services' => $services,
             'first_level_active_index' => 'cms',
             'second_level_active_index' => 'faqs',
             'third_level_active_index' => ''
@@ -133,19 +153,15 @@ class CmsAdminController extends Controller
     public function storeFaq(Request $request)
     {
         $request->validate([
+            'service_id' => 'required|exists:chatbot_services,id',
             'question_th' => 'required|string',
-            'question_en' => 'required|string',
             'answer_th' => 'required|string',
-            'answer_en' => 'required|string',
-            'category' => 'nullable|string'
         ]);
 
-        DB::table('faqs')->insert([
-            'category' => $request->category ?? 'ทั่วไป',
+        DB::table('chatbot_service_faqs')->insert([
+            'service_id' => $request->service_id,
             'question_th' => $request->question_th,
-            'question_en' => $request->question_en,
             'answer_th' => $request->answer_th,
-            'answer_en' => $request->answer_en,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
             'created_at' => now(),
@@ -155,9 +171,29 @@ class CmsAdminController extends Controller
         return redirect()->back()->with('success', 'เพิ่มคำถาม FAQ เรียบร้อยแล้ว');
     }
 
+    public function updateFaq(Request $request, $id)
+    {
+        $request->validate([
+            'service_id' => 'required|exists:chatbot_services,id',
+            'question_th' => 'required|string',
+            'answer_th' => 'required|string',
+        ]);
+
+        DB::table('chatbot_service_faqs')->where('id', $id)->update([
+            'service_id' => $request->service_id,
+            'question_th' => $request->question_th,
+            'answer_th' => $request->answer_th,
+            'sort_order' => $request->sort_order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'updated_at' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'แก้ไขคำถาม FAQ เรียบร้อยแล้ว');
+    }
+
     public function deleteFaq($id)
     {
-        DB::table('faqs')->where('id', $id)->delete();
+        DB::table('chatbot_service_faqs')->where('id', $id)->delete();
         return redirect()->back()->with('success', 'ลบคำถาม FAQ เรียบร้อยแล้ว');
     }
 

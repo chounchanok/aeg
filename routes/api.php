@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ServiceCategoryApiController;
 use App\Http\Controllers\Api\SmartLockerController;
 use App\Http\Controllers\Frontend\SupportChatController;
@@ -38,6 +39,19 @@ Route::post('/auth/check-whatsapp-login', [AuthController::class, 'checkWhatsapp
 
 // --- FAQ (ไม่ต้องล็อกอินก็ดูได้) ---
 Route::get('/faqs', [SupportController::class, 'getFaqs']);
+
+// --- FAQ Bot (ให้ลูกค้าถามเองก่อน ไม่ต้องล็อกอินก็ถามได้) ---
+Route::post('/faq-bot/ask', [SupportController::class, 'askBot']);
+
+// --- Chat Bot เมนูปุ่มกด (ดูเมนู/ข้อมูลบริการได้แม้ยังไม่ล็อกอิน ส่วนถามเพิ่มเติม/สนใจซื้อ ต้องล็อกอิน - เช็คภายใน controller) ---
+Route::prefix('chatbot')->group(function () {
+    Route::get('/topics', [ChatbotController::class, 'topics']);
+    Route::get('/topics/{topicId}/services', [ChatbotController::class, 'services']);
+    Route::get('/services/{serviceId}', [ChatbotController::class, 'serviceDetail']);
+    Route::post('/search', [ChatbotController::class, 'keywordSearch']);
+    Route::post('/leads', [ChatbotController::class, 'submitLead']);
+    Route::post('/rating', [ChatbotController::class, 'submitRating']);
+});
 // BBL Webhook
 Route::post('/payment/webhook', [BblPaymentController::class, 'webhook']);
 
