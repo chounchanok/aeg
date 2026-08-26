@@ -428,7 +428,7 @@ class AuthController extends Controller
 
             // เข้าสู่ระบบ
             Auth::login($user);
-            return redirect()->route('home')->with('success', 'เข้าสู่ระบบด้วย ' . ucfirst($provider) . ' สำเร็จ');
+            return redirect()->route('home')->with('success', 'เข้าสู่ระบบด้วย ' . ucfirst($provider) . ' สำเร็จ')->with(['update_first' => $user->update_first ?? false]);
 
         } catch (\Exception $e) {
             return redirect()->route('login')->with('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ ' . ucfirst($provider));
@@ -529,7 +529,7 @@ class AuthController extends Controller
             Auth::login($user);
             $request->session()->regenerate();
 
-            return response()->json(['status' => 'success']);
+            return response()->json(['status' => 'success', 'update_first' => $user->update_first ?? false]);
         }
 
         // ถ้ายิงมาเช็คแล้วยังไม่มีการสแกน ให้บอกหน้าเว็บว่ารอไปก่อน

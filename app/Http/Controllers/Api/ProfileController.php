@@ -45,13 +45,14 @@ class ProfileController extends Controller
             'gender' => 'nullable|string',
             'birthday' => 'nullable|date',
             'other' => 'nullable|string',
+            'company' => 'nullable|string',
             'company_type' => 'nullable|string',
             'service_interesting' => 'nullable|array',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' 
         ]);
 
         // แยก service_interesting ออกมาก่อน เพราะเราต้องจัดฟอร์แมตมันใหม่
-        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other', 'company_type']);
+        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other', 'company', 'company_type']);
 
         // 🌟 ดักจับ Array และบังคับเข้ารหัส JSON แบบอ่านภาษาไทยออก ก่อนเซฟลง Database
         if ($request->has('service_interesting')) {
@@ -64,6 +65,7 @@ class ProfileController extends Controller
             $updateData['profile_image_url'] = url('storage/' . $path);
         }
 
+        $updateData['update_first'] = now();
         $updateData['updated_at'] = now();
 
         DB::table('customer_profiles')

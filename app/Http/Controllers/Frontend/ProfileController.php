@@ -34,6 +34,7 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'nullable|string|max:255',
+            'company'  => 'nullable|string|max:255',
             'phone'      => 'required|string|max:20',
             'password'   => 'nullable|string|min:6|confirmed',
         ]);
@@ -43,8 +44,6 @@ class ProfileController extends Controller
             // 1. อัปเดตข้อมูลในตาราง users (รหัสผ่าน และ เบอร์โทรหลัก)
             $updateUserData = [
                 'phone' => $validated['phone'],
-                // อัปเดตฟิลด์ name ใน users ให้เป็น ชื่อ-นามสกุล รวมกัน เผื่อนำไปใช้ง่ายๆ
-                'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? ''))
             ];
 
             if ($request->filled('password')) {
@@ -60,6 +59,7 @@ class ProfileController extends Controller
                     [
                         'first_name' => $validated['first_name'],
                         'last_name'  => $validated['last_name'],
+                        'company'  => $validated['company'] ?? null,
                         'phone'      => $validated['phone'],
                         'updated_at' => now()
                     ]

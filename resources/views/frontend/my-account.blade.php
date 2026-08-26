@@ -90,9 +90,13 @@
                                         <div class="info-label">เบอร์โทรศัพท์มือถือ</div>
                                         <div class="info-value">{{ $profile->phone ?? '-' }}</div>
                                     </div>
-                                    <div class="col-12">
+                                    <div class="col-6">
                                         <div class="info-label">อีเมล</div>
                                         <div class="info-value">{{ $user->email }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="info-label">บริษัท</div>
+                                        <div class="info-value">{{ $profile->company ?? '-' }}</div>
                                     </div>
                                 </div>
                                 <div class="text-end mt-3">
@@ -297,17 +301,21 @@
                                 <label for="phone">เบอร์โทรศัพท์มือถือ</label>
                                 <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $profile->phone) }}" required>
                             </div>
+                            <div class="col-6">
+                                <label for="company">บริษัท</label>
+                                <input type="text" class="form-control" id="company" name="company" value="{{ old('company', $profile->company) }}" autocomplete="off">
+                            </div>
                         </div>
 
                         <hr>
                         <h6 class="mb-3">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</h6>
                         <div class="mb-3">
                             <label for="password">รหัสผ่านใหม่</label>
-                            <input type="password" class="form-control" id="password" name="password">
+                            <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
                         </div>
                         <div class="mb-3">
                             <label for="password_confirmation">ยืนยันรหัสผ่านใหม่</label>
-                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
+                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password">
                         </div>
                     </div>
                     <div class="modal-footer">
