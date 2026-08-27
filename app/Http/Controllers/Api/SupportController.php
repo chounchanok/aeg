@@ -18,12 +18,35 @@ class SupportController extends Controller
     // ==========================================
     public function getFaqs()
     {
-        $faqs = DB::table('faqs')
+        // 🌟 ดึงข้อมูลชุดเดียวกับที่ใช้บนหน้าเว็บ /faq (chatbot_topics > chatbot_services > chatbot_service_faqs)
+        // เพื่อให้แอปกับเว็บแสดง FAQ ตรงกัน แก้ไขจากหลังบ้าน (/admin/cms/faqs) ที่เดียวมีผลทั้งคู่
+        $topics = DB::table('chatbot_topics')
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        return $this->successResponse($faqs, 'FAQs retrieved');
+        // ⚠️ join กับ chatbot_services เท่านั้น (ไม่ต้อง join chatbot_topics ตรงนี้ เพราะ
+        // f.service_id ชี้ไปที่ chatbot_services.id ไม่ใช่ chatbot_topics.id — topic_id ดึงผ่าน s.topic_id แทน)
+        $faqs = DB::table('chatbot_service_faqs as f')
+            ->join('chatbot_services as s', 'f.service_id', '=', 's.id')
+            ->where('f.is_active', true)
+            ->where('s.is_active', true)
+            ->orderBy('s.sort_order', 'asc')
+            ->orderBy('f.sort_order', 'asc')
+            ->select('f.id', 'f.question_th', 'f.answer_th', 's.id as service_id', 's.name_th as service_name', 's.topic_id')
+            ->get()
+            ->groupBy('topic_id');
+
+        // จัดกลุ่ม FAQ ให้อยู่ใต้ topic ของตัวเอง (เฉพาะ topic ที่มีคำถามจริง) เหมือนฝั่งเว็บทุกประการ
+        $topicsWithFaqs = $topics->map(function ($topic) use ($faqs) {
+            // ->values() reindex ให้เป็น array เรียง 0,1,2,... เสมอ ไม่งั้น json อาจออกมาเป็น object แทน array
+            $topic->faqs = $faqs->get($topic->id, collect())->values();
+            return $topic;
+        })->filter(function ($topic) {
+            return $topic->faqs->isNotEmpty();
+        })->values();
+
+        return $this->successResponse($topicsWithFaqs, 'FAQs retrieved');
     }
 
     // ==========================================

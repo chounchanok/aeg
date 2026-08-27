@@ -112,7 +112,7 @@ class EaseClubController extends Controller
         }
         
         // ให้เรียงตามวันที่สร้างเป็นลำดับที่ 2
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('points_required', 'ASC');
 
         // 3. ดึง Rewards ออกมาจากฐานข้อมูล
         $rawRewards = $query->get();

@@ -13,7 +13,7 @@ class RewardController extends Controller
     public function index()
     {
         // ดึงรายการของรางวัลที่เปิดใช้งานอยู่
-        $rewards = Reward::where('is_active', true)->get();
+        $rewards = Reward::where('is_active', true)->orderBy('points_required', 'ASC')->get();
         $categories = DB::table('reward_categories')->get();
         $rewardsByCategory = $rewards->groupBy('category_id'); // สมมติว่ามีฟิลด์ category_id ในตาราง rewards
         $banners = Banner::where('location', 'ease_club')

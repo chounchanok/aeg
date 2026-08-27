@@ -16,6 +16,41 @@ Base URL: `https://<domain>/api`
 
 ---
 
+## ⚠️ 0. `GET /faqs` — เส้นทางเดิมที่มีอยู่แล้ว แต่เปลี่ยนรูปแบบ response (Breaking Change)
+
+เส้นทางนี้**ไม่ใช่ของใหม่** แต่ **response เปลี่ยนโครงสร้างไปจากเดิมทั้งหมด** เพื่อให้ FAQ บนแอปตรงกับหน้าเว็บ `/faq` และดึงจากชุดข้อมูลเดียวกับ Chat Bot (`chatbot_service_faqs`) แทนตาราง `faqs` เดิม
+
+**ก่อนแก้** `data` เป็น array แบนๆ ของแถวจากตาราง `faqs` (มี `category`, `question_en`, `answer_en`)
+
+**หลังแก้** `data` เป็น array ของ "หมวดหลัก" แต่ละหมวดมี `faqs` ซ้อนอยู่ข้างใน (เฉพาะหมวดที่มีคำถามจริงเท่านั้นถึงจะโผล่มา):
+```json
+[
+  {
+    "id": 1,
+    "key": "security-system",
+    "name_th": "ระบบรักษาความปลอดภัย",
+    "name_en": "Security System",
+    "icon": "fa-shield-halved",
+    "sort_order": 1,
+    "is_active": 1,
+    "faqs": [
+      {
+        "id": 10,
+        "question_th": "สัญญาณเตือนร้องขึ้นมาโดยไม่ทราบสาเหตุ",
+        "answer_th": "...",
+        "service_id": 5,
+        "service_name": "ระบบสัญญาณกันขโมย (Burglar Alarm System)",
+        "topic_id": 1
+      }
+    ]
+  }
+]
+```
+
+🚨 **ถ้าแอปเวอร์ชันที่ปล่อยไปแล้วเรียกเส้นนี้อยู่และ parse โครงสร้างเดิม (flat array + field `category`) โค้ดจะพังหรือแสดงผลผิด** — ให้ทีม mobile ปรับ parser ให้รองรับโครงสร้างใหม่นี้ก่อน deploy backend ตัวนี้ขึ้น production หรือถ้ายังไม่พร้อม แจ้งกลับมาได้ จะช่วยทำเป็น endpoint ใหม่แยกต่างหากแทนการแก้ของเดิมก็ได้
+
+---
+
 ## 1. FAQ Bot แบบเดิม (เวอร์ชันแรก — เก็บไว้เผื่อใช้ แต่แนะนำให้ใช้ชุดเมนูปุ่มกดด้านล่างแทน)
 
 ### `POST /faq-bot/ask`

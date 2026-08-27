@@ -26,9 +26,24 @@ class ProfileController extends Controller
             $profile->service_interesting = json_decode($profile->service_interesting, true) ?? [];
         }
 
+        if(!empty($user->google_id)){
+            $provider = 'google';
+        }else if(!empty($user->line_id)){
+            $provider = 'line';
+        }else if(!empty($user->apple_id)){
+            $provider = 'apple';
+        }else if(!empty($user->whatsapp_id)){
+            $provider = 'whatsapp';
+        }else if(!empty($user->facebook_id)){
+            $provider = 'facebook';
+        }else{
+            $provider = 'email';
+        }
+
         return $this->successResponse([
             'user' => $user,
             'profile' => $profile,
+            'provider' => $provider,
             'question_company_type' => ['ร้านทอง', 'ร้านเพชรพลอยและอัญมณี', 'โรงรับจำนำ', 'โรงงาน/คลังสินค้า', 'สำนักงาน', 'อาคารและสิ่งปลูกสร้าง', 'บ้าน', 'อื่นๆ'],
             'question_service_interesting' => ['ระบบสัญญาณกันขโมย', 'ระบบควบคุมการเข้า-ออก', 'ระบบสัญญาณเตือนอัคคีภัย', 'ระบบกล้องวงจรปิด', 'ประกันภัยอัญมณี ทองและทรัพย์สินมูลค่าสูง', 'ประกันวินาศภัยสิ่งปลูกสร้าง', 'ประกันวินาศภัยเพื่อการขนส่งสินค้ามูลค่าสูง', 'AEG Gold Cap-Lock', 'ตู้นิรภัยให้เช่า', 'ขนส่งสินค้ามูลค่าสูง']
         ], 'Profile retrieved');

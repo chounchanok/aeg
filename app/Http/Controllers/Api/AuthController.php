@@ -211,10 +211,16 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'firstname' => 'required|string',
+            'lastname' => 'required|string',
             'username' => 'required|string|unique:users',
             'phone' => 'required|string|unique:users',
+            'email' => 'required|string|email|unique:users',
+            'company' => 'nullable|string',
+            'gender' => 'nullable|string',
+            'birthday' => 'nullable|date',
             'password' => 'required|string|min:6|confirmed',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // เพิ่มการตรวจสอบไฟล์รูปภาพ
         ]);
 
         DB::beginTransaction();
@@ -222,7 +228,7 @@ class AuthController extends Controller
             // 1. สร้าง User (ให้ Active ทันที เพราะผ่าน OTP มาแล้ว)
             $user = User::create([
                 'username' => $request->username,
-                'email' => $request->username . '@temp.com',
+                'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
                 'role' => 'customer',
@@ -233,10 +239,22 @@ class AuthController extends Controller
             // 2. สร้าง Profile
             DB::table('customer_profiles')->insert([
                 'user_id' => $user->id,
-                'first_name' => $request->name,
+                'first_name' => $request->firstname,
+                'last_name' => $request->lastname,
                 'phone' => $request->phone,
+                'company' => $request->company,
+                'gender' => $request->gender,
+                'birthday' => $request->birthday,
+                'update_first' => now(),
                 'created_at' => now(),
             ]);
+
+            if($request->hasFile('profile_image')) {
+                $path = $request->file('profile_image')->store('profiles', 'public');
+                DB::table('customer_profiles')->where('user_id', $user->id)->update([
+                    'profile_image_url' => url('storage/' . $path)
+                ]);
+            }
 
             // 3. สร้างกระเป๋าพอยท์ (ถ้ามีระบบ Ease Club)
             DB::table('customer_wallets')->insert([
@@ -257,6 +275,7 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'username' => $user->username,
+                    'email' => $user->email,
                     'phone' => $user->phone
                 ]
             ], 'สมัครสมาชิกและเข้าสู่ระบบสำเร็จ');

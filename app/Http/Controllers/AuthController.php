@@ -275,6 +275,7 @@ class AuthController extends Controller
                     'first_name' => $dummyName,
                     'phone' => $phone,
                     'created_at' => now(),
+                    'update_first' => now()
                 ]);
 
                 // สร้างกระเป๋า EASE Coins
@@ -374,6 +375,8 @@ class AuthController extends Controller
                 $column = 'facebook_id';
             } elseif ($provider === 'whatsapp') {
                 $column = 'whatsapp_id';
+            }else{
+                $provider = 'google';
             }
 
             // 1. ตรวจสอบว่าเคยสมัครด้วย Social ไอดีนี้ไหม
@@ -399,7 +402,7 @@ class AuthController extends Controller
                         'email' => $socialUser->getEmail() ?? ($dummyUsername . '@temp.com'),
                         'phone' => $dummyPhone,
                         'password' => Hash::make(Str::random(16)),
-                        $column => $socialUser->getId(),
+                        $column => $socialUser->getId() ? $socialUser->getId() : $dummyUsername,
                         'role' => 'customer',
                         'is_active' => true,
                         'phone_verified_at' => now(), 
@@ -497,7 +500,7 @@ class AuthController extends Controller
                         'email' => $dummyUsername . '@temp.com',
                         'phone' => $phone,
                         'password' => \Hash::make(\Str::random(16)),
-                        'whatsapp_id' => $phone,
+                        'whatsapp_id' => $dummyUsername,
                         'role' => 'customer',
                         'is_active' => true,
                         'phone_verified_at' => now(), 
