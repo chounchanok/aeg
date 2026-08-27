@@ -392,6 +392,8 @@ class AuthController extends Controller
                     $user->update([$column => $providerId]);
                 }
             }
+            
+            // logger()->info("Social Login Attempt: Provider={$provider}, ProviderID={$providerId}, UserID=" . ($user ? $user->id : 'null'). "Column: ".$column." ProviderID: ".$providerId);
 
             // 4. ถ้าเป็นลูกค้าใหม่แกะกล่อง (ไม่มีทั้ง ID และ Email ในระบบ) ให้สมัครสมาชิกใหม่
             if (!$user) {

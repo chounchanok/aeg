@@ -27,6 +27,8 @@ class User extends Authenticatable
         'is_active', // เพิ่มคอลัมน์นี้
         'google_id', // เพิ่มคอลัมน์นี้
         'line_id', // เพิ่มคอลัมน์นี้
+        'facebook_id', // เพิ่มคอลัมน์นี้
+        'apple_id', // เพิ่มคอลัมน์นี้
         'phone_verified_at', // เพิ่มคอลัมน์นี้
     ];
 
