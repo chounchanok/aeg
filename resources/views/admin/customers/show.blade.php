@@ -16,6 +16,12 @@
             <button type="button" class="btn-close text-white" data-tw-dismiss="alert" aria-label="Close"> <i data-lucide="x" class="w-4 h-4"></i> </button>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible show flex items-center mb-2 mt-5" role="alert">
+            <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i> {{ session('error') }}
+            <button type="button" class="btn-close text-white" data-tw-dismiss="alert" aria-label="Close"> <i data-lucide="x" class="w-4 h-4"></i> </button>
+        </div>
+    @endif
 
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 lg:col-span-4">
@@ -28,6 +34,15 @@
                 <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
                     <div class="mb-2"><i data-lucide="phone" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->phone ?? 'ไม่ระบุ' }}</div>
                     <div class="mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->address ?? 'ยังไม่มีข้อมูลที่อยู่' }}</div>
+                </div>
+                <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-slate-500 text-xs">แต้มสะสมปัจจุบัน</span>
+                        @if($wallet && $wallet->tier_name)
+                            <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">{{ $wallet->tier_name }}</span>
+                        @endif
+                    </div>
+                    <div class="text-2xl font-medium text-primary">{{ number_format($wallet->current_points ?? 0) }} <span class="text-sm text-slate-500 font-normal">แต้ม</span></div>
                 </div>
             </div>
         </div>
@@ -78,6 +93,80 @@
                         </div>
                     @empty
                         <div class="text-center text-slate-500 py-10">ลูกค้าคนนี้ยังไม่มีประวัติการซื้อสินค้า/บริการ</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6 mt-5">
+        <!-- ===================== ประวัติแต้มสะสม ===================== -->
+        <div class="intro-y col-span-12 lg:col-span-6">
+            <div class="box p-5">
+                <div class="font-medium text-base border-b border-slate-200/60 pb-5 mb-3">ประวัติการได้รับ/ใช้แต้ม</div>
+                <div class="overflow-x-auto" style="max-height: 420px; overflow-y: auto;">
+                    <table class="table table-report -mt-2 w-full">
+                        <thead>
+                            <tr>
+                                <th class="whitespace-nowrap">วันที่</th>
+                                <th class="whitespace-nowrap">รายละเอียด</th>
+                                <th class="text-center whitespace-nowrap">ประเภท</th>
+                                <th class="text-right whitespace-nowrap">จำนวนแต้ม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pointHistory as $tx)
+                                <tr>
+                                    <td class="whitespace-nowrap text-xs">{{ \Carbon\Carbon::parse($tx->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td class="text-xs">{{ $tx->description ?? '-' }}</td>
+                                    <td class="text-center text-xs">
+                                        @if($tx->type === 'earn') <span class="text-success">ได้รับแต้ม</span>
+                                        @elseif($tx->type === 'redeem') <span class="text-danger">ใช้แต้ม</span>
+                                        @else <span class="text-warning">ปรับ/นำเข้า</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-right font-medium {{ $tx->amount < 0 ? 'text-danger' : 'text-success' }}">
+                                        {{ $tx->amount > 0 ? '+' : '' }}{{ number_format($tx->amount) }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="text-center text-slate-500 py-5">ยังไม่มีประวัติแต้ม</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== ของรางวัล/คูปองที่แลกไปแล้ว ===================== -->
+        <div class="intro-y col-span-12 lg:col-span-6">
+            <div class="box p-5">
+                <div class="font-medium text-base border-b border-slate-200/60 pb-5 mb-3">ของรางวัล/คูปองที่แลกไปแล้ว</div>
+                <div style="max-height: 420px; overflow-y: auto;">
+                    @forelse($redeemedRewards as $rw)
+                        <div class="flex items-start p-3 border-b border-slate-200/60 last:border-0">
+                            <div class="mr-auto">
+                                <div class="font-medium">{{ $rw->reward_title }}</div>
+                                <div class="text-slate-500 text-xs mt-0.5">โค้ด: <span class="font-medium text-slate-700">{{ $rw->code }}</span></div>
+                                <div class="text-slate-500 text-xs mt-0.5">แลกเมื่อ: {{ \Carbon\Carbon::parse($rw->redeemed_at)->format('d/m/Y H:i') }}</div>
+                                @if($rw->status === 'used' && $rw->used_at)
+                                    <div class="text-slate-500 text-xs mt-0.5">ใช้เมื่อ: {{ \Carbon\Carbon::parse($rw->used_at)->format('d/m/Y H:i') }}</div>
+                                @endif
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                @if($rw->status === 'active')
+                                    <span class="bg-success text-white text-xs px-2 py-1 rounded d-inline-block mb-2">ใช้งานได้</span><br>
+                                    <form action="{{ route('admin.customers.reward-codes.redeem', [$customer->id, $rw->id]) }}" method="POST" onsubmit="return confirm('ยืนยันใช้คูปองนี้แทนลูกค้า? เมื่อกดแล้วโค้ดนี้จะไม่สามารถใช้ซ้ำได้อีก');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">ใช้คูปองแทนลูกค้า</button>
+                                    </form>
+                                @else
+                                    <span class="bg-slate-200 text-slate-500 text-xs px-2 py-1 rounded">ใช้ไปแล้ว</span>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-slate-500 py-10">ลูกค้าคนนี้ยังไม่เคยแลกของรางวัล</div>
                     @endforelse
                 </div>
             </div>

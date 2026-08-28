@@ -6,7 +6,12 @@
 @endsection
 
 @section('subcontent')
-    <h2 class="intro-y text-lg font-medium mt-10">รายชื่อลูกค้าทั้งหมด (Customers)</h2>
+    <div class="intro-y flex items-center mt-10">
+        <h2 class="text-lg font-medium mr-auto">รายชื่อลูกค้าทั้งหมด (Customers)</h2>
+        <a href="{{ route('admin.customers.points-import') }}" class="btn btn-primary shadow-md">
+            <i data-lucide="upload" class="w-4 h-4 mr-1"></i> นำเข้าแต้มลูกค้า (Excel)
+        </a>
+    </div>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
             <table class="table table-report -mt-2 w-full datatable">

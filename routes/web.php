@@ -232,6 +232,11 @@ Route::middleware('auth')->group(function() {
         Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
 
         // --- Customers ---
+        // ⚠️ ต้องอยู่ก่อน '/admin/customers/{id}' ไม่งั้น Laravel จะจับคำว่า "points-import" เป็นค่า {id} แทน
+        Route::get('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportForm'])->name('admin.customers.points-import');
+        Route::post('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportStore'])->name('admin.customers.points-import.store');
+        Route::get('/admin/customers/points-import/{batchId}', [CustomerAdminController::class, 'pointsImportShow'])->name('admin.customers.points-import.show');
+
         Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
         Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
         Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
@@ -239,6 +244,9 @@ Route::middleware('auth')->group(function() {
         // 🌟 2 เส้นทางใหม่ สำหรับเพิ่มประกันและตู้เซฟ
         Route::post('/admin/customers/{id}/insurances', [CustomerAdminController::class, 'storeInsurance'])->name('admin.customers.insurances.store');
         Route::post('/admin/customers/{id}/lockers', [CustomerAdminController::class, 'storeLocker'])->name('admin.customers.lockers.store');
+
+        // 🌟 ใช้คูปองแทนลูกค้า (แอดมินกดปิดโค้ดที่ยัง active ให้กลายเป็น used)
+        Route::post('/admin/customers/{id}/reward-codes/{codeId}/redeem', [CustomerAdminController::class, 'markRewardCodeUsed'])->name('admin.customers.reward-codes.redeem');
 
         // --- Products ---
         Route::get('/admin/products', [ProductAdminController::class, 'index'])->name('admin.products');
