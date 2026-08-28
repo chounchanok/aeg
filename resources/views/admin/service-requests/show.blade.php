@@ -95,7 +95,11 @@
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">แก้ไขเวลานัดหมาย</label>
-                        <input type="text" id="time-slot-input" class="form-control" value="{{ $request->time_slot }}" placeholder="เช่น ช่วงเช้า (09:00 - 12:00 น.)">
+                        <select class="form-select" id="time-slot-input" name="time_slot">
+                            <option value="">-- ยังไม่ได้ระบุช่วงเวลานัดหมาย --</option>
+                            <option value="09:00-12:00" {{ $request->time_slot == '09:00-12:00' ? 'selected' : '' }}>09:00 - 12:00</option>
+                            <option value="13:00-18:00" {{ $request->time_slot == '13:00-18:00' ? 'selected' : '' }}>13:00 - 18:00</option>
+                        </select>
                     </div>
 
                     <div class="col-span-12 mt-2">
