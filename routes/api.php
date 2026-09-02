@@ -125,6 +125,7 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
 // --- Public Routes (ไม่ต้องล็อกอิน) ---
 Route::prefix('main')->group(function () {
     Route::get('/banners', [MainPageController::class, 'getBanners']);
+    Route::get('/popup-ads', [MainPageController::class, 'getPopupAds']);
     Route::get('/recommended-services', [MainPageController::class, 'getRecommendedServices']);
     Route::get('/recommended-product', [MainPageController::class, 'getRecommendedProducts']);
 });

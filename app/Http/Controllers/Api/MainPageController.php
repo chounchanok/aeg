@@ -21,6 +21,19 @@ class MainPageController extends Controller
         return $this->successResponse($banners, 'Banners retrieved successfully');
     }
 
+    public function getPopupAds()
+    {
+        // 🌟 Popup Ads: รูปโฆษณาที่กำหนดจากหลังบ้าน ให้แอปมือถือโชว์เป็น popup ตอนเปิดแอปครั้งแรก (ต่อ session)
+        // ส่งกลับเป็น array เรียงตาม sort_order (แอปจะเลือกโชว์ตัวแรก หรือจะวนโชว์หลายตัวก็ได้ตามที่ออกแบบ)
+        $popupAds = DB::table('popup_ads')
+            ->where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'title', 'image_url', 'link_url', 'sort_order']);
+
+        return $this->successResponse($popupAds, 'Popup ads retrieved successfully');
+    }
+
     public function getExpiringServices(Request $request)
     {
         // ดึงบริการที่ใกล้หมดอายุโดยตรง (ไม่ Join ตาราง products)
