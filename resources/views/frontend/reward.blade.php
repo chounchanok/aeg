@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'รายละเอียดแลกของรางวัล - AEG EASE CLUB')
+@section('title', __('รายละเอียดแลกของรางวัล - AEG EASE CLUB'))
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -387,7 +387,7 @@
                             <h2>{!! nl2br(e($rewards->description_th)) !!}</h2>
 
                             <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
-                                <span class="lbl">รับสิทธิ์</span>
+                                <span class="lbl">{{ __('รับสิทธิ์') }}</span>
                                 <div class="pts">
                                     <i class="fas fa-coins" style="color: #edb314;"></i> {{ number_format($rewards->points_required) }}
                                 </div>
@@ -402,15 +402,15 @@
                 <div class="container-950">
                     <h3 class="main-product-title">{{ $rewards->title_th }}</h3>
 
-                    <h4 class="section-sub-title">รายละเอียดการแลกรางวัล</h4>
-                    <p class="section-desc-text">*แลกใช้เพียง {{ number_format($rewards->points_required) }} พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน</p>
+                    <h4 class="section-sub-title">{{ __('รายละเอียดการแลกรางวัล') }}</h4>
+                    <p class="section-desc-text">{{ __('*แลกใช้เพียง') }} {{ number_format($rewards->points_required) }} {{ __('พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน') }}</p>
 
-                    <h4 class="section-sub-title mt-4">เงื่อนไขการใช้สิทธิ์</h4>
+                    <h4 class="section-sub-title mt-4">{{ __('เงื่อนไขการใช้สิทธิ์') }}</h4>
                     <div class="section-desc-text">
                         <ul class="specs-list">
-                            <li>สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี</li>
-                            <li>บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว</li>
-                            <li>กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า</li>
+                            <li>{{ __('สิทธิพิเศษนี้ไม่สามารถโอนสิทธิ์, จำหน่าย หรือแลกเปลี่ยนเป็นเงินสดได้ในทุกกรณี') }}</li>
+                            <li>{{ __('บริษัทขอสงวนสิทธิ์ในการยกเลิกหรือคืนคะแนนในทุกกรณีเมื่อยืนยันการแลกคะแนนเสร็จสมบูรณ์แล้ว') }}</li>
+                            <li>{{ __('กรุณาตรวจสอบสภาพสินค้าและความครบถ้วน ณ จุดรับสินค้า') }}</li>
                         </ul>
                     </div>
                     <hr class="mt-5 mb-5">
@@ -418,7 +418,7 @@
             </section>
         @else
             <div class="container text-center mt-5 mb-5">
-                <h3 class="text-muted">ยังไม่มีสิทธิพิเศษในขณะนี้</h3>
+                <h3 class="text-muted">{{ __('ยังไม่มีสิทธิพิเศษในขณะนี้') }}</h3>
             </div>
         @endif
 
@@ -431,8 +431,8 @@
         <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
             <div class="modal-content modal-qr-content">
                 <div class="modal-qr-blue-top">
-                    <span style="font-size: 0.8rem; opacity: 0.8; text-transform: uppercase;">ดำเนินการต่อบนแอปพลิเคชัน</span>
-                    <h5>สแกน Qr Code</h5>
+                    <span style="font-size: 0.8rem; opacity: 0.8; text-transform: uppercase;">{{ __('ดำเนินการต่อบนแอปพลิเคชัน') }}</span>
+                    <h5>{{ __('สแกน Qr Code') }}</h5>
                     <button type="button" class="btn-qr-close" data-bs-dismiss="modal">
                         <i class="fas fa-xmark"></i>
                     </button>
@@ -441,7 +441,7 @@
                     </div>
                 </div>
                 <div class="modal-qr-footer">
-                    สแกนคิวอาร์โค้ดเพื่อดำเนินการแลกรางวัลผ่านแอป
+                    {{ __('สแกนคิวอาร์โค้ดเพื่อดำเนินการแลกรางวัลผ่านแอป') }}
                 </div>
             </div>
         </div>

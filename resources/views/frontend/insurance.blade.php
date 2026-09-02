@@ -1,7 +1,7 @@
 
 @extends('frontend.layouts.main')
 
-@section('title', 'ประกันภัย - AEG EASE CLUB')
+@section('title', __('ประกันภัย') . ' - AEG EASE CLUB')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -293,13 +293,13 @@
                     </div>
                     <div class="insurance-content">
                         <h2 class="insurance-title">{{ $item->title_th }}</h2>
-                        <a href="{{ route('insurance-detail', $item->id) }}" class="btn-details">ดูรายละเอียด</a>
+                        <a href="{{ route('insurance-detail', $item->id) }}" class="btn-details">{{ __('ดูรายละเอียด') }}</a>
                     </div>
                 </div>
             @empty
                 <div class="text-center py-5 text-muted">
                     <i class="fas fa-shield-alt fa-4x mb-3" style="opacity: 0.5;"></i>
-                    <h4>ยังไม่มีข้อมูลประกันภัยในขณะนี้</h4>
+                    <h4>{{ __('ยังไม่มีข้อมูลประกันภัยในขณะนี้') }}</h4>
                 </div>
             @endforelse
 

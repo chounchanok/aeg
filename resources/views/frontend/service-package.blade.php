@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'แพ็กเกจดูแลอุปกรณ์ - AEG EASE CLUB')
+@section('title', __('แพ็กเกจดูแลอุปกรณ์') . ' - AEG EASE CLUB')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -310,13 +310,13 @@
     <!-- Main Content Section -->
     <main class="service-main">
         <div class="container">
-            <h1 class="page-title">แพ็กเกจดูแลอุปกรณ์</h1>
+            <h1 class="page-title">{{ __('แพ็กเกจดูแลอุปกรณ์') }}</h1>
 
             <!-- Selection Dropdown (Width matched to 900px) -->
             <div class="selection-group">
-                <label class="selection-label">ประเภทอุปกรณ์</label>
+                <label class="selection-label">{{ __('ประเภทอุปกรณ์') }}</label>
                 <select class="custom-select" id="serviceSelector" onchange="updateServiceInfo()">
-                    <option value="" selected>- เลือกบริการ -</option>
+                    <option value="" selected>{{ __('- เลือกบริการ -') }}</option>
                     @if(!empty($products))
                         @foreach($products as $product)
                             <option value="service-{{ $product->id }}">{{ $product->name_th }}</option>
@@ -339,32 +339,32 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="detail-info-text">
-                                        <h2 class="info-header">รายละเอียด</h2>
+                                        <h2 class="info-header">{{ __('รายละเอียด') }}</h2>
                                         <ul class="info-list">
                                             @foreach(explode("\n", $product->description_th) as $point)
                                                 <li>{{ trim($point) }}</li>
                                             @endforeach
                                         </ul>
                                         <div class="price-section">
-                                            <p class="price-info">ดูแลรักษาเบื้องต้น 1 จุด</p>
-                                            <p class="price-info">ราคาเริ่มต้นรวมจุดละ <span class="fw-bold text-danger">{{ number_format($product->price) }} บาท / เดือน</span></p>
-                                            <p class="price-warning">หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ</p>
-                                            <p class="price-warning">* บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม</p>
+                                            <p class="price-info">{{ __('ดูแลรักษาเบื้องต้น 1 จุด') }}</p>
+                                            <p class="price-info">{{ __('ราคาเริ่มต้นรวมจุดละ') }} <span class="fw-bold text-danger">{{ number_format($product->price) }} {{ __('บาท / เดือน') }}</span></p>
+                                            <p class="price-warning">{{ __('หมายเหตุ : ราคาอุปกรณ์จัดส่งฟรี ยกเว้นในกรณีที่มีการเปลี่ยน เช่น เซนเซอร์, แบตเตอรี่, กล้องวงจรปิด ฯลฯ') }}</p>
+                                            <p class="price-warning">{{ __('* บริการนี้ไม่ครอบคลุมรายการอะไหล่อุปกรณ์และวัสดุสิ้นเปลืองที่เป็นตัวเติม') }}</p>
                                         </div>
 
                                         <!-- 🌟 ส่วนที่เพิ่มใหม่: เลือกจำนวนและระยะเวลา -->
                                         <div class="row mt-4">
                                             <div class="col-sm-6 mb-3">
-                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">จำนวน (จุด/เครื่อง)</label>
+                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">{{ __('จำนวน (จุด/เครื่อง)') }}</label>
                                                 <input type="number" name="quantity" class="form-control form-control-custom quantity-input" value="1" min="1" disabled style="margin-bottom: 0;">
                                             </div>
                                             <div class="col-sm-6 mb-3">
-                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">ระยะเวลารับบริการ</label>
+                                                <label class="form-label fw-bold" style="color: var(--primary-dark); font-size: 0.9rem;">{{ __('ระยะเวลารับบริการ') }}</label>
                                                 <select name="duration_months" class="form-select form-control-custom duration-input" disabled style="margin-bottom: 0;">
-                                                    <option value="1">1 เดือน</option>
-                                                    <option value="3">3 เดือน</option>
-                                                    <option value="6">6 เดือน</option>
-                                                    <option value="12">1 ปี (12 เดือน)</option>
+                                                    <option value="1">{{ __('1 เดือน') }}</option>
+                                                    <option value="3">{{ __('3 เดือน') }}</option>
+                                                    <option value="6">{{ __('6 เดือน') }}</option>
+                                                    <option value="12">{{ __('1 ปี (12 เดือน)') }}</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -377,8 +377,8 @@
                             <div class="btn-action-group">
                                 <input type="hidden" name="product_id" value="{{ $product->id }}" class="product-id-input" disabled>
                                 <!-- 🌟 ลบ <input type="hidden" name="quantity" value="1"> ตัวเก่าทิ้งไปเลยครับ เพราะเราใช้ตัวใหม่ข้างบนแล้ว -->
-                                <button type="button" onclick="history.back();" class="btn-custom border-0">ย้อนกลับ</button>
-                                <button type="submit" class="btn-custom border-0">เพิ่มลงตะกร้า</button>
+                                <button type="button" onclick="history.back();" class="btn-custom border-0">{{ __('ย้อนกลับ') }}</button>
+                                <button type="submit" class="btn-custom border-0">{{ __('เพิ่มลงตะกร้า') }}</button>
                             </div>
                         </div>
                     @endforeach

@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'รายละเอียดแพ็กเกจ - AEG EASE CLUB')
+@section('title', __('รายละเอียดแพ็กเกจ') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -250,22 +250,22 @@
                             @endphp
 
                             <span class="detail-status-tag {{ ($package->status !== 'active' || $isExpired) ? 'expired' : '' }}">
-                                {{ ($package->status === 'active' && !$isExpired) ? 'ใช้งานปกติ' : 'หมดอายุ / ไม่ได้ใช้งาน' }}
+                                {{ ($package->status === 'active' && !$isExpired) ? __('ใช้งานปกติ') : __('หมดอายุ / ไม่ได้ใช้งาน') }}
                             </span>
                         </div>
 
-                        <label class="info-label">หมายเลข Serial Number / Policy :</label>
-                        <div class="info-value-navy">{{ $package->serial_number ?? 'ไม่ระบุ' }}</div>
+                        <label class="info-label">{{ __('หมายเลข') }} Serial Number / Policy :</label>
+                        <div class="info-value-navy">{{ $package->serial_number ?? __('ไม่ระบุ') }}</div>
 
-                        <label class="info-label">ระยะเวลาการคุ้มครอง / การดูแล :</label>
+                        <label class="info-label">{{ __('ระยะเวลาการคุ้มครอง / การดูแล :') }}</label>
                         <div class="date-columns">
                             <div>
-                                <label class="info-label">เริ่มต้น</label>
+                                <label class="info-label">{{ __('เริ่มต้น') }}</label>
                                 <span class="date-val-red">{{ \Carbon\Carbon::parse($package->created_at)->translatedFormat('d M Y') }}</span>
                             </div>
                             <div>
-                                <label class="info-label">สิ้นสุด</label>
-                                <span class="date-val-red">{{ !empty($package->warranty_expire_date) ? \Carbon\Carbon::parse($package->warranty_expire_date)->translatedFormat('d M Y') : 'ไม่ระบุวันสิ้นสุด' }}</span>
+                                <label class="info-label">{{ __('สิ้นสุด') }}</label>
+                                <span class="date-val-red">{{ !empty($package->warranty_expire_date) ? \Carbon\Carbon::parse($package->warranty_expire_date)->translatedFormat('d M Y') : __('ไม่ระบุวันสิ้นสุด') }}</span>
                             </div>
                         </div>
                     </div>
@@ -275,41 +275,41 @@
 
                     @if($package->reference_type === 'product' && $package->total_service_count > 0)
                     <div class="section-block">
-                        <span class="section-label-bold">จำนวนบริการคงเหลือ :</span>
-                        <p class="remaining-text">{{ max(0, $package->total_service_count - $package->used_service_count) }} ครั้ง (จากทั้งหมด {{ $package->total_service_count }} ครั้ง)</p>
+                        <span class="section-label-bold">{{ __('จำนวนบริการคงเหลือ :') }}</span>
+                        <p class="remaining-text">{{ max(0, $package->total_service_count - $package->used_service_count) }} {{ __('ครั้ง (จากทั้งหมด') }} {{ $package->total_service_count }} {{ __('ครั้ง)') }}</p>
                     </div>
                     @endif
 
                     <div class="section-block">
-                        <span class="section-label-bold">ประวัติการแจ้งซ่อม / เรียกใช้บริการ :</span>
+                        <span class="section-label-bold">{{ __('ประวัติการแจ้งซ่อม / เรียกใช้บริการ :') }}</span>
                         @if($repairs->count() > 0)
                             <div class="repair-history-btns">
                                 @foreach($repairs as $index => $repair)
                                     <button type="button" class="btn-history-pill" onclick="openCompletionModal({{ $repair->id }})">
-                                        ครั้งที่ {{ $repairs->count() - $index }}
+                                        {{ __('ครั้งที่') }} {{ $repairs->count() - $index }}
                                         <small style="opacity: 0.8; margin-left: 5px;">({{ \Carbon\Carbon::parse($repair->created_at)->format('d/m/Y') }})</small>
                                     </button>
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-muted">ยังไม่มีประวัติการแจ้งซ่อม</p>
+                            <p class="text-muted">{{ __('ยังไม่มีประวัติการแจ้งซ่อม') }}</p>
                         @endif
                     </div>
 
                     <div class="section-block">
-                        <span class="section-label-bold">รายละเอียด / ขอบเขตการบริการ :</span>
+                        <span class="section-label-bold">{{ __('รายละเอียด / ขอบเขตการบริการ :') }}</span>
                         <div class="service-scope-content">
                             {!! nl2br(e($description)) !!}
                             @if(!empty($coverage))
                                 <hr class="my-3">
-                                <strong>¼ข้อมูลความคุ้มครองเพิ่มเติม:</strong><br>
+                                <strong>{{ __('¼ข้อมูลความคุ้มครองเพิ่มเติม:') }}</strong><br>
                                 {!! nl2br(e($coverage)) !!}
                             @endif
                         </div>
                     </div>
 
                     <div class="detail-footer">
-                        <a href="{{ route('packages.mine') }}" class="btn-back-detail"><i class="fas fa-arrow-left me-2"></i> ย้อนกลับ</a>
+                        <a href="{{ route('packages.mine') }}" class="btn-back-detail"><i class="fas fa-arrow-left me-2"></i> {{ __('ย้อนกลับ') }}</a>
                     </div>
                 </div>
 
@@ -321,41 +321,41 @@
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none;">
                 <div class="modal-header text-white" style="background-color: var(--primary-navy);">
-                    <h5 class="modal-title fw-bold" id="modalTitle">รายละเอียดรายงานการซ่อม</h5>
+                    <h5 class="modal-title fw-bold" id="modalTitle">{{ __('รายละเอียดรายงานการซ่อม') }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" style="background-color: #f8fafc;">
                     <div id="modalLoading" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status"></div>
-                        <p class="text-muted mt-2">กำลังดึงข้อมูลรายงานการซ่อม...</p>
+                        <p class="text-muted mt-2">{{ __('กำลังดึงข้อมูลรายงานการซ่อม...') }}</p>
                     </div>
 
                     <div id="modalContent" class="d-none">
                         <div class="row g-4 mb-4">
                             <div class="col-md-5">
-                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-danger"></i>บันทึกเวลาทำงาน (Timeline)</h6>
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-danger"></i>{{ __('บันทึกเวลาทำงาน (Timeline)') }}</h6>
                                 <ul class="tech-timeline" id="logTimeline">
                                     </ul>
                             </div>
                             <div class="col-md-7">
-                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-comment-alt me-2 text-primary"></i>หมายเหตุการแก้ไขจากช่าง</h6>
+                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-comment-alt me-2 text-primary"></i>{{ __('หมายเหตุการแก้ไขจากช่าง') }}</h6>
                                 <div class="p-3 bg-white border rounded mb-3" id="techNote" style="font-size: 0.9rem; min-height: 80px;"></div>
 
-                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-signature me-2 text-success"></i>ลายเซ็นยืนยันจากลูกค้า</h6>
+                                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-signature me-2 text-success"></i>{{ __('ลายเซ็นยืนยันจากลูกค้า') }}</h6>
                                 <div class="text-center bg-white border rounded p-2" style="max-width: 250px;">
                                     <img id="custSignature" src="" alt="Customer Signature" style="max-height: 80px; width: auto;">
                                 </div>
                             </div>
                         </div>
 
-                        <h6 class="fw-bold text-dark mb-2 border-t pt-3"><i class="fas fa-images me-2 text-warning"></i>รูปภาพ/หลักฐานประกอบจากหน้างาน</h6>
+                        <h6 class="fw-bold text-dark mb-2 border-t pt-3"><i class="fas fa-images me-2 text-warning"></i>{{ __('รูปภาพ/หลักฐานประกอบจากหน้างาน') }}</h6>
                         <div class="row mt-2">
                             <div class="col-6">
-                                <span class="d-block small fw-bold text-muted mb-2">📸 ภาพก่อนการซ่อม (Before)</span>
+                                <span class="d-block small fw-bold text-muted mb-2">📸 {{ __('ภาพก่อนการซ่อม (Before)') }}</span>
                                 <div class="d-flex flex-wrap gap-2" id="galleryBefore"></div>
                             </div>
                             <div class="col-6">
-                                <span class="d-block small fw-bold text-muted mb-2">✅ ภาพหลังการซ่อม (After)</span>
+                                <span class="d-block small fw-bold text-muted mb-2">✅ {{ __('ภาพหลังการซ่อม (After)') }}</span>
                                 <div class="d-flex flex-wrap gap-2" id="galleryAfter"></div>
                             </div>
                         </div>

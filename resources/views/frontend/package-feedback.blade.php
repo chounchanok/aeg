@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ให้คะแนนและรีวิว - AEG EASE CLUB')
+@section('title', __('ให้คะแนนและรีวิว') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -354,7 +354,7 @@
 
     <div class="reward-banner-gray">
         <div class="container">
-            <i class="fas fa-coins" style="color: #edb314;"></i> ให้คะแนนและเขียนรีวิวเพื่อรับ 1 EASE Coins
+            <i class="fas fa-coins" style="color: #edb314;"></i> {{ __('ให้คะแนนและเขียนรีวิวเพื่อรับ') }} 1 EASE Coins
         </div>
     </div>
 
@@ -367,7 +367,7 @@
                             <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="{{ $item->product_name }}">
                         </div>
                         <div class="rating-group">
-                            <span class="rating-label">ให้คะแนนคุณภาพงานติดตั้งและบริการหลังการขาย</span>
+                            <span class="rating-label">{{ __('ให้คะแนนคุณภาพงานติดตั้งและบริการหลังการขาย') }}</span>
                             <div class="star-rating" data-id="install">
                                 <i class="fas fa-star selected" data-value="1"></i>
                                 <i class="fas fa-star selected" data-value="2"></i>
@@ -377,7 +377,7 @@
                             </div>
                         </div>
                         <div class="rating-group">
-                            <span class="rating-label">ให้คะแนนคุณภาพการให้คำแนะนำและข้อมูลจากฝ่ายขาย</span>
+                            <span class="rating-label">{{ __('ให้คะแนนคุณภาพการให้คำแนะนำและข้อมูลจากฝ่ายขาย') }}</span>
                             <div class="star-rating" data-id="sales">
                                 <i class="fas fa-star selected" data-value="1"></i>
                                 <i class="fas fa-star selected" data-value="2"></i>
@@ -389,7 +389,7 @@
                     </div>
                     <div class="col-right">
                         <h1 class="pkg-title-main">{{ $item->product_name }}</h1>
-                        <span class="pkg-subtitle">แพ็กเกจการดูแลอุปกรณ์ (Order: {{ $item->order->order_number }})</span>
+                        <span class="pkg-subtitle">{{ __('แพ็กเกจการดูแลอุปกรณ์') }} (Order: {{ $item->order->order_number }})</span>
 
                         <form action="{{ url('/packages/feedback/' . $item->id) }}" method="POST">
                             @csrf
@@ -398,13 +398,13 @@
                             <input type="hidden" name="sales_rating" id="sales_rating_input" value="4">
 
                             <div class="review-block">
-                                <span class="review-label font-weight-bold d-block mb-2">เขียนรีวิว</span>
-                                <textarea class="custom-textarea" name="review_text" placeholder="เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ"></textarea>
+                                <span class="review-label font-weight-bold d-block mb-2">{{ __('เขียนรีวิว') }}</span>
+                                <textarea class="custom-textarea" name="review_text" placeholder="{{ __('เขียนรีวิวหรือคำแนะนำเพื่อปรับปรุงบริการ') }}"></textarea>
                             </div>
 
                             <div class="action-btns-row">
-                                <a href="{{ route('packages.mine') }}" class="btn-navy-pill bg-secondary text-dark border-0">ย้อนกลับ</a>
-                                <button type="submit" class="btn-navy-pill">ยืนยัน</button>
+                                <a href="{{ route('packages.mine') }}" class="btn-navy-pill bg-secondary text-dark border-0">{{ __('ย้อนกลับ') }}</a>
+                                <button type="submit" class="btn-navy-pill">{{ __('ยืนยัน') }}</button>
                             </div>
                         </form>
                     </div>

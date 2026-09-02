@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -102,6 +103,9 @@ class ServiceRequestAdminController extends Controller
             'time_slot' => 'nullable|string'       // 🌟 รับค่าเวลา
         ]);
 
+        // 🌟 ดึง customer_id เจ้าของงานซ่อมนี้ไว้ก่อน เพื่อใช้แจ้งเตือนหลังอัปเดตสถานะสำเร็จ
+        $customerId = DB::table('service_requests')->where('id', $id)->value('customer_id');
+
         DB::beginTransaction();
         try {
             // 2. อัปเดตข้อมูลลงฐานข้อมูล (เพิ่ม preferred_date และ time_slot)
@@ -145,7 +149,38 @@ class ServiceRequestAdminController extends Controller
                 'updated_at' => now()
             ]);
 
+            // 🌟 4. บันทึกการแจ้งเตือนในระบบ (แสดงในกระดิ่งแจ้งเตือนหน้าเว็บ) ให้ลูกค้าเจ้าของงานซ่อมนี้
+            $notifyTitle = 'สถานะงานซ่อมมีการอัปเดต';
+            $notifyBody = 'สถานะงานซ่อมของคุณเปลี่ยนเป็น: ' . $statusLabels[$request->status] . $techName . $dateTimeInfo;
+
+            if ($customerId) {
+                DB::table('notifications')->insert([
+                    'user_id' => $customerId,
+                    'title' => $notifyTitle,
+                    'body' => $notifyBody,
+                    'type' => 'service',
+                    'is_read' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
             DB::commit();
+
+            // 🌟 5. ยิง Push Notification (FCM) ไปยังมือถือของลูกค้า — ทำหลัง commit เสร็จแล้ว และห้ามทำให้ request ล้มเหลว
+            // แม้ว่าการส่ง push จะผิดพลาด (เช่น ยังไม่ได้ตั้งค่า Firebase credentials) เพราะสถานะงานซ่อมอัปเดตสำเร็จไปแล้ว
+            if ($customerId) {
+                try {
+                    PushNotificationService::sendToUser($customerId, $notifyTitle, $notifyBody, [
+                        'type' => 'service_request_status',
+                        'service_request_id' => (string) $id,
+                        'status' => $request->status,
+                    ]);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('[ServiceRequestAdminController] ส่ง push แจ้งเตือนล้มเหลว: ' . $e->getMessage());
+                }
+            }
+
             return response()->json(['success' => true, 'message' => 'อัปเดตข้อมูลและวันเวลานัดหมายสำเร็จ']);
 
         } catch (\Exception $e) {

@@ -117,6 +117,85 @@ class CmsAdminController extends Controller
     }
 
     // ==========================================
+    // ส่วนที่ 1.5: จัดการ Popup Ads (โฆษณาแบบ popup แสดงตอนเปิดหน้าแรกครั้งแรก)
+    // ==========================================
+    public function popupAds()
+    {
+        $popupAds = DB::table('popup_ads')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.cms.popup-ads', [
+            'popupAds' => $popupAds,
+            'first_level_active_index' => 'cms',
+            'second_level_active_index' => 'popup-ads',
+            'third_level_active_index' => ''
+        ]);
+    }
+
+    public function storePopupAd(Request $request)
+    {
+        $request->validate([
+            'title' => 'nullable|string',
+            'link_url' => 'nullable|url',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+        ]);
+
+        $imageUrl = '';
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('popup-ads', 'public');
+            $imageUrl = url('storage/' . $path);
+        }
+
+        DB::table('popup_ads')->insert([
+            'title' => $request->title,
+            'image_url' => $imageUrl,
+            'link_url' => $request->link_url,
+            'sort_order' => $request->sort_order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'เพิ่ม Popup Ad เรียบร้อยแล้ว');
+    }
+
+    public function updatePopupAd(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'nullable|string',
+            'link_url' => 'nullable|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+        ]);
+
+        $popupAd = DB::table('popup_ads')->where('id', $id)->first();
+        $imageUrl = $popupAd->image_url;
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('popup-ads', 'public');
+            $imageUrl = url('storage/' . $path);
+        }
+
+        DB::table('popup_ads')->where('id', $id)->update([
+            'title' => $request->title,
+            'image_url' => $imageUrl,
+            'link_url' => $request->link_url,
+            'sort_order' => $request->sort_order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'updated_at' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'แก้ไข Popup Ad เรียบร้อยแล้ว');
+    }
+
+    public function deletePopupAd($id)
+    {
+        DB::table('popup_ads')->where('id', $id)->delete();
+        return redirect()->back()->with('success', 'ลบ Popup Ad เรียบร้อยแล้ว');
+    }
+
+    // ==========================================
     // ส่วนที่ 2: จัดการคำถามที่พบบ่อย (FAQs)
     // ==========================================
     public function faqs()

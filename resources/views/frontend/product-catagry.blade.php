@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ระบบรักษาความปลอดภัย - AEG EASE CLUB')
+@section('title', __('ระบบรักษาความปลอดภัย') . ' - AEG EASE CLUB')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -497,14 +497,14 @@
                             <img src="{{ asset('assets/image/noun-category.png') }}" alt="All Products">
                         </div>
                         <div class="category-text-en">All Products</div>
-                        <div class="category-text-th">ทั้งหมด</div>
+                        <div class="category-text-th">{{ __('ทั้งหมด') }}</div>
                     </div>
                 </a>
 
                 @if(isset($categories))
                     @foreach($categories as $cat)
                         @php
-                            $catNameTh = $cat->title_th ?? $cat->title_en ?? 'หมวดหมู่';
+                            $catNameTh = $cat->title_th ?? $cat->title_en ?? __('หมวดหมู่');
                             $catNameEn = $cat->title_en ?? $cat->title_th ?? 'Category';
                             $icon = $cat->image_url ? asset($cat->image_url) : asset('assets/image/noun-category.png');
                         @endphp
@@ -541,17 +541,17 @@
                                     </a>
                                     <div class="product-title-en">{{ $product->name }}</div>
                                     @if($product->is_contact_only == 1 || $product->is_contact_only == 0)
-                                        <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">ติดต่อฝ่ายขาย</a>
+                                        <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">{{ __('ติดต่อฝ่ายขาย') }}</a>
                                     @else
                                     <div class="product-title-th">฿{{ number_format($product->price, 2) }}</div>
-                                    <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">ดูรายละเอียด</a>
+                                    <a href="{{ route('product-detail', $product->id) }}" class="btn-action-sales">{{ __('ดูรายละเอียด') }}</a>
                                     @endif
                                 </div>
                             </div>
                         @empty
                             <div class="col-12 text-center text-muted py-5">
                                 <i class="fas fa-box-open fa-3x mb-3" style="opacity: 0.5;"></i>
-                                <h5>ไม่พบข้อมูลสินค้าในหมวดหมู่นี้</h5>
+                                <h5>{{ __('ไม่พบข้อมูลสินค้าในหมวดหมู่นี้') }}</h5>
                             </div>
                         @endforelse
 

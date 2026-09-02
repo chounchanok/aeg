@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->preventRequestsDuringMaintenance(except: [
             'api/*', // ยอมให้แอปฝั่งช่างและลูกค้าเข้า API ได้ปกติ
         ]);
+        // ตั้งค่าภาษาที่แสดงผล (TH/EN) จาก session ทุก request ฝั่งเว็บ (ไม่รวม API)
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

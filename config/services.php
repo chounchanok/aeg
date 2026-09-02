@@ -53,4 +53,12 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
+    // 🌟 Firebase Cloud Messaging (FCM) - สำหรับส่ง Push Notification ไปยังแอปมือถือ
+    // ยังไม่ได้ตั้งค่าไฟล์ Service Account JSON (credentials ว่างไว้ก่อน) ระบบจะข้ามการส่ง push
+    // จนกว่าจะตั้งค่า FIREBASE_CREDENTIALS ให้ชี้ไปยังไฟล์ JSON ที่ดาวน์โหลดจาก Firebase Console
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'), // path เต็มไปยังไฟล์ service-account .json (เก็บนอก public/ เพื่อความปลอดภัย)
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
 ];

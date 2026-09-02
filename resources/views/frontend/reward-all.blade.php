@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'สิทธิพิเศษสำหรับสมาชิก - AEG EASE CLUB')
+@section('title', __('สิทธิพิเศษสำหรับสมาชิก - AEG EASE CLUB'))
 
 @push('styles')
     <style>
@@ -322,8 +322,8 @@
 
         <div class="privilege-unified-box">
             <div class="text-center mb-5">
-                <h1 class="gradient-title">สิทธิพิเศษสำหรับสมาชิก EASE CLUB</h1>
-                <p class="text-muted">สะสมพอยท์เพื่อแลกของรางวัล และดีลพิเศษมากมาย</p>
+                <h1 class="gradient-title">{{ __('สิทธิพิเศษสำหรับสมาชิก EASE CLUB') }}</h1>
+                <p class="text-muted">{{ __('สะสมพอยท์เพื่อแลกของรางวัล และดีลพิเศษมากมาย') }}</p>
             </div>
 
             <div class="privilege-tabs-container mb-5">
@@ -364,7 +364,7 @@
                                                 <div class="dashed-line"></div>
                                                 <div class="reward-expiry-wrapper">
                                                     <img src="{{ asset('assets/image/clock-icon.webp') }}" class="clock-icon">
-                                                    <span class="expiry-text">จำนวนคงเหลือ : <span class="expiry-date">{{ $reward->stock_quantity }} สิทธิ์</span></span>
+                                                    <span class="expiry-text">{{ __('จำนวนคงเหลือ :') }} <span class="expiry-date">{{ $reward->stock_quantity }} {{ __('สิทธิ์') }}</span></span>
                                                 </div>
                                             </div>
                                         </a>
@@ -374,7 +374,7 @@
                         @else
                             <div class="col-12">
                                 <div class="alert alert-info text-center" role="alert">
-                                    ขณะนี้ยังไม่มีสิทธิพิเศษในหมวดนี้ กรุณาตรวจสอบอีกครั้งในภายหลัง
+                                    {{ __('ขณะนี้ยังไม่มีสิทธิพิเศษในหมวดนี้ กรุณาตรวจสอบอีกครั้งในภายหลัง') }}
                                 </div>
                             </div>
                         @endif

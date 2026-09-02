@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ตะกร้าสินค้า - AEG EASE CLUB')
+@section('title', __('ตะกร้าสินค้า - AEG EASE CLUB'))
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -403,7 +403,7 @@
             @if(isset($cartItems) && $cartItems->count() > 0)
                 <div class="cart-header" onclick="toggleAll()">
                     <span class="custom-radio radio-active" id="allSelector"></span>
-                    <span class="select-all-text">เลือกทั้งหมด</span>
+                    <span class="select-all-text">{{ __('เลือกทั้งหมด') }}</span>
                 </div>
 
                 @foreach($cartItems as $item)
@@ -417,17 +417,17 @@
                                 <h3 class="item-title">{{ $item->name }}</h3>
                                 <!-- 🌟 ให้แก้เป็นแบบนี้ครับ -->
                                 <p class="text-muted mb-2" style="font-size: 0.9rem;">
-                                    จำนวน: {{ $item->quantity }} ชิ้น 
+                                    {{ __('จำนวน:') }} {{ $item->quantity }} {{ __('ชิ้น') }}
                                     @if($item->duration_months > 1)
-                                        <span class="text-danger">| ระยะเวลา: {{ $item->duration_months }} เดือน</span> 
+                                        <span class="text-danger">| {{ __('ระยะเวลา:') }} {{ $item->duration_months }} {{ __('เดือน') }}</span>
                                     @endif
-                                    | ราคา: {{ number_format($item->price, 2) }} ฿
+                                    | {{ __('ราคา:') }} {{ number_format($item->price, 2) }} ฿
                                 </p>
 
                                 <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST" class="mt-2" onclick="event.stopPropagation();">
                                     @csrf
                                     <button type="submit" class="text-danger border-0 bg-transparent p-0 btn-sm" style="font-size: 13px;">
-                                        <i class="fas fa-trash-can mr-1"></i> ลบรายการนี้
+                                        <i class="fas fa-trash-can mr-1"></i> {{ __('ลบรายการนี้') }}
                                     </button>
                                 </form>
                             </div>
@@ -437,18 +437,18 @@
                 @endforeach
 
                 <div class="text-end my-4 px-2">
-                    <h4 class="fw-bold text-dark" style="font-size: 1.1rem;">ยอดรวมทั้งหมด: <span class="text-danger" id="totalAmountDisplay">{{ number_format($totalAmount, 2) }} ฿</span></h4>
+                    <h4 class="fw-bold text-dark" style="font-size: 1.1rem;">{{ __('ยอดรวมทั้งหมด:') }} <span class="text-danger" id="totalAmountDisplay">{{ number_format($totalAmount, 2) }} ฿</span></h4>
                 </div>
 
                 <div class="cart-actions">
-                    <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none; color: #333 !important;">ย้อนกลับ</button>
-                    <button class="btn-cart" data-bs-toggle="modal" data-bs-target="#qrModal">ดำเนินการต่อ</button>
+                    <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none; color: #333 !important;">{{ __('ย้อนกลับ') }}</button>
+                    <button class="btn-cart" data-bs-toggle="modal" data-bs-target="#qrModal">{{ __('ดำเนินการต่อ') }}</button>
                 </div>
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-shopping-basket fa-4x text-muted mb-3"></i>
-                    <h4 class="text-muted">ตะกร้าสินค้าของคุณยังว่างเปล่า</h4>
-                    <a href="{{ route('packages', 'equipment') }}" class="btn btn-cart mt-4 d-inline-flex align-items-center justify-content-center text-white" style="text-decoration: none; min-width: 200px;">ไปเลือกซื้อสินค้ากันเลย!</a>
+                    <h4 class="text-muted">{{ __('ตะกร้าสินค้าของคุณยังว่างเปล่า') }}</h4>
+                    <a href="{{ route('packages', 'equipment') }}" class="btn btn-cart mt-4 d-inline-flex align-items-center justify-content-center text-white" style="text-decoration: none; min-width: 200px;">{{ __('ไปเลือกซื้อสินค้ากันเลย!') }}</a>
                 </div>
             @endif
 
@@ -459,7 +459,7 @@
         <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
             <div class="modal-content modal-qr-content">
                 <div class="modal-qr-blue-section">
-                    <h5 class="modal-qr-title">สแกน Qr Code</h5>
+                    <h5 class="modal-qr-title">{{ __('สแกน Qr Code') }}</h5>
                     <button type="button" class="btn-qr-close" data-bs-dismiss="modal">
                         <i class="fas fa-xmark"></i>
                     </button>
@@ -469,7 +469,7 @@
                     </div>
                 </div>
                 <div class="qr-footer-info">
-                    <p class="qr-instruction">สแกนคิวอาร์โค้ดเพื่อดำเนินการต่อผ่านแอปพลิเคชัน</p>
+                    <p class="qr-instruction">{{ __('สแกนคิวอาร์โค้ดเพื่อดำเนินการต่อผ่านแอปพลิเคชัน') }}</p>
                 </div>
             </div>
         </div>

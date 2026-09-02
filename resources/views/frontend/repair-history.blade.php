@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ประวัติการแจ้งซ่อม - AEG EASE CLUB')
+@section('title', __('ประวัติการแจ้งซ่อม') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -343,7 +343,7 @@
     <!-- Main Repair Details Content -->
     <main class="repair-detail-wrapper">
         <div class="container-950">
-            <h2 class="fw-bold mb-4" style="color: var(--primary-navy);">ประวัติการแจ้งซ่อมของคุณ</h2>
+            <h2 class="fw-bold mb-4" style="color: var(--primary-navy);">{{ __('ประวัติการแจ้งซ่อมของคุณ') }}</h2>
 
             @if(isset($requests) && $requests->count() > 0)
                 @foreach($requests as $req)
@@ -360,24 +360,24 @@
                                 </div>
                                 <div>
                                     @if($req->status == 'completed')
-                                        <span class="badge bg-success px-3 py-2">เสร็จสิ้น</span>
+                                        <span class="badge bg-success px-3 py-2">{{ __('เสร็จสิ้น') }}</span>
                                     @elseif($req->status == 'cancelled')
-                                        <span class="badge bg-secondary px-3 py-2">ยกเลิก</span>
+                                        <span class="badge bg-secondary px-3 py-2">{{ __('ยกเลิก') }}</span>
                                     @else
-                                        <span class="badge bg-warning text-dark px-3 py-2">กำลังดำเนินการ</span>
+                                        <span class="badge bg-warning text-dark px-3 py-2">{{ __('กำลังดำเนินการ') }}</span>
                                     @endif
                                 </div>
                             </div>
 
                             <p class="mb-2 text-truncate" style="max-width: 400px; font-size: 0.9rem;">
-                                <strong>ปัญหา:</strong> {{ $req->problem_description }}
+                                <strong>{{ __('ปัญหา:') }}</strong> {{ $req->problem_description }}
                             </p>
 
                             <div class="d-flex justify-content-between align-items-end mt-3">
                                 <span class="text-muted" style="font-size: 0.8rem;">
-                                    วันที่แจ้ง: {{ \Carbon\Carbon::parse($req->created_at)->format('d M Y') }}
+                                    {{ __('วันที่แจ้ง:') }} {{ \Carbon\Carbon::parse($req->created_at)->format('d M Y') }}
                                 </span>
-                                <a href="{{ route('repair-status', $req->id) }}" class="btn-navy-back" style="padding: 8px 25px;">ดูสถานะ</a>
+                                <a href="{{ route('repair-status', $req->id) }}" class="btn-navy-back" style="padding: 8px 25px;">{{ __('ดูสถานะ') }}</a>
                             </div>
                         </div>
                     </div>
@@ -386,7 +386,7 @@
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">คุณยังไม่มีประวัติการแจ้งซ่อม</p>
+                    <p class="text-muted">{{ __('คุณยังไม่มีประวัติการแจ้งซ่อม') }}</p>
                 </div>
             @endif
         </div>

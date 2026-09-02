@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'สถานะการแจ้งซ่อม - AEG EASE CLUB')
+@section('title', __('สถานะการแจ้งซ่อม') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -498,22 +498,22 @@
                     <div class="pkg-info-side">
                         <div class="pkg-header-flex">
                             <h1 class="pkg-main-title">{{ $request->product_name }}</h1>
-                            <span class="tag-red-label">แจ้งซ่อม</span>
+                            <span class="tag-red-label">{{ __('แจ้งซ่อม') }}</span>
                         </div>
                         <div class="job-details-text">
                             JOB {{ $request->ticket_number }}<br>
                             {{ $request->problem_description }}<br>
-                            คุณ {{ $profile->first_name ?? $user->username }} โทร {{ $user->phone }}
+                            {{ __('คุณ') }} {{ $profile->first_name ?? $user->username }} {{ __('โทร') }} {{ $user->phone }}
                         </div>
-                        <div class="badge-repair-round">ใช้งานครั้งที่ {{ ($request->used_service_count ?? 0) + 1 }}</div>
+                        <div class="badge-repair-round">{{ __('ใช้งานครั้งที่') }} {{ ($request->used_service_count ?? 0) + 1 }}</div>
 
                         <div class="dates-summary-grid">
                             <div class="date-col">
-                                <span class="summary-label">วันที่แจ้ง</span>
+                                <span class="summary-label">{{ __('วันที่แจ้ง') }}</span>
                                 <span class="summary-value">{{ \Carbon\Carbon::parse($request->created_at)->addYears(543)->format('d M Y') }}</span>
                             </div>
                             <div class="date-col">
-                                <span class="summary-label">วันนัดหมาย</span>
+                                <span class="summary-label">{{ __('วันนัดหมาย') }}</span>
                                 <span class="summary-value">{{ \Carbon\Carbon::parse($request->preferred_date)->addYears(543)->format('d M Y') }}</span>
                             </div>
                         </div>
@@ -527,47 +527,47 @@
                     if($currentIndex === false) $currentIndex = 0; // fallback
 
                     $labels = [
-                        'pending' => 'รับเรื่องแล้ว',
-                        'assigned' => 'นัดหมายช่าง',
-                        'in_progress' => 'กำลังดำเนินการ',
-                        'completed' => 'เสร็จสิ้น',
-                        'cancelled' => 'ยกเลิก'
+                        'pending' => __('รับเรื่องแล้ว'),
+                        'assigned' => __('นัดหมายช่าง'),
+                        'in_progress' => __('กำลังดำเนินการ'),
+                        'completed' => __('เสร็จสิ้น'),
+                        'cancelled' => __('ยกเลิก')
                     ];
                 @endphp
 
                 <div class="stepper-container">
-                    <div class="current-status-tag">{{ $labels[$request->status] ?? 'รอดำเนินการ' }}</div>
+                    <div class="current-status-tag">{{ $labels[$request->status] ?? __('รอดำเนินการ') }}</div>
                     <div class="stepper-line-wrapper">
                         <div class="step-item {{ $currentIndex >= 0 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-check"></i></div>
-                            <div class="step-label">รับเรื่องแล้ว</div>
+                            <div class="step-label">{{ __('รับเรื่องแล้ว') }}</div>
                         </div>
                         <div class="step-item {{ $currentIndex >= 1 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-check"></i></div>
-                            <div class="step-label">นัดหมาย</div>
+                            <div class="step-label">{{ __('นัดหมาย') }}</div>
                         </div>
                         <div class="step-item {{ $currentIndex >= 2 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-tools"></i></div>
-                            <div class="step-label">กำลังดำเนินการ</div>
+                            <div class="step-label">{{ __('กำลังดำเนินการ') }}</div>
                         </div>
                         <div class="step-item {{ $currentIndex >= 3 ? 'active completed' : '' }}">
                             <div class="step-circle"><i class="fas fa-flag-checkered"></i></div>
-                            <div class="step-label">เสร็จสิ้น</div>
+                            <div class="step-label">{{ __('เสร็จสิ้น') }}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="info-block">
-                    <span class="info-block-label">แพ็กเกจดูแล :</span>
+                    <span class="info-block-label">{{ __('แพ็กเกจดูแล :') }}</span>
                     <p class="info-block-value">{{ $request->product_name }}</p>
                 </div>
                 <div class="info-block">
-                    <span class="info-block-label">จำนวนบริการคงเหลือ :</span>
-                    <p class="info-block-value fw-bold text-danger">{{ max(0, $request->total_service_count - $request->used_service_count) }} ครั้ง</p>
+                    <span class="info-block-label">{{ __('จำนวนบริการคงเหลือ :') }}</span>
+                    <p class="info-block-value fw-bold text-danger">{{ max(0, $request->total_service_count - $request->used_service_count) }} {{ __('ครั้ง') }}</p>
                 </div>
 
                 <div class="card-footer-right">
-                    <a href="{{ route('repair-history') }}" class="btn-navy-back">ดูประวัติทั้งหมด</a>
+                    <a href="{{ route('repair-history') }}" class="btn-navy-back">{{ __('ดูประวัติทั้งหมด') }}</a>
                 </div>
             </article>
         </div>

@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ติดต่อผู้เชี่ยวชาญ - AEG EASE CLUB')
+@section('title', __('ติดต่อผู้เชี่ยวชาญ') . ' - AEG EASE CLUB')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -314,7 +314,7 @@
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
-                <p class="text-center mb-4 text-muted">เรื่อง: {{ $product->name_th }}</p>
+                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ $product->name_th }}</p>
 
                 <form id="contactForm">
                     @csrf <!-- 🌟 ขาดไม่ได้สำหรับ Laravel -->
@@ -323,34 +323,34 @@
                     <div class="row">
                         <div class="col-12">
                             <!-- 🌟 เติม name="name" -->
-                            <input type="text" name="name" class="form-control form-control-custom" placeholder="• ชื่อผู้ติดต่อ" required>
+                            <input type="text" name="name" class="form-control form-control-custom" placeholder="• {{ __('ชื่อผู้ติดต่อ') }}" required>
                         </div>
                         <div class="col-md-6">
                             <!-- 🌟 เติม name="phone" -->
-                            <input type="tel" name="phone" class="form-control form-control-custom" placeholder="• เบอร์โทรศัพท์ Telephone Number" required>
+                            <input type="tel" name="phone" class="form-control form-control-custom" placeholder="• {{ __('เบอร์โทรศัพท์') }} Telephone Number" required>
                         </div>
                         <div class="col-md-6">
                             <!-- 🌟 เติม name="email" -->
-                            <input type="email" name="email" class="form-control form-control-custom" placeholder="• อีเมล / Email" required>
+                            <input type="email" name="email" class="form-control form-control-custom" placeholder="• {{ __('อีเมล') }} / Email" required>
                         </div>
                         <div class="col-12">
                             <!-- 🌟 เติม name="contact_time" -->
                             <select name="contact_time" class="form-select form-control-custom form-select-custom" required>
-                                <option value="" selected disabled>• ช่วงเวลาที่สะดวกให้ติดต่อกลับ</option>
-                                <option value="morning">เช้า (09:00 - 12:00)</option>
-                                <option value="afternoon">บ่าย (13:00 - 17:00)</option>
-                                <option value="anytime">สะดวกตลอดเวลา</option>
+                                <option value="" selected disabled>• {{ __('ช่วงเวลาที่สะดวกให้ติดต่อกลับ') }}</option>
+                                <option value="morning">{{ __('เช้า (09:00 - 12:00)') }}</option>
+                                <option value="afternoon">{{ __('บ่าย (13:00 - 17:00)') }}</option>
+                                <option value="anytime">{{ __('สะดวกตลอดเวลา') }}</option>
                             </select>
                         </div>
                         <div class="col-12">
                             <!-- 🌟 เติม name="message" -->
-                            <textarea name="message" class="form-control form-control-custom textarea-custom" placeholder="• สอบถามรายละเอียดเพิ่มเติม / Request More Information"></textarea>
+                            <textarea name="message" class="form-control form-control-custom textarea-custom" placeholder="• {{ __('สอบถามรายละเอียดเพิ่มเติม') }} / Request More Information"></textarea>
                         </div>
                     </div>
 
                     <div class="btn-container">
-                        <button type="button" onclick="history.back();" class="btn-gradient border-0">ย้อนกลับ</button>
-                        <button type="submit" id="btnSubmit" class="btn-gradient border-0">ส่งข้อความถึงเรา</button>
+                        <button type="button" onclick="history.back();" class="btn-gradient border-0">{{ __('ย้อนกลับ') }}</button>
+                        <button type="submit" id="btnSubmit" class="btn-gradient border-0">{{ __('ส่งข้อความถึงเรา') }}</button>
                     </div>
                 </form>
             </div>
@@ -363,8 +363,8 @@
                 <div class="modal-body p-0">
                     <p class="success-text-en">Your request has been submitted</p>
                     <p class="success-text-en">We will contact you as soon as possible.</p>
-                    <p class="success-text-th">ระบบได้รับคำขอของคุณแล้ว ทางบริษัทของเราจะติดต่อกลับโดยเร็วที่สุด</p>
-                    <a href="{{ url('/') }}" class="btn-back-home">กลับสู่หน้าหลัก</a>
+                    <p class="success-text-th">{{ __('ระบบได้รับคำขอของคุณแล้ว ทางบริษัทของเราจะติดต่อกลับโดยเร็วที่สุด') }}</p>
+                    <a href="{{ url('/') }}" class="btn-back-home">{{ __('กลับสู่หน้าหลัก') }}</a>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'บริการตู้ล็อกเกอร์ - AEG EASE CLUB')
+@section('title', __('บริการตู้ล็อกเกอร์') . ' - AEG EASE CLUB')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -283,7 +283,7 @@
                 </div>
                 <div class="locker-content">
                     <h2 class="locker-title">AEG Smart Locker</h2>
-                    <a href="{{ route('locker-detail') }}" class="btn-view-details">ดูรายละเอียด</a>
+                    <a href="{{ route('locker-detail') }}" class="btn-view-details">{{ __('ดูรายละเอียด') }}</a>
                 </div>
             </div>
 
@@ -292,11 +292,11 @@
                 <div class="locker-image-box">
                     <!-- Placeholder representing the safes in Locker.jpg -->
                     <img src="https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=1200&q=80"
-                        alt="บริการตู้เซฟนิรภัย">
+                        alt="{{ __('บริการตู้เซฟนิรภัย') }}">
                 </div>
                 <div class="locker-content">
-                    <h2 class="locker-title">บริการตู้เซฟนิรภัย</h2>
-                    <a href="{{ route('safe-detail') }}" class="btn-view-details">ดูรายละเอียด</a>
+                    <h2 class="locker-title">{{ __('บริการตู้เซฟนิรภัย') }}</h2>
+                    <a href="{{ route('safe-detail') }}" class="btn-view-details">{{ __('ดูรายละเอียด') }}</a>
                 </div>
             </div>
 

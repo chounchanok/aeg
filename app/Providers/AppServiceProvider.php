@@ -103,6 +103,12 @@ class AppServiceProvider extends ServiceProvider
                         'route_name' => 'admin.cms.banners',
                         'params' => []
                     ],
+                    'popup-ads' => [
+                        'icon' => 'maximize',
+                        'title' => 'ป๊อปอัพโฆษณา',
+                        'route_name' => 'admin.cms.popup-ads',
+                        'params' => []
+                    ],
                     'ease-club' => [
                         'icon' => 'gift',
                         'title' => 'สิทธิประโยชน์ EASE CLUB',

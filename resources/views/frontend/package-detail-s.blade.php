@@ -1,7 +1,7 @@
 
 @extends('frontend.layouts.main')
 
-@section('title', 'รายละเอียดแพ็กเกจ - AEG EASE CLUB')
+@section('title', __('รายละเอียดแพ็กเกจ') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -443,10 +443,10 @@
         <div class="container">
             <div class="collapse navbar-collapse d-lg-block" id="mainMenuCollapse">
                 <ul class="navbar-nav d-flex flex-column flex-lg-row justify-content-center text-center">
-                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="index">หน้าหลัก</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">สินค้าพร้อมติดตั้ง</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="packages">แพ็กเกจบริการ</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">บริการแนะนำ</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="index">{{ __('หน้าหลัก') }}</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">{{ __('สินค้าพร้อมติดตั้ง') }}</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="packages">{{ __('แพ็กเกจบริการ') }}</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">{{ __('บริการแนะนำ') }}</a></li>
                 </ul>
             </div>
         </div>
@@ -462,69 +462,69 @@
                     </div>
                     <div class="detail-info-side">
                         <div class="detail-header-flex">
-                            <h1 class="detail-main-title">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
-                            <span class="detail-status-tag">ใช้งาน</span>
+                            <h1 class="detail-main-title">Burglary Alarm<br>{{ __('(ระบบสัญญาณกันขโมย)') }}</h1>
+                            <span class="detail-status-tag">{{ __('ใช้งาน') }}</span>
                         </div>
-                        <label class="info-label-small">แพ็กเกจดูแลรายเดือน :</label>
-                        <div class="info-value-navy">Burglary Alarm (ระบบสัญญาณกันขโมย)</div>
+                        <label class="info-label-small">{{ __('แพ็กเกจดูแลรายเดือน') }} :</label>
+                        <div class="info-value-navy">Burglary Alarm {{ __('(ระบบสัญญาณกันขโมย)') }}</div>
 
-                        <label class="info-label-small">ระยะเวลาการดูแล :</label>
+                        <label class="info-label-small">{{ __('ระยะเวลาการดูแล') }} :</label>
                         <div class="date-grid-info">
                             <div>
-                                <label class="info-label-small">เริ่มต้น</label>
-                                <span class="val-red-date">01 ม.ค. 2025</span>
+                                <label class="info-label-small">{{ __('เริ่มต้น') }}</label>
+                                <span class="val-red-date">01 {{ __('ม.ค.') }} 2025</span>
                             </div>
                             <div>
-                                <label class="info-label-small">สิ้นสุด</label>
-                                <span class="val-red-date">31 มี.ค. 2025</span>
+                                <label class="info-label-small">{{ __('สิ้นสุด') }}</label>
+                                <span class="val-red-date">31 {{ __('มี.ค.') }} 2025</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <nav class="internal-tab-nav">
-                    <button class="itab-btn active" onclick="switchInternalTab(event, 'tabInfo')">รายละเอียด</button>
-                    <button class="itab-btn" onclick="switchInternalTab(event, 'tabScope')">ขอบเขตการบริการ</button>
-                    <button class="itab-btn" onclick="switchInternalTab(event, 'tabHistory')">ประวัติการซ่อม</button>
+                    <button class="itab-btn active" onclick="switchInternalTab(event, 'tabInfo')">{{ __('รายละเอียด') }}</button>
+                    <button class="itab-btn" onclick="switchInternalTab(event, 'tabScope')">{{ __('ขอบเขตการบริการ') }}</button>
+                    <button class="itab-btn" onclick="switchInternalTab(event, 'tabHistory')">{{ __('ประวัติการซ่อม') }}</button>
                 </nav>
 
                 <div class="itab-panels-container">
                     <div id="tabInfo" class="itab-panel active">
-                        <span class="section-label-bold">ข้อมูลแพ็กเกจ :</span>
+                        <span class="section-label-bold">{{ __('ข้อมูลแพ็กเกจ') }} :</span>
                         <div class="mb-4">
-                            <label class="info-label-small">จำนวนบริการคงเหลือ :</label>
-                            <p class="remaining-text">8 ครั้ง</p>
+                            <label class="info-label-small">{{ __('จำนวนบริการคงเหลือ') }} :</label>
+                            <p class="remaining-text">8 {{ __('ครั้ง') }}</p>
                         </div>
                         <p class="text-muted small">
-                            บริการดูแลรักษาอุปกรณ์เบื้องต้นเพื่อประสิทธิภาพสูงสุดในการทำงานของระบบรักษาความปลอดภัยของคุณ
+                            {{ __('บริการดูแลรักษาอุปกรณ์เบื้องต้นเพื่อประสิทธิภาพสูงสุดในการทำงานของระบบรักษาความปลอดภัยของคุณ') }}
                         </p>
                     </div>
 
                     <div id="tabScope" class="itab-panel">
-                        <span class="section-label-bold">ขอบเขตการบริการ :</span>
+                        <span class="section-label-bold">{{ __('ขอบเขตการบริการ') }} :</span>
                         <ul class="service-scope-list">
-                            <li>ตรวจสอบ Motion Sensor, Door Contact, Panic Switch</li>
-                            <li>ทดสอบการทำงานของสัญญาณเตือน</li>
-                            <li>เช็ก Battery Backup / Power Supply</li>
-                            <li>ตรวจสอบแผงควบคุม และการเชื่อมต่อ</li>
-                            <li>แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด</li>
-                            <li>ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม</li>
+                            <li>{{ __('ตรวจสอบ Motion Sensor, Door Contact, Panic Switch') }}</li>
+                            <li>{{ __('ทดสอบการทำงานของสัญญาณเตือน') }}</li>
+                            <li>{{ __('เช็ก Battery Backup / Power Supply') }}</li>
+                            <li>{{ __('ตรวจสอบแผงควบคุม และการเชื่อมต่อ') }}</li>
+                            <li>{{ __('แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด') }}</li>
+                            <li>{{ __('ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม') }}</li>
                         </ul>
                     </div>
 
                     <div id="tabHistory" class="itab-panel">
-                        <span class="section-label-bold">ประวัติการแจ้งซ่อม :</span>
+                        <span class="section-label-bold">{{ __('ประวัติการแจ้งซ่อม') }} :</span>
                         <div class="repair-history-btns">
-                            <a href="history_repair_entry" class="btn-history-pill">ครั้งที่ 1</a>
-                            <a href="history_repair_entry" class="btn-history-pill">ครั้งที่ 2</a>
+                            <a href="history_repair_entry" class="btn-history-pill">{{ __('ครั้งที่ 1') }}</a>
+                            <a href="history_repair_entry" class="btn-history-pill">{{ __('ครั้งที่ 2') }}</a>
                         </div>
-                        <p class="mt-4 text-muted small">* ท่านสามารถกดเพื่อดูรายละเอียดปัญหาและการแก้ไขในแต่ละครั้งได้
+                        <p class="mt-4 text-muted small">* {{ __('ท่านสามารถกดเพื่อดูรายละเอียดปัญหาและการแก้ไขในแต่ละครั้งได้') }}
                         </p>
                     </div>
                 </div>
 
                 <div class="detail-footer-actions">
-                    <a href="packages" class="btn-back-main">ย้อนกลับ</a>
+                    <a href="packages" class="btn-back-main">{{ __('ย้อนกลับ') }}</a>
                 </div>
             </div>
         </div>

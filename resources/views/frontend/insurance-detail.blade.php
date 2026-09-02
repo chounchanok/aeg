@@ -1,7 +1,7 @@
 
 @extends('frontend.layouts.main')
 
-@section('title', 'รายละเอียดประกันภัย - AEG EASE CLUB')
+@section('title', __('รายละเอียดประกันภัย - AEG EASE CLUB'))
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -299,7 +299,7 @@
                         {!! $insurance->description_th !!}
                     </div>
 
-                    <a href="{{ route('insurance-contact', $insurance->id) }}" class="btn-consult">ปรึกษาผู้เชี่ยวชาญ</a>
+                    <a href="{{ route('insurance-contact', $insurance->id) }}" class="btn-consult">{{ __('ปรึกษาผู้เชี่ยวชาญ') }}</a>
                 </div>
             </div>
         </div>

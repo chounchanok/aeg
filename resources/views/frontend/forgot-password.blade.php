@@ -150,12 +150,12 @@
 <body>
 
     <div class="forgot-card">
-        <h1 class="form-title">ลืมรหัสผ่าน?</h1>
-        <p class="form-subtitle">ไม่ต้องกังวล! ระบุเบอร์มือถือของคุณเพื่อรับรหัสยืนยันในการตั้งรหัสผ่านใหม่</p>
+        <h1 class="form-title">{{ __('ลืมรหัสผ่าน?') }}</h1>
+        <p class="form-subtitle">{{ __('ไม่ต้องกังวล! ระบุเบอร์มือถือของคุณเพื่อรับรหัสยืนยันในการตั้งรหัสผ่านใหม่') }}</p>
 
         <form>
             <div class="mb-4">
-                <label class="input-label">เบอร์มือถือ</label>
+                <label class="input-label">{{ __('เบอร์มือถือ') }}</label>
                 <div class="phone-input-group">
                     <div class="country-code-box">
                         <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
@@ -165,7 +165,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-submit-custom">ส่งรหัสยืนยัน</button>
+            <button type="submit" class="btn btn-submit-custom">{{ __('ส่งรหัสยืนยัน') }}</button>
         </form>
 
         <div class="back-to-login">
@@ -175,7 +175,7 @@
                     <path fill-rule="evenodd"
                         d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
                 </svg>
-                กลับไปหน้าเข้าสู่ระบบ
+                {{ __('กลับไปหน้าเข้าสู่ระบบ') }}
             </a>
         </div>
     </div>

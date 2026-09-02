@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'คำถามที่พบบ่อย - AEG EASE CLUB')
+@section('title', __('คำถามที่พบบ่อย') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -288,7 +288,7 @@
         <div class="container">
             <div class="faq-header">
                 <h1>Frequently Asked Questions</h1>
-                <h2>คำถามที่พบบ่อย</h2>
+                <h2>{{ __('คำถามที่พบบ่อย') }}</h2>
             </div>
 
             <div class="faq-container">
@@ -315,14 +315,14 @@
                         </div>
                     </div>
                 @empty
-                    <div class="faq-empty">ยังไม่มีข้อมูลคำถามที่พบบ่อยในขณะนี้</div>
+                    <div class="faq-empty">{{ __('ยังไม่มีข้อมูลคำถามที่พบบ่อยในขณะนี้') }}</div>
                 @endforelse
             </div>
 
             <!-- Contact CTA (Match FAQ.jpg) -->
             <div class="contact-cta">
-                <p class="cta-text">ยังแก้ปัญหาไม่ได้ใช่ไหม? ส่งข้อความหาเราได้เลย</p>
-                <a href="insurance-contact" class="btn-cta-contact">ส่งข้อความหาเรา</a>
+                <p class="cta-text">{{ __('ยังแก้ปัญหาไม่ได้ใช่ไหม? ส่งข้อความหาเราได้เลย') }}</p>
+                <a href="insurance-contact" class="btn-cta-contact">{{ __('ส่งข้อความหาเรา') }}</a>
             </div>
         </div>
     </main>

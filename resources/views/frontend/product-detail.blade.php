@@ -439,7 +439,7 @@
                         @if($product->is_contact_only != 0 && $product->is_contact_only != 1)
                         <h2 class="detail-subtitle">฿{{ number_format($product->price, 2) }}</h2>
                         @endif
-                        <p class="detail-desc">{{ $product->description ?? 'ยังไม่มีรายละเอียดสินค้า' }}</p>
+                        <p class="detail-desc">{{ $product->description ?? __('ยังไม่มีรายละเอียดสินค้า') }}</p>
 
                         @if($product->is_contact_only != 0 && $product->is_contact_only != 1)
                         <form action="{{ route('cart.add') }}" method="POST">
@@ -447,21 +447,21 @@
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
 
                             <div class="d-flex align-items-center gap-3 mb-4 qty-container">
-                                <label for="quantity" class="fw-bold text-secondary">จำนวน :</label>
+                                <label for="quantity" class="fw-bold text-secondary">{{ __('จำนวน :') }}</label>
                                 <input type="number" id="quantity" name="quantity" value="1" min="1" class="form-control text-center" style="width: 100px; border-radius: 10px;">
                             </div>
 
                             <div class="btn-container-centered">
-                                <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">ย้อนกลับ</button>
+                                <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">{{ __('ย้อนกลับ') }}</button>
                                 <button type="submit" class="btn-gradient">
-                                    <i class="fas fa-shopping-cart me-2"></i> หยิบใส่ตะกร้า
+                                    <i class="fas fa-shopping-cart me-2"></i> {{ __('หยิบใส่ตะกร้า') }}
                                 </button>
                             </div>
                         </form>
                         @else
                         <div class="btn-container-centered">
-                            <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">ย้อนกลับ</button>
-                            <button type="button" class="btn-gradient" onclick="window.location.href='{{ route('product-contact', $product->id) }}'">ติดต่อฝ่ายขาย</button>
+                            <button type="button" onclick="history.back();" class="btn-cart text-center text-dark d-flex align-items-center justify-content-center" style="background: white; border: 1px solid #ddd; text-decoration: none;">{{ __('ย้อนกลับ') }}</button>
+                            <button type="button" class="btn-gradient" onclick="window.location.href='{{ route('product-contact', $product->id) }}'">{{ __('ติดต่อฝ่ายขาย') }}</button>
                         </div>
                         @endif
 

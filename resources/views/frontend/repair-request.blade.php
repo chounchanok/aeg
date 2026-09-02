@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'แจ้งซ่อม - AEG EASE CLUB')
+@section('title', __('แจ้งซ่อม') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -428,11 +428,11 @@
                         <img src="{{ $item->product ? $item->product->image_url : 'https://via.placeholder.com/600' }}" alt="Product Image">
                     </div>
                     <div class="repair-title-info">
-                        <h1>{{ $item->product_name ?? 'อุปกรณ์ของคุณ' }}</h1>
+                        <h1>{{ $item->product_name ?? __('อุปกรณ์ของคุณ') }}</h1>
                         <div class="package-info-box">
-                            <span class="info-label" style="font-size: 1.2rem; margin-bottom: 15px;">ข้อมูลแพ็กเกจ</span>
+                            <span class="info-label" style="font-size: 1.2rem; margin-bottom: 15px;">{{ __('ข้อมูลแพ็กเกจ') }}</span>
                             <div class="mb-2">
-                                <span class="sub-label">แพ็กเกจที่ต้องการแจ้งซ่อม :</span>
+                                <span class="sub-label">{{ __('แพ็กเกจที่ต้องการแจ้งซ่อม :') }}</span>
                                 <span class="val-text">{{ $item->product_name }}</span>
                             </div>
                         </div>
@@ -440,17 +440,17 @@
                 </div>
 
                 <div class="form-section">
-                    <span class="info-label">รายละเอียดปัญหา <span class="text-danger">*</span></span>
+                    <span class="info-label">{{ __('รายละเอียดปัญหา') }} <span class="text-danger">*</span></span>
                     <textarea name="problem_description" class="custom-textarea" required
-                        placeholder="• ระบุอาการเสีย หรือข้อมูลเพิ่มเติมที่ต้องการให้ช่างทราบ"></textarea>
+                        placeholder="{{ __('• ระบุอาการเสีย หรือข้อมูลเพิ่มเติมที่ต้องการให้ช่างทราบ') }}"></textarea>
                 </div>
 
                 <div class="form-section">
-                    <span class="info-label">ที่อยู่รับบริการ :</span>
+                    <span class="info-label">{{ __('ที่อยู่รับบริการ :') }}</span>
                     <div class="address-box">
                         <div class="address-text">
                             <strong class="val-text">{{ $profile->first_name ?? $user->username }}</strong><br>
-                            เบอร์โทรติดต่อ: {{ $user->phone }}
+                            {{ __('เบอร์โทรติดต่อ:') }} {{ $user->phone }}
                             </div>
                     </div>
                 </div>
@@ -458,7 +458,7 @@
                 <div class="row cal-time-flex">
                     <div class="col-lg-6">
                         <div class="form-section mb-lg-0">
-                            <span class="info-label">เลือกวันที่ใช้บริการ <span class="text-danger">*</span></span>
+                            <span class="info-label">{{ __('เลือกวันที่ใช้บริการ') }} <span class="text-danger">*</span></span>
                             <input type="hidden" name="preferred_date" id="hidden_preferred_date" required>
 
                             <div class="calendar-container">
@@ -481,12 +481,12 @@
                     </div>
                     <div class="col-lg-6">
                         <div class="form-section mb-0">
-                            <span class="info-label">เวลาที่ใช้บริการ <span class="text-danger">*</span></span>
+                            <span class="info-label">{{ __('เวลาที่ใช้บริการ') }} <span class="text-danger">*</span></span>
                             <div class="time-select-container">
                                 <select name="preferred_time" class="custom-dropdown" required>
-                                    <option value="" selected disabled>• เลือกช่วงเวลา</option>
-                                    <option value="ช่วงเช้า (09:00 - 12:00 น.)">ช่วงเช้า (09:00 - 12:00 น.)</option>
-                                    <option value="ช่วงบ่าย (13:00 - 17:00 น.)">ช่วงบ่าย (13:00 - 17:00 น.)</option>
+                                    <option value="" selected disabled>{{ __('• เลือกช่วงเวลา') }}</option>
+                                    <option value="ช่วงเช้า (09:00 - 12:00 น.)">{{ __('ช่วงเช้า (09:00 - 12:00 น.)') }}</option>
+                                    <option value="ช่วงบ่าย (13:00 - 17:00 น.)">{{ __('ช่วงบ่าย (13:00 - 17:00 น.)') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -494,8 +494,8 @@
                 </div>
 
                 <div class="repair-footer-actions">
-                    <a href="{{ route('packages.mine') }}" class="btn-navy-action" style="background: transparent; color: var(--primary-navy); border: 2px solid var(--primary-navy);">ย้อนกลับ</a>
-                    <button type="submit" class="btn-navy-action">บันทึกและส่งคำขอ</button>
+                    <a href="{{ route('packages.mine') }}" class="btn-navy-action" style="background: transparent; color: var(--primary-navy); border: 2px solid var(--primary-navy);">{{ __('ย้อนกลับ') }}</a>
+                    <button type="submit" class="btn-navy-action">{{ __('บันทึกและส่งคำขอ') }}</button>
                 </div>
             </form>
         </div>

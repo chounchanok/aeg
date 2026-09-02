@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ยืนยันรหัส OTP - AEG EASE CLUB')
+@section('title', __('ยืนยันรหัส OTP') . ' - AEG EASE CLUB')
 
 @push('styles')
 <style>
@@ -129,11 +129,11 @@
                             <i class="fas fa-mobile-screen-button" style="font-size: 3.5rem; color: var(--primary-dark);"></i>
                         </div>
                         
-                        <h2 class="auth-title">ยืนยันรหัส OTP</h2>
+                        <h2 class="auth-title">{{ __('ยืนยันรหัส OTP') }}</h2>
                         <!-- 🌟 เปลี่ยนให้เป็นแบบนี้ครับ -->
                         <p class="auth-subtitle">
-                            กรุณากรอกรหัส OTP 6 หลัก <br>
-                            ที่เราได้ส่งไปยังเบอร์ <span class="fw-bold text-dark">{{ substr_replace($phone, 'XXXX', 3, 4) }}</span><br>
+                            {{ __('กรุณากรอกรหัส OTP 6 หลัก') }} <br>
+                            {{ __('ที่เราได้ส่งไปยังเบอร์') }} <span class="fw-bold text-dark">{{ substr_replace($phone, 'XXXX', 3, 4) }}</span><br>
                             <span class="badge bg-light text-secondary border mt-2 px-3 py-2" style="font-size: 0.9rem;">
                                 Ref Code: <span class="text-danger fw-bold">{{ $refCode ?? 'N/A' }}</span>
                             </span>
@@ -165,12 +165,12 @@
                             </div>
 
                             <button type="submit" class="btn btn-auth mb-4">
-                                ยืนยันรหัส OTP
+                                {{ __('ยืนยันรหัส OTP') }}
                             </button>
 
                             <div class="text-center">
-                                <span class="text-muted" style="font-size: 0.95rem;">ยังไม่ได้รับรหัส?</span>
-                                <a href="#" class="resend-link ms-1">ส่งรหัสใหม่อีกครั้ง</a>
+                                <span class="text-muted" style="font-size: 0.95rem;">{{ __('ยังไม่ได้รับรหัส?') }}</span>
+                                <a href="#" class="resend-link ms-1">{{ __('ส่งรหัสใหม่อีกครั้ง') }}</a>
                             </div>
                         </form>
                     </div>

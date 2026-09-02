@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'แพ็กเกจของฉัน - AEG EASE CLUB')
+@section('title', __('แพ็กเกจของฉัน') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -372,8 +372,8 @@
 
             <!-- Tabs Navigation -->
             <div class="tab-nav-container">
-                <button type="button" class="tab-btn active" id="activeTabBtn" onclick="switchTab('active')">แพ็กเกจ/สินค้า</button>
-                <button type="button" class="tab-btn inactive" id="historyTabBtn" onclick="switchTab('history')">ประวัติ</button>
+                <button type="button" class="tab-btn active" id="activeTabBtn" onclick="switchTab('active')">{{ __('แพ็กเกจ/สินค้า') }}</button>
+                <button type="button" class="tab-btn inactive" id="historyTabBtn" onclick="switchTab('history')">{{ __('ประวัติ') }}</button>
             </div>
 
             <!-- Tab Content: Active Packages -->
@@ -387,26 +387,26 @@
                             <div class="package-info">
                                 <div class="package-header-flex">
                                     <h2 class="package-title">{{ $item->product_name }}</h2>
-                                    <span class="status-badge status-active">ใช้งานปกติ</span>
+                                    <span class="status-badge status-active">{{ __('ใช้งานปกติ') }}</span>
                                 </div>
 
                                 <div class="date-info-grid">
                                     <div class="info-item">
-                                        <label>หมายเลข Serial Number / Policy</label>
+                                        <label>{{ __('หมายเลข') }} Serial Number / Policy</label>
                                         <span class="val-dark">{{ $item->serial_number }}</span>
                                     </div>
                                     <div class="info-item">
-                                        <label>วันที่เริ่มเปิดสิทธิ์ดูแล</label>
+                                        <label>{{ __('วันที่เริ่มเปิดสิทธิ์ดูแล') }}</label>
                                         <span class="val-dark">{{ $item->created_at->format('d M Y') }}</span>
                                     </div>
                                     <div class="info-item">
-                                        <label>วันที่สิ้นสุดบริการการดูแล</label>
+                                        <label>{{ __('วันที่สิ้นสุดบริการการดูแล') }}</label>
                                         <span>{{ !empty($item->warranty_expire_date) ? \Carbon\Carbon::parse($item->warranty_expire_date)->format('d M Y') : '-' }}</span>
                                     </div>
                                     @if($item->reference_type === 'product' && $item->total_service_count > 0)
                                     <div class="info-item">
-                                        <label>โควต้าบริการคงเหลือ</label>
-                                        <div class="points-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">เหลือ {{ $item->remaining_services }} ครั้ง</div>
+                                        <label>{{ __('โควต้าบริการคงเหลือ') }}</label>
+                                        <div class="points-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">{{ __('เหลือ') }} {{ $item->remaining_services }} {{ __('ครั้ง') }}</div>
                                     </div>
                                     @endif
                                 </div>
@@ -415,14 +415,14 @@
 
                                     @if($item->reference_type === 'product')
                                         @if($item->total_service_count == 0)
-                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อมสินค้า</a>
-                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">รายละเอียด/ประวัติ</a>
+                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">{{ __('แจ้งซ่อมสินค้า') }}</a>
+                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">{{ __('รายละเอียด/ประวัติ') }}</a>
                                         @else
-                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">แจ้งซ่อมสินค้า</a>
-                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">รายละเอียดประวัติบริการ</a>
+                                            <a href="{{ route('repair-request', $item->id) }}" class="btn-navy-small">{{ __('แจ้งซ่อมสินค้า') }}</a>
+                                            <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color:#4b5563;">{{ __('รายละเอียดประวัติบริการ') }}</a>
                                         @endif
                                     @else
-                                        <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color: var(--tab-inactive); width: 100%; flex: none;">ดูรายละเอียดสิทธิ์</a>
+                                        <a href="{{ route('repair-status', $item->id) }}" class="btn-navy-small" style="background-color: var(--tab-inactive); width: 100%; flex: none;">{{ __('ดูรายละเอียดสิทธิ์') }}</a>
                                     @endif
 
                                 </div>
@@ -430,7 +430,7 @@
                         </div>
                     @endforeach
                 @else
-                    <div class="text-center py-5 text-muted">ยังไม่มีรายการสินค้าหรือบริการที่กำลังใช้งาน</div>
+                    <div class="text-center py-5 text-muted">{{ __('ยังไม่มีรายการสินค้าหรือบริการที่กำลังใช้งาน') }}</div>
                 @endif
             </div>
 
@@ -445,22 +445,22 @@
                             <div class="package-info">
                                 <div class="package-header-flex">
                                     <h2 class="package-title">{{ $item->product_name }}</h2>
-                                    <span class="status-badge status-expired">หมดอายุ/เสร็จสิ้น</span>
+                                    <span class="status-badge status-expired">{{ __('หมดอายุ/เสร็จสิ้น') }}</span>
                                 </div>
                                 <div class="date-info-grid">
                                     <div class="info-item">
-                                        <label>วันที่สั่งซื้อ</label>
+                                        <label>{{ __('วันที่สั่งซื้อ') }}</label>
                                         <span>{{ $item->created_at->format('d M Y') }}</span>
                                     </div>
                                 </div>
                                 <div class="card-btn-group">
-                                    <a href="#" class="btn-navy-small" style="width: 100%;">รายละเอียด</a>
+                                    <a href="#" class="btn-navy-small" style="width: 100%;">{{ __('รายละเอียด') }}</a>
                                 </div>
                             </div>
                         </div>
                     @endforeach
                 @else
-                    <div class="text-center py-5 text-muted">ไม่มีประวัติการใช้งานแพ็กเกจ</div>
+                    <div class="text-center py-5 text-muted">{{ __('ไม่มีประวัติการใช้งานแพ็กเกจ') }}</div>
                 @endif
             </div>
 

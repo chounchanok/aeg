@@ -1,4 +1,4 @@
-@extends('frontend.layouts.main') @section('title', 'บัญชีของฉัน - AEG EASE CLUB') @section('styles')
+@extends('frontend.layouts.main') @section('title', __('บัญชีของฉัน') . ' - AEG EASE CLUB') @section('styles')
 
 @endsection
 
@@ -7,7 +7,7 @@
     <!-- Sub Header Bar -->
     <div class="breadcrumb-bar">
         <div class="container">
-            <span>บัญชีของฉัน</span>
+            <span>{{ __('บัญชีของฉัน') }}</span>
         </div>
     </div>
 
@@ -80,27 +80,27 @@
                             
                             <!-- โค้ดข้อมูลส่วนตัวฝั่งขวา (เหมือนเดิม) -->
                             <div class="col-lg-7">
-                                <h3 class="section-title">ข้อมูลส่วนตัว</h3>
+                                <h3 class="section-title">{{ __('ข้อมูลส่วนตัว') }}</h3>
                                 <div class="row">
                                     <div class="col-sm-6">
-                                        <div class="info-label">ชื่อ</div>
-                                        <div class="info-value">คุณ {{ $profile->first_name }} {{ $profile->last_name }}</div>
+                                        <div class="info-label">{{ __('ชื่อ') }}</div>
+                                        <div class="info-value">{{ __('คุณ') }} {{ $profile->first_name }} {{ $profile->last_name }}</div>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="info-label">เบอร์โทรศัพท์มือถือ</div>
+                                        <div class="info-label">{{ __('เบอร์โทรศัพท์มือถือ') }}</div>
                                         <div class="info-value">{{ $profile->phone ?? '-' }}</div>
                                     </div>
                                     <div class="col-6">
-                                        <div class="info-label">อีเมล</div>
+                                        <div class="info-label">{{ __('อีเมล') }}</div>
                                         <div class="info-value">{{ $user->email }}</div>
                                     </div>
                                     <div class="col-6">
-                                        <div class="info-label">บริษัท</div>
+                                        <div class="info-label">{{ __('บริษัท') }}</div>
                                         <div class="info-value">{{ $profile->company ?? '-' }}</div>
                                     </div>
                                 </div>
                                 <div class="text-end mt-3">
-                                    <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#profileModal">แก้ไขข้อมูลส่วนตัว</button>
+                                    <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#profileModal">{{ __('แก้ไขข้อมูลส่วนตัว') }}</button>
                                 </div>
                             </div>
                         </div>
@@ -109,32 +109,32 @@
                     <!-- ข้อมูลเพิ่มเติม -->
                     <div class="card-custom mt-4">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="section-title">ข้อมูลเพิ่มเติม</h3>
+                            <h3 class="section-title">{{ __('ข้อมูลเพิ่มเติม') }}</h3>
                             <span id="saveIndicator" class="badge bg-success" style="opacity: 0; transition: opacity 0.5s;">
-                                <i class="fas fa-check-circle me-1"></i> บันทึกแล้ว
+                                <i class="fas fa-check-circle me-1"></i> {{ __('บันทึกแล้ว') }}
                             </span>
                         </div>
                         
                         <div class="row mb-3">
                             <!-- 1. กล่องเลือกประเภทธุรกิจ -->
                             <div class="col-12 mb-3">
-                                <label for="company_type" class="fw-bold mb-1">ประเภทธุรกิจ</label>
+                                <label for="company_type" class="fw-bold mb-1">{{ __('ประเภทธุรกิจ') }}</label>
                                 <select class="form-select" id="company_type" name="company_type">
-                                    <option value="">-- เลือกประเภทธุรกิจ --</option>
-                                    <option value="ร้านทอง" {{ ($profile->company_type ?? '') == 'ร้านทอง' ? 'selected' : '' }}>ร้านทอง</option>
-                                    <option value="ร้านเพชรพลอยและอัญมณี" {{ ($profile->company_type ?? '') == 'ร้านเพชรพลอยและอัญมณี' ? 'selected' : '' }}>ร้านเพชรพลอยและอัญมณี</option>
-                                    <option value="โรงรับจำนำ" {{ ($profile->company_type ?? '') == 'โรงรับจำนำ' ? 'selected' : '' }}>โรงรับจำนำ</option>
-                                    <option value="โรงงาน/คลังสินค้า" {{ ($profile->company_type ?? '') == 'โรงงาน/คลังสินค้า' ? 'selected' : '' }}>โรงงาน/คลังสินค้า</option>
-                                    <option value="สำนักงาน" {{ ($profile->company_type ?? '') == 'สำนักงาน' ? 'selected' : '' }}>สำนักงาน</option>
-                                    <option value="อาคารและสิ่งปลูกสร้าง" {{ ($profile->company_type ?? '') == 'อาคารและสิ่งปลูกสร้าง' ? 'selected' : '' }}>อาคารและสิ่งปลูกสร้าง</option>
-                                    <option value="บ้าน" {{ ($profile->company_type ?? '') == 'บ้าน' ? 'selected' : '' }}>บ้าน</option>
-                                    <option value="อื่นๆ" {{ ($profile->company_type ?? '') == 'อื่นๆ' ? 'selected' : '' }}>อื่น ๆ</option>
+                                    <option value="">{{ __('-- เลือกประเภทธุรกิจ --') }}</option>
+                                    <option value="ร้านทอง" {{ ($profile->company_type ?? '') == 'ร้านทอง' ? 'selected' : '' }}>{{ __('ร้านทอง') }}</option>
+                                    <option value="ร้านเพชรพลอยและอัญมณี" {{ ($profile->company_type ?? '') == 'ร้านเพชรพลอยและอัญมณี' ? 'selected' : '' }}>{{ __('ร้านเพชรพลอยและอัญมณี') }}</option>
+                                    <option value="โรงรับจำนำ" {{ ($profile->company_type ?? '') == 'โรงรับจำนำ' ? 'selected' : '' }}>{{ __('โรงรับจำนำ') }}</option>
+                                    <option value="โรงงาน/คลังสินค้า" {{ ($profile->company_type ?? '') == 'โรงงาน/คลังสินค้า' ? 'selected' : '' }}>{{ __('โรงงาน/คลังสินค้า') }}</option>
+                                    <option value="สำนักงาน" {{ ($profile->company_type ?? '') == 'สำนักงาน' ? 'selected' : '' }}>{{ __('สำนักงาน') }}</option>
+                                    <option value="อาคารและสิ่งปลูกสร้าง" {{ ($profile->company_type ?? '') == 'อาคารและสิ่งปลูกสร้าง' ? 'selected' : '' }}>{{ __('อาคารและสิ่งปลูกสร้าง') }}</option>
+                                    <option value="บ้าน" {{ ($profile->company_type ?? '') == 'บ้าน' ? 'selected' : '' }}>{{ __('บ้าน') }}</option>
+                                    <option value="อื่นๆ" {{ ($profile->company_type ?? '') == 'อื่นๆ' ? 'selected' : '' }}>{{ __('อื่น ๆ') }}</option>
                                 </select>
                             </div>
 
                             <!-- 2. กล่องเลือกบริการที่สนใจ (แบบ Dropdown Checkbox) -->
                             <div class="col-12">
-                                <label class="fw-bold mb-1">บริการที่สนใจ</label>
+                                <label class="fw-bold mb-1">{{ __('บริการที่สนใจ') }}</label>
                                 
                                 @php
                                     $rawJson = $profile->service_interesting ?? '[]';
@@ -151,7 +151,7 @@
 
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center" type="button" id="serviceDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="background: white;">
-                                        <span id="serviceBtnText" class="text-truncate">-- เลือกบริการที่สนใจ --</span>
+                                        <span id="serviceBtnText" class="text-truncate">{{ __('-- เลือกบริการที่สนใจ --') }}</span>
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
                                     <ul class="dropdown-menu w-100 p-2 shadow-sm" aria-labelledby="serviceDropdownBtn" style="max-height: 250px; overflow-y: auto;">
@@ -180,8 +180,8 @@
                     <!-- My Address Card -->
                     <div class="card-custom mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3 class="section-title mb-0">รายการที่อยู่ของฉัน</h3>
-                            <button class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">+ เพิ่มที่อยู่ใหม่</button>
+                            <h3 class="section-title mb-0">{{ __('รายการที่อยู่ของฉัน') }}</h3>
+                            <button class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">+ {{ __('เพิ่มที่อยู่ใหม่') }}</button>
                         </div>
 
                         @forelse($addresses as $address)
@@ -191,16 +191,16 @@
                                         <i class="fas fa-map-marker-alt text-danger me-2"></i>{{ $address->title }}
                                     </div>
                                     <div class="mt-2 text-muted" style="font-size: 0.9rem;">
-                                        <strong>ชื่อผู้ติดต่อ:</strong> {{ $address->contact_name }} ({{ $address->contact_phone }})<br>
-                                        {{ $address->address_line }} ต.{{ $address->subdistrict }} อ.{{ $address->district }} จ.{{ $address->province }} {{ $address->zipcode }}
+                                        <strong>{{ __('ชื่อผู้ติดต่อ:') }}</strong> {{ $address->contact_name }} ({{ $address->contact_phone }})<br>
+                                        {{ $address->address_line }} {{ __('ต.') }}{{ $address->subdistrict }} {{ __('อ.') }}{{ $address->district }} {{ __('จ.') }}{{ $address->province }} {{ $address->zipcode }}
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2 flex-column flex-sm-row">
-                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editAddressModal{{ $address->id }}">แก้ไข</button>
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editAddressModal{{ $address->id }}">{{ __('แก้ไข') }}</button>
 
-                                    <form action="{{ route('my-account.address.delete', $address->id) }}" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบที่อยู่นี้?');">
+                                    <form action="{{ route('my-account.address.delete', $address->id) }}" method="POST" onsubmit="return confirm('{{ __('คุณแน่ใจหรือไม่ว่าต้องการลบที่อยู่นี้?') }}');">
                                         @csrf
-                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">ลบ</button>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">{{ __('ลบ') }}</button>
                                     </form>
                                 </div>
                             </div>
@@ -209,7 +209,7 @@
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                     <div class="modal-content">
                                         <div class="modal-header bg-light">
-                                            <h5 class="modal-title fw-bold">แก้ไขที่อยู่ ({{ $address->title }})</h5>
+                                            <h5 class="modal-title fw-bold">{{ __('แก้ไขที่อยู่') }} ({{ $address->title }})</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <form action="{{ route('my-account.address.update', $address->id) }}" method="POST">
@@ -217,42 +217,42 @@
                                             <div class="modal-body">
                                                 <div class="row g-3">
                                                     <div class="col-md-12">
-                                                        <label class="form-label">ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)</label>
+                                                        <label class="form-label">{{ __('ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)') }}</label>
                                                         <input type="text" class="form-control" name="title" value="{{ $address->title }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">ชื่อผู้ติดต่อ</label>
+                                                        <label class="form-label">{{ __('ชื่อผู้ติดต่อ') }}</label>
                                                         <input type="text" class="form-control" name="contact_name" value="{{ $address->contact_name }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">เบอร์โทรศัพท์</label>
+                                                        <label class="form-label">{{ __('เบอร์โทรศัพท์') }}</label>
                                                         <input type="text" class="form-control" name="contact_phone" value="{{ $address->contact_phone }}" required>
                                                     </div>
                                                     <div class="col-md-12">
-                                                        <label class="form-label">ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)</label>
+                                                        <label class="form-label">{{ __('ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)') }}</label>
                                                         <input type="text" class="form-control" name="address_line" value="{{ $address->address_line }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">จังหวัด</label>
+                                                        <label class="form-label">{{ __('จังหวัด') }}</label>
                                                         <input type="text" class="form-control" name="province" value="{{ $address->province }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">เขต/อำเภอ</label>
+                                                        <label class="form-label">{{ __('เขต/อำเภอ') }}</label>
                                                         <input type="text" class="form-control" name="district" value="{{ $address->district }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">แขวง/ตำบล</label>
+                                                        <label class="form-label">{{ __('แขวง/ตำบล') }}</label>
                                                         <input type="text" class="form-control" name="subdistrict" value="{{ $address->subdistrict }}" required>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">รหัสไปรษณีย์</label>
+                                                        <label class="form-label">{{ __('รหัสไปรษณีย์') }}</label>
                                                         <input type="text" class="form-control" name="zipcode" value="{{ $address->zipcode }}" required>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                                                <button type="submit" class="btn btn-navy">บันทึกการแก้ไข</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('ยกเลิก') }}</button>
+                                                <button type="submit" class="btn btn-navy">{{ __('บันทึกการแก้ไข') }}</button>
                                             </div>
                                         </form>
                                     </div>
@@ -261,8 +261,8 @@
                         @empty
                             <div class="text-center text-muted py-5 border rounded bg-light">
                                 <i class="fas fa-map-marked-alt fa-3x mb-3 text-secondary"></i>
-                                <h5>ยังไม่มีข้อมูลที่อยู่</h5>
-                                <p>เพิ่มที่อยู่เพื่อให้การสั่งซื้อและการรับบริการสะดวกยิ่งขึ้น</p>
+                                <h5>{{ __('ยังไม่มีข้อมูลที่อยู่') }}</h5>
+                                <p>{{ __('เพิ่มที่อยู่เพื่อให้การสั่งซื้อและการรับบริการสะดวกยิ่งขึ้น') }}</p>
                             </div>
                         @endforelse
                     </div>
@@ -279,7 +279,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">แก้ไขข้อมูลส่วนตัว</h5>
+                    <h5 class="modal-title">{{ __('แก้ไขข้อมูลส่วนตัว') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <!-- กำหนด Form Action ไปที่ Route my-account.update -->
@@ -288,39 +288,39 @@
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-6">
-                                <label for="first_name">ชื่อ</label>
+                                <label for="first_name">{{ __('ชื่อ') }}</label>
                                 <input type="text" class="form-control" id="first_name" name="first_name" value="{{ old('first_name', $profile->first_name) }}" required>
                             </div>
                             <div class="col-6">
-                                <label for="last_name">นามสกุล</label>
+                                <label for="last_name">{{ __('นามสกุล') }}</label>
                                 <input type="text" class="form-control" id="last_name" name="last_name" value="{{ old('last_name', $profile->last_name) }}" required>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
-                                <label for="phone">เบอร์โทรศัพท์มือถือ</label>
+                                <label for="phone">{{ __('เบอร์โทรศัพท์มือถือ') }}</label>
                                 <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $profile->phone) }}" required>
                             </div>
                             <div class="col-6">
-                                <label for="company">บริษัท</label>
+                                <label for="company">{{ __('บริษัท') }}</label>
                                 <input type="text" class="form-control" id="company" name="company" value="{{ old('company', $profile->company) }}" autocomplete="off">
                             </div>
                         </div>
 
                         <hr>
-                        <h6 class="mb-3">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</h6>
+                        <h6 class="mb-3">{{ __('เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)') }}</h6>
                         <div class="mb-3">
-                            <label for="password">รหัสผ่านใหม่</label>
+                            <label for="password">{{ __('รหัสผ่านใหม่') }}</label>
                             <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
                         </div>
                         <div class="mb-3">
-                            <label for="password_confirmation">ยืนยันรหัสผ่านใหม่</label>
+                            <label for="password_confirmation">{{ __('ยืนยันรหัสผ่านใหม่') }}</label>
                             <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password">
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">ยกเลิก</button>
-                        <button type="submit" class="btn btn-modal-confirm">บันทึกข้อมูล</button>
+                        <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">{{ __('ยกเลิก') }}</button>
+                        <button type="submit" class="btn btn-modal-confirm">{{ __('บันทึกข้อมูล') }}</button>
                     </div>
                 </form>
             </div>
@@ -331,7 +331,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">เพิ่มที่อยู่ใหม่</h5>
+                    <h5 class="modal-title fw-bold">{{ __('เพิ่มที่อยู่ใหม่') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ route('my-account.address.store') }}" method="POST">
@@ -339,42 +339,42 @@
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-12">
-                                <label class="form-label">ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)</label>
-                                <input type="text" class="form-control" name="title" placeholder="บ้าน" required>
+                                <label class="form-label">{{ __('ชื่อสถานที่ (เช่น บ้าน, ที่ทำงาน)') }}</label>
+                                <input type="text" class="form-control" name="title" placeholder="{{ __('บ้าน') }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">ชื่อผู้ติดต่อ</label>
-                                <input type="text" class="form-control" name="contact_name" placeholder="ชื่อ-นามสกุล" value="{{ $profile->first_name }} {{ $profile->last_name }}" required>
+                                <label class="form-label">{{ __('ชื่อผู้ติดต่อ') }}</label>
+                                <input type="text" class="form-control" name="contact_name" placeholder="{{ __('ชื่อ-นามสกุล') }}" value="{{ $profile->first_name }} {{ $profile->last_name }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">เบอร์โทรศัพท์</label>
+                                <label class="form-label">{{ __('เบอร์โทรศัพท์') }}</label>
                                 <input type="text" class="form-control" name="contact_phone" placeholder="08X-XXX-XXXX" value="{{ $profile->phone }}" required>
                             </div>
                             <div class="col-md-12">
-                                <label class="form-label">ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)</label>
-                                <input type="text" class="form-control" name="address_line" placeholder="เลขที่..." required>
+                                <label class="form-label">{{ __('ที่อยู่ (บ้านเลขที่, หมู่, ซอย, ถนน)') }}</label>
+                                <input type="text" class="form-control" name="address_line" placeholder="{{ __('เลขที่...') }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">จังหวัด</label>
+                                <label class="form-label">{{ __('จังหวัด') }}</label>
                                 <input type="text" class="form-control" name="province" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">เขต/อำเภอ</label>
+                                <label class="form-label">{{ __('เขต/อำเภอ') }}</label>
                                 <input type="text" class="form-control" name="district" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">แขวง/ตำบล</label>
+                                <label class="form-label">{{ __('แขวง/ตำบล') }}</label>
                                 <input type="text" class="form-control" name="subdistrict" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">รหัสไปรษณีย์</label>
+                                <label class="form-label">{{ __('รหัสไปรษณีย์') }}</label>
                                 <input type="text" class="form-control" name="zipcode" required>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                        <button type="submit" class="btn btn-navy">บันทึกที่อยู่</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('ยกเลิก') }}</button>
+                        <button type="submit" class="btn btn-navy">{{ __('บันทึกที่อยู่') }}</button>
                     </div>
                 </form>
             </div>

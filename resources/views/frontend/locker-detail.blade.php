@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'บริการตู้เซฟนิรภัย - AEG Smart Locker')
+@section('title', __('บริการตู้เซฟนิรภัย') . ' - AEG Smart Locker')
 
 @push('styles')
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
@@ -450,15 +450,11 @@
 
                 <div class="detail-body">
                     <h1 class="locker-main-title">AEG Smart Locker</h1>
-                    <h2 class="locker-sub-title">บริการให้เช่าตู้เซฟนิรภัย ในห้องนิรภัย</h2>
+                    <h2 class="locker-sub-title">{{ __('บริการให้เช่าตู้เซฟนิรภัย ในห้องนิรภัย') }}</h2>
 
                     <p class="locker-intro-text">
                         AEG Smart Locker
-                        คือบริการเช่าตู้เซฟนิรภัยภายในห้องนิรภัยมาตรฐานสากลที่มีความเป็นส่วนตัวและมีความปลอดภัยสูง
-                        ด้วยระบบรักษาความปลอดภัยขั้นสูงที่ออกแบบมาเพื่อเก็บรักษาทรัพย์สินมูลค่าสูงโดยเฉพาะ
-                        มาพร้อมระบบความปลอดภัยขั้นสูง ถึง 4 ขั้น ทั้งระบบควบคุมการเข้า —
-                        ออกรวมถึงระบบยืนยันตัวตนทางชีวภาพ (Biometrics) 2 ขั้นเต็มรูปแบบ และให้ความเป็นส่วนตัวสูงสุด
-                        ภายใต้แนวคิด "Full Privacy, Maximum Security"
+                        {{ __('คือบริการเช่าตู้เซฟนิรภัยภายในห้องนิรภัยมาตรฐานสากลที่มีความเป็นส่วนตัวและมีความปลอดภัยสูง ด้วยระบบรักษาความปลอดภัยขั้นสูงที่ออกแบบมาเพื่อเก็บรักษาทรัพย์สินมูลค่าสูงโดยเฉพาะ มาพร้อมระบบความปลอดภัยขั้นสูง ถึง 4 ขั้น ทั้งระบบควบคุมการเข้า — ออกรวมถึงระบบยืนยันตัวตนทางชีวภาพ (Biometrics) 2 ขั้นเต็มรูปแบบ และให้ความเป็นส่วนตัวสูงสุด ภายใต้แนวคิด "Full Privacy, Maximum Security"') }}
                     </p>
 
                     <!-- Price Table Section (Responsive with custom colors) -->
@@ -466,24 +462,24 @@
                         <table class="price-table">
                             <thead>
                                 <tr class="main-header-row">
-                                    <th colspan="7">ค่าธรรมเนียมการเช่า (บาท)</th>
+                                    <th colspan="7">{{ __('ค่าธรรมเนียมการเช่า (บาท)') }}</th>
                                 </tr>
                                 <tr class="sub-header-row">
                                     <th class="header-corner">
-                                        <span class="label-time">ระยะเวลา</span>
-                                        <span class="label-size">ขนาด</span>
+                                        <span class="label-time">{{ __('ระยะเวลา') }}</span>
+                                        <span class="label-size">{{ __('ขนาด') }}</span>
                                     </th>
-                                    <th>3 เดือน</th>
-                                    <th>6 เดือน</th>
-                                    <th>9 เดือน</th>
-                                    <th>1 ปี</th>
-                                    <th>3 ปี</th>
-                                    <th>6 ปี</th>
+                                    <th>{{ __('3 เดือน') }}</th>
+                                    <th>{{ __('6 เดือน') }}</th>
+                                    <th>{{ __('9 เดือน') }}</th>
+                                    <th>{{ __('1 ปี') }}</th>
+                                    <th>{{ __('3 ปี') }}</th>
+                                    <th>{{ __('6 ปี') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td class="row-label-cell">Prime <span>ขนาดเล็ก (H:5", L:12", W:18")</span></td>
+                                    <td class="row-label-cell">Prime <span>{{ __('ขนาดเล็ก (H:5", L:12", W:18")') }}</span></td>
                                     <td>4,200.-</td>
                                     <td>8,050.-</td>
                                     <td>11,550.-</td>
@@ -498,7 +494,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="row-label-cell">Privilege <span>ขนาดใหญ่ (H:10", L:12", W:18")</span>
+                                    <td class="row-label-cell">Privilege <span>{{ __('ขนาดใหญ่ (H:10", L:12", W:18")') }}</span>
                                     </td>
                                     <td>4,800.-</td>
                                     <td>9,200.-</td>
@@ -519,17 +515,14 @@
 
                     <!-- Additional Terms -->
                     <div class="terms-section text-center">
-                        <p>โปรดนำบัตรประชาชนตัวจริง หรือพาสปอร์ต
-                            ตัวจริงมาในวันที่ลงทะเบียนที่สาขา<br>ลูกค้าสามารถเข้ารับบริการได้ภายใน 30 วัน
-                            หลังจากชำระค่าบริการ</p>
-                        <p class="promo-highlight">สัญญา 3 ปี ได้รับส่วนลด 5% / สัญญา 6 ปี ได้รับส่วนลด 10%</p>
-                        <p>* ครั้งแรกของการทำสัญญาต้องชำระค่ามัดจำ<br>เป็นจำนวน 5,000 บาท
-                            (ได้รับคืนเต็มจำนวนเมื่อสิ้นสุดสัญญา)<br>* ราคาข้างต้นยังไม่รวมภาษีมูลค่าเพิ่ม 7%</p>
+                        <p>{{ __('โปรดนำบัตรประชาชนตัวจริง หรือพาสปอร์ต ตัวจริงมาในวันที่ลงทะเบียนที่สาขา') }}<br>{{ __('ลูกค้าสามารถเข้ารับบริการได้ภายใน 30 วัน หลังจากชำระค่าบริการ') }}</p>
+                        <p class="promo-highlight">{{ __('สัญญา 3 ปี ได้รับส่วนลด 5% / สัญญา 6 ปี ได้รับส่วนลด 10%') }}</p>
+                        <p>{{ __('* ครั้งแรกของการทำสัญญาต้องชำระค่ามัดจำ') }}<br>{{ __('เป็นจำนวน 5,000 บาท (ได้รับคืนเต็มจำนวนเมื่อสิ้นสุดสัญญา)') }}<br>{{ __('* ราคาข้างต้นยังไม่รวมภาษีมูลค่าเพิ่ม 7%') }}</p>
                     </div>
 
                     <!-- Book Button -->
                     <button type="button" class="btn-booking" data-bs-toggle="modal"
-                        data-bs-target="#qrModal">จองเลย</button>
+                        data-bs-target="#qrModal">{{ __('จองเลย') }}</button>
                 </div>
             </div>
         </div>
@@ -540,7 +533,7 @@
         <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
             <div class="modal-content modal-qr-content">
                 <div class="modal-qr-blue-section">
-                    <h5 class="modal-qr-title">สแกน Qr Code</h5>
+                    <h5 class="modal-qr-title">{{ __('สแกน Qr Code') }}</h5>
                     <button type="button" class="btn-qr-close" data-bs-dismiss="modal">
                         <i class="fas fa-xmark"></i>
                     </button>
@@ -550,7 +543,7 @@
                     </div>
                 </div>
                 <div class="qr-footer-info">
-                    <p class="qr-instruction">สแกนคิวอาร์โค้ดเพื่อดำเนินการต่อผ่านแอปพลิเคชัน</p>
+                    <p class="qr-instruction">{{ __('สแกนคิวอาร์โค้ดเพื่อดำเนินการต่อผ่านแอปพลิเคชัน') }}</p>
                 </div>
             </div>
         </div>

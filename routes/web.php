@@ -297,6 +297,11 @@ Route::middleware('auth')->group(function() {
             Route::post('/banners/{id}/update', [CmsAdminController::class, 'updateBanner'])->name('banners.update');
             Route::post('/banners/{id}/delete', [CmsAdminController::class, 'deleteBanner'])->name('banners.delete');
 
+            Route::get('/popup-ads', [CmsAdminController::class, 'popupAds'])->name('popup-ads');
+            Route::post('/popup-ads', [CmsAdminController::class, 'storePopupAd'])->name('popup-ads.store');
+            Route::post('/popup-ads/{id}/update', [CmsAdminController::class, 'updatePopupAd'])->name('popup-ads.update');
+            Route::post('/popup-ads/{id}/delete', [CmsAdminController::class, 'deletePopupAd'])->name('popup-ads.delete');
+
             Route::get('/faqs', [CmsAdminController::class, 'faqs'])->name('faqs');
             Route::post('/faqs', [CmsAdminController::class, 'storeFaq'])->name('faqs.store');
             Route::post('/faqs/{id}/update', [CmsAdminController::class, 'updateFaq'])->name('faqs.update');

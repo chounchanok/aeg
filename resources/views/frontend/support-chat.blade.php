@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'ติดต่อสอบถาม - AEG')
+@section('title', __('ติดต่อสอบถาม') . ' - AEG')
 
 @section('content')
     <div class="container">

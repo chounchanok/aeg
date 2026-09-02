@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'แพ็กเกจบริการตู้เซฟนิรภัย - AEG EASE CLUB')
+@section('title', __('แพ็กเกจบริการตู้เซฟนิรภัย') . ' - AEG EASE CLUB')
 
 @push('styles')
     <link
@@ -318,37 +318,37 @@
         <div class="container">
             <div class="safe-detail-card">
                 <!-- Header Banner Image (Matching Safe.jpg) -->
-                <img src="assets/image/safe-banner.webp" alt="แพ็กเกจบริการตู้เซฟนิรภัย" class="banner-image"
+                <img src="assets/image/safe-banner.webp" alt="{{ __('แพ็กเกจบริการตู้เซฟนิรภัย') }}" class="banner-image"
                     onerror="this.src='https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=1200&q=80'">
 
                 <div class="card-body-content">
                     <div class="section-header">
-                        <h1>แพ็กเกจบริการตู้เซฟนิรภัย</h1>
+                        <h1>{{ __('แพ็กเกจบริการตู้เซฟนิรภัย') }}</h1>
                     </div>
 
                     <!-- Content Group 1: กันไฟ -->
                     <div class="content-group">
-                        <h2>ตู้เซฟนิรภัยกันไฟ</h2>
+                        <h2>{{ __('ตู้เซฟนิรภัยกันไฟ') }}</h2>
                         <ul class="detail-list">
-                            <li>ป้องกันเอกสารและทรัพย์สินจากความร้อนและเปลวไฟ</li>
-                            <li>โครงสร้างวัสดุทนไฟ ป้องกันความเสียหายจากอัคคีภัย</li>
-                            <li>เสริมความปลอดภัยด้วยระบบล็อกหลากหลายรูปแบบ</li>
+                            <li>{{ __('ป้องกันเอกสารและทรัพย์สินจากความร้อนและเปลวไฟ') }}</li>
+                            <li>{{ __('โครงสร้างวัสดุทนไฟ ป้องกันความเสียหายจากอัคคีภัย') }}</li>
+                            <li>{{ __('เสริมความปลอดภัยด้วยระบบล็อกหลากหลายรูปแบบ') }}</li>
                         </ul>
                     </div>
 
                     <!-- Content Group 2: กันโจรกรรม -->
                     <div class="content-group">
-                        <h2>ตู้เซฟนิรภัยกันการเจาะโจรกรรม</h2>
+                        <h2>{{ __('ตู้เซฟนิรภัยกันการเจาะโจรกรรม') }}</h2>
                         <ul class="detail-list">
-                            <li>โครงสร้างเหล็กหนา แข็งแรง ทนต่อการงัดแงะและการเจาะทำลาย</li>
-                            <li>ระบบล็อกหลายชั้น เพิ่มความปลอดภัยต่อเหตุการณ์ไม่คาดฝัน</li>
-                            <li>สามารถติดตั้งยึดกับพื้นหรือผนังเพื่อป้องกันการเคลื่อนย้าย</li>
+                            <li>{{ __('โครงสร้างเหล็กหนา แข็งแรง ทนต่อการงัดแงะและการเจาะทำลาย') }}</li>
+                            <li>{{ __('ระบบล็อกหลายชั้น เพิ่มความปลอดภัยต่อเหตุการณ์ไม่คาดฝัน') }}</li>
+                            <li>{{ __('สามารถติดตั้งยึดกับพื้นหรือผนังเพื่อป้องกันการเคลื่อนย้าย') }}</li>
                         </ul>
                     </div>
 
                     <!-- Action Button Link to Contact -->
                     <div class="btn-consult-wrapper">
-                        <a href="{{ route('safe-contact', 5) }}" class="btn-gradient-pill">ปรึกษาผู้เชี่ยวชาญ</a>
+                        <a href="{{ route('safe-contact', 5) }}" class="btn-gradient-pill">{{ __('ปรึกษาผู้เชี่ยวชาญ') }}</a>
                     </div>
                 </div>
             </div>

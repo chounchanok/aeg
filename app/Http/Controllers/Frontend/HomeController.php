@@ -55,12 +55,20 @@ class HomeController extends Controller
                                  ->limit(4)
                                  ->get();
 
+        // 5. ดึงข้อมูล Popup Ad ที่เปิดใช้งานอยู่ (เอาตัวแรกตามลำดับ sort_order มาแสดงเป็น popup ตอนเปิดหน้าแรกครั้งแรก)
+        $popupAd = DB::table('popup_ads')
+                     ->where('is_active', true)
+                     ->orderBy('sort_order', 'asc')
+                     ->orderBy('created_at', 'desc')
+                     ->first();
+
         return view('frontend.index', compact(
             'banners',
             'expiringServices',
             'categories',
             'recommendedPrivileges',
-            'recommendedServices'
+            'recommendedServices',
+            'popupAd'
         ));
     }
 }

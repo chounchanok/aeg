@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดประวัติ - AEG EASE CLUB</title>
+    <title>{{ __('รายละเอียดประวัติ') }} - AEG EASE CLUB</title>
     <!-- Google Fonts: Poppins (Main) & Kanit (Thai support) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Kanit:wght@200;300;400;500&display=swap"
@@ -378,23 +378,23 @@
                     </div>
                     <div class="detail-summary">
                         <div class="detail-header-flex">
-                            <h1 class="detail-title">Burglary Alarm<br>(ระบบสัญญาณกันขโมย)</h1>
-                            <span class="status-tag">หมดอายุ</span>
+                            <h1 class="detail-title">Burglary Alarm<br>{{ __('(ระบบสัญญาณกันขโมย)') }}</h1>
+                            <span class="status-tag">{{ __('หมดอายุ') }}</span>
                         </div>
                         <div class="info-block">
-                            <label class="info-label">แพ็กเกจดูแลรายเดือน :</label>
-                            <div class="info-value">Burglary Alarm (ระบบสัญญาณกันขโมย)</div>
+                            <label class="info-label">{{ __('แพ็กเกจดูแลรายเดือน') }} :</label>
+                            <div class="info-value">Burglary Alarm {{ __('(ระบบสัญญาณกันขโมย)') }}</div>
                         </div>
                         <div class="info-block">
-                            <label class="info-label">ระยะเวลาการดูแล :</label>
+                            <label class="info-label">{{ __('ระยะเวลาการดูแล') }} :</label>
                             <div class="date-grid">
                                 <div class="date-item">
-                                    <label class="info-label">เริ่มต้น</label>
-                                    <span>01 ม.ค. 2024</span>
+                                    <label class="info-label">{{ __('เริ่มต้น') }}</label>
+                                    <span>01 {{ __('ม.ค.') }} 2024</span>
                                 </div>
                                 <div class="date-item">
-                                    <label class="info-label">สิ้นสุด</label>
-                                    <span>31 มี.ค. 2024</span>
+                                    <label class="info-label">{{ __('สิ้นสุด') }}</label>
+                                    <span>31 {{ __('มี.ค.') }} 2024</span>
                                 </div>
                             </div>
                         </div>
@@ -403,27 +403,27 @@
 
                 <!-- Body Section -->
                 <div class="detail-body-section">
-                    <span class="body-title">จำนวนบริการคงเหลือ :</span>
-                    <p class="fw-bold mb-4" style="font-size: 1.1rem;">8 ครั้ง</p>
+                    <span class="body-title">{{ __('จำนวนบริการคงเหลือ') }} :</span>
+                    <p class="fw-bold mb-4" style="font-size: 1.1rem;">8 {{ __('ครั้ง') }}</p>
 
-                    <span class="body-title">ประวัติการแจ้งซ่อม :</span>
+                    <span class="body-title">{{ __('ประวัติการแจ้งซ่อม') }} :</span>
                     <div class="history-btn-group">
-                        <a href="#" class="btn-history-round">ครั้งที่ 1</a>
-                        <a href="#" class="btn-history-round">ครั้งที่ 2</a>
+                        <a href="#" class="btn-history-round">{{ __('ครั้งที่ 1') }}</a>
+                        <a href="#" class="btn-history-round">{{ __('ครั้งที่ 2') }}</a>
                     </div>
 
-                    <span class="body-title">ขอบเขตการบริการ :</span>
+                    <span class="body-title">{{ __('ขอบเขตการบริการ') }} :</span>
                     <ul class="scope-list">
-                        <li>ตรวจสอบ Motion Sensor, Door Contact, Panic Switch</li>
-                        <li>ทดสอบการทำงานของสัญญาณเตือน</li>
-                        <li>เช็ก Battery Backup / Power Supply</li>
-                        <li>ตรวจสอบแผงควบคุม และการเชื่อมต่อ</li>
-                        <li>แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด</li>
-                        <li>ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม</li>
+                        <li>{{ __('ตรวจสอบ Motion Sensor, Door Contact, Panic Switch') }}</li>
+                        <li>{{ __('ทดสอบการทำงานของสัญญาณเตือน') }}</li>
+                        <li>{{ __('เช็ก Battery Backup / Power Supply') }}</li>
+                        <li>{{ __('ตรวจสอบแผงควบคุม และการเชื่อมต่อ') }}</li>
+                        <li>{{ __('แก้ไขระบบที่ไม่ทำงาน / แจ้งเตือนผิดพลาด') }}</li>
+                        <li>{{ __('ตรวจสอบเซ็นเซอร์เสียงและกล่องควบคุม') }}</li>
                     </ul>
 
                     <div class="detail-footer-btn">
-                        <a href="package" class="btn-back-navy">ย้อนกลับ</a>
+                        <a href="package" class="btn-back-navy">{{ __('ย้อนกลับ') }}</a>
                     </div>
                 </div>
 
@@ -436,7 +436,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4 mb-4 mb-md-0">
-                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">ดาวน์โหลดแอปพลิเคชัน</h5>
+                    <h5 class="fw-bold mb-3" style="font-size: 1rem;">{{ __('ดาวน์โหลดแอปพลิเคชัน') }}</h5>
                     <div class="d-flex gap-2">
                         <div class="bg-white p-2 rounded"
                             style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
@@ -455,12 +455,12 @@
                 <div class="col-md-4">
                     <div class="row">
                         <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">แพ็กเกจที่ใช้งาน</h5>
-                            <a href="package" class="footer-link">ข้อกำหนดและเงื่อนไข</a>
+                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">{{ __('แพ็กเกจที่ใช้งาน') }}</h5>
+                            <a href="package" class="footer-link">{{ __('ข้อกำหนดและเงื่อนไข') }}</a>
                         </div>
                         <div class="col-6 footer-column text-center">
-                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">คำถามที่พบบ่อย</h5>
-                            <a href="faq" class="footer-link">นโยบายความเป็นส่วนตัว</a>
+                            <h5 class="fw-bold mb-3" style="font-size: 0.95rem;">{{ __('คำถามที่พบบ่อย') }}</h5>
+                            <a href="faq" class="footer-link">{{ __('นโยบายความเป็นส่วนตัว') }}</a>
                         </div>
                     </div>
                     <div class="social-icons-bar">

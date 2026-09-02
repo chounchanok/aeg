@@ -53,19 +53,19 @@
 
 <div class="chat-container">
     <div class="chat-header-bar">
-        <div class="chat-header" id="panelTitle">ถามบอทตอบอัตโนมัติ</div>
+        <div class="chat-header" id="panelTitle">{{ __('ถามบอทตอบอัตโนมัติ') }}</div>
         <div class="header-actions">
             @if($botUserId)
                 <button type="button" class="btn-agent" id="toggleAgentBtn" onclick="switchToAgent()">
-                    <i class="fas fa-headset"></i> คุยกับเจ้าหน้าที่
+                    <i class="fas fa-headset"></i> {{ __('คุยกับเจ้าหน้าที่') }}
                 </button>
             @else
                 <a href="{{ route('login') }}" class="btn-agent" id="toggleAgentBtn">
-                    <i class="fas fa-headset"></i> เข้าสู่ระบบเพื่อคุยกับเจ้าหน้าที่
+                    <i class="fas fa-headset"></i> {{ __('เข้าสู่ระบบเพื่อคุยกับเจ้าหน้าที่') }}
                 </a>
             @endif
             <button type="button" class="btn-agent btn-end" onclick="openRatingModal()">
-                <i class="fas fa-circle-xmark"></i> จบการสนทนา
+                <i class="fas fa-circle-xmark"></i> {{ __('จบการสนทนา') }}
             </button>
         </div>
     </div>
@@ -74,7 +74,7 @@
     <div id="botPanel" style="display:flex; flex-direction:column; flex:1; min-height:0;">
         <div class="chat-box" id="botChatBox"></div>
         <div class="chat-input-area">
-            <input type="text" id="botChatInput" class="chat-input" placeholder="พิมพ์คำถามของคุณที่นี่..." onkeypress="handleBotEnter(event)">
+            <input type="text" id="botChatInput" class="chat-input" placeholder="{{ __('พิมพ์คำถามของคุณที่นี่...') }}" onkeypress="handleBotEnter(event)">
             <button onclick="submitBotText()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -83,21 +83,21 @@
     @if($botUserId)
         <div id="agentPanel" style="display:none; flex-direction:column; flex:1; min-height:0;">
             <div class="chat-box" id="chatBox">
-                <div class="text-center text-muted" style="font-size:0.8rem;">กำลังโหลดข้อมูล...</div>
+                <div class="text-center text-muted" style="font-size:0.8rem;">{{ __('กำลังโหลดข้อมูล...') }}</div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chatInput" class="chat-input" placeholder="พิมพ์ข้อความของคุณที่นี่..." onkeypress="handleEnter(event)">
+                <input type="text" id="chatInput" class="chat-input" placeholder="{{ __('พิมพ์ข้อความของคุณที่นี่...') }}" onkeypress="handleEnter(event)">
                 <button onclick="sendMessage()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
             </div>
-            <div class="back-to-bot" onclick="switchToBot()">← กลับไปถามบอทอัตโนมัติ</div>
+            <div class="back-to-bot" onclick="switchToBot()">{{ __('← กลับไปถามบอทอัตโนมัติ') }}</div>
         </div>
     @endif
 
     {{-- ===================== Modal ให้คะแนน (บังคับก่อนปิดการสนทนา) ===================== --}}
     <div id="ratingModal" class="rating-modal">
         <div class="rating-modal-box">
-            <div class="rating-modal-title">ให้คะแนนความพึงพอใจ</div>
-            <div class="rating-modal-sub">กรุณาให้คะแนนการให้บริการของเราก่อนปิดการสนทนา</div>
+            <div class="rating-modal-title">{{ __('ให้คะแนนความพึงพอใจ') }}</div>
+            <div class="rating-modal-sub">{{ __('กรุณาให้คะแนนการให้บริการของเราก่อนปิดการสนทนา') }}</div>
             <div class="rating-stars" id="ratingStars">
                 <i class="far fa-star" data-value="1" onclick="setRating(1)"></i>
                 <i class="far fa-star" data-value="2" onclick="setRating(2)"></i>
@@ -105,8 +105,8 @@
                 <i class="far fa-star" data-value="4" onclick="setRating(4)"></i>
                 <i class="far fa-star" data-value="5" onclick="setRating(5)"></i>
             </div>
-            <textarea id="ratingComment" class="rating-comment" placeholder="ความคิดเห็นเพิ่มเติม (ถ้ามี)"></textarea>
-            <button type="button" class="btn-send rating-submit-btn" id="ratingSubmitBtn" disabled onclick="submitRatingAndClose()">ส่งคะแนนและปิดแชท</button>
+            <textarea id="ratingComment" class="rating-comment" placeholder="{{ __('ความคิดเห็นเพิ่มเติม (ถ้ามี)') }}"></textarea>
+            <button type="button" class="btn-send rating-submit-btn" id="ratingSubmitBtn" disabled onclick="submitRatingAndClose()">{{ __('ส่งคะแนนและปิดแชท') }}</button>
         </div>
     </div>
 </div>

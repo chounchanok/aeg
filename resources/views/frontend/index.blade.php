@@ -1,6 +1,6 @@
 @extends('frontend.layouts.main')
 
-@section('title', 'หน้าหลัก - AEG EASE CLUB')
+@section('title', __('หน้าหลัก') . ' - AEG EASE CLUB')
 
 @push('styles')
 <style>
@@ -443,34 +443,34 @@
     <div class="container mt-5">
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
-                <div class="service-card"><img src="{{ asset('assets/image/g1.webp') }}" alt="สินค้าพร้อมติดตั้ง">
+                <div class="service-card"><img src="{{ asset('assets/image/g1.webp') }}" alt="{{ __('สินค้าพร้อมติดตั้ง') }}">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">สินค้าพร้อมติดตั้ง</h5>
-                        <a href="{{ route('products', ['group' => 'equipment']) }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <h5 class="fw-bold">{{ __('สินค้าพร้อมติดตั้ง') }}</h5>
+                        <a href="{{ route('products', ['group' => 'equipment']) }}" class="btn btn-service mt-2">{{ __('ดูเพิ่มเติม') }}</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="service-card"><img src="{{ asset('assets/image/g2.webp') }}" alt="แพ็กเกจบริการ">
+                <div class="service-card"><img src="{{ asset('assets/image/g2.webp') }}" alt="{{ __('แพ็กเกจบริการ') }}">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">แพ็กเกจบริการ</h5>
-                        <a href="{{ route('services') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <h5 class="fw-bold">{{ __('แพ็กเกจบริการ') }}</h5>
+                        <a href="{{ route('services') }}" class="btn btn-service mt-2">{{ __('ดูเพิ่มเติม') }}</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="service-card"><img src="{{ asset('assets/image/g3.webp') }}" alt="ประกัน">
+                <div class="service-card"><img src="{{ asset('assets/image/g3.webp') }}" alt="{{ __('ประกัน') }}">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">ประกัน</h5>
-                        <a href="{{ route('insurance') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <h5 class="fw-bold">{{ __('ประกัน') }}</h5>
+                        <a href="{{ route('insurance') }}" class="btn btn-service mt-2">{{ __('ดูเพิ่มเติม') }}</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="service-card"><img src="{{ asset('assets/image/g4.webp') }}" alt="ตู้เซฟนิรภัย">
+                <div class="service-card"><img src="{{ asset('assets/image/g4.webp') }}" alt="{{ __('ตู้เซฟนิรภัย') }}">
                     <div class="service-card-body">
-                        <h5 class="fw-bold">ตู้เซฟนิรภัย</h5>
-                        <a href="{{ route('lockers') }}" class="btn btn-service mt-2">ดูเพิ่มเติม</a>
+                        <h5 class="fw-bold">{{ __('ตู้เซฟนิรภัย') }}</h5>
+                        <a href="{{ route('lockers') }}" class="btn btn-service mt-2">{{ __('ดูเพิ่มเติม') }}</a>
                     </div>
                 </div>
             </div>
@@ -481,7 +481,7 @@
     @auth
         @if(isset($expiringServices) && $expiringServices->count() > 0)
         <div class="container mt-5">
-            <h3 class="text-center fw-bold mb-4">บริการที่ใกล้หมดอายุ</h3>
+            <h3 class="text-center fw-bold mb-4">{{ __('บริการที่ใกล้หมดอายุ') }}</h3>
             <div class="row g-3">
                 @foreach($expiringServices as $service)
                 @php
@@ -489,7 +489,7 @@
                     $endDate = \Carbon\Carbon::parse($service->warranty_expire_date)->format('d/m/Y');
                     $imgUrl = $service->image_url ?? asset('assets/image/logo2.webp');
                     $quota = (($service->reference_type ?? 'product') === 'product' && $service->total_service_count > 0)
-                             ? max(0, $service->total_service_count - $service->used_service_count) . ' ครั้ง (จาก ' . $service->total_service_count . ' ครั้ง)'
+                             ? max(0, $service->total_service_count - $service->used_service_count) . ' ' . __('ครั้ง (จาก') . ' ' . $service->total_service_count . ' ' . __('ครั้ง)')
                              : '-';
                     $detailUrl = route('repair-status', $service->id);
                 @endphp
@@ -501,7 +501,7 @@
                          data-bs-toggle="modal"
                          data-bs-target="#expiringModal"
                          data-name="{{ $service->product_name }}"
-                         data-sn="{{ $service->serial_number ?? 'ไม่ระบุ' }}"
+                         data-sn="{{ $service->serial_number ?? __('ไม่ระบุ') }}"
                          data-start="{{ $startDate }}"
                          data-end="{{ $endDate }}"
                          data-img="{{ $imgUrl }}"
@@ -512,12 +512,12 @@
 
                         <div class="flex-grow-1">
                             <h5 class="fw-bold mb-1 text-truncate" style="max-width: 250px;">{{ $service->product_name }}</h5>
-                            <p class="text-muted small mb-0">S/N: {{ $service->serial_number ?? 'ไม่ระบุ' }}</p>
+                            <p class="text-muted small mb-0">S/N: {{ $service->serial_number ?? __('ไม่ระบุ') }}</p>
                         </div>
 
                         <div class="ms-3 text-end border-start ps-3" style="min-width: 110px;">
-                            <div class="small text-muted">เริ่ม: <span class="text-dark fw-bold">{{ $startDate }}</span></div>
-                            <div class="small text-muted">จบ: <span class="text-danger fw-bold">{{ $endDate }}</span></div>
+                            <div class="small text-muted">{{ __('เริ่ม:') }} <span class="text-dark fw-bold">{{ $startDate }}</span></div>
+                            <div class="small text-muted">{{ __('จบ:') }} <span class="text-danger fw-bold">{{ $endDate }}</span></div>
                         </div>
                     </div>
                 </div>
@@ -529,7 +529,7 @@
 
     <!-- Recommended Services Section -->
     <div class="container mt-5">
-        <h3 class="text-center fw-bold mb-4">บริการแนะนำ</h3>
+        <h3 class="text-center fw-bold mb-4">{{ __('บริการแนะนำ') }}</h3>
         <div class="row g-4 mt-3">
             @if(isset($recommendedServices) && $recommendedServices->count() > 0)
                 @foreach($recommendedServices as $service)
@@ -538,7 +538,7 @@
                         <div class="rec-card shadow-sm">
                             <img src="{{ $service->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ $service->name ?? 'Service' }}">
                             <div class="rec-overlay">
-                                <h5 class="fw-bold text-white">{{ $service->name_th ?? 'ไม่มีชื่อ' }}</h5>
+                                <h5 class="fw-bold text-white">{{ $service->name_th ?? __('ไม่มีชื่อ') }}</h5>
                             </div>
                         </div>
                     </a>
@@ -546,7 +546,7 @@
                 @endforeach
             @else
                 <div class="col-12 text-center text-muted">
-                    <p>ยังไม่มีบริการแนะนำในขณะนี้</p>
+                    <p>{{ __('ยังไม่มีบริการแนะนำในขณะนี้') }}</p>
                 </div>
             @endif
         </div>
@@ -556,8 +556,8 @@
     <div class="container mt-5 mb-5">
         <div class="privilege-section p-4 rounded-4 shadow">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold mb-0 text-white">สิทธิพิเศษแนะนำ</h2>
-                <a href="{{ route('rewards') }}" class="text-white fw-bold text-decoration-none">ดูทั้งหมด <i class="fas fa-arrow-right ms-1"></i></a>
+                <h2 class="fw-bold mb-0 text-white">{{ __('สิทธิพิเศษแนะนำ') }}</h2>
+                <a href="{{ route('rewards') }}" class="text-white fw-bold text-decoration-none">{{ __('ดูทั้งหมด') }} <i class="fas fa-arrow-right ms-1"></i></a>
             </div>
             <div class="row g-4">
                 @if(isset($recommendedPrivileges) && $recommendedPrivileges->count() > 0)
@@ -567,9 +567,9 @@
                             <div class="privilege-card shadow-sm">
                                 <img src="{{ $privilege->image_url ?? asset('assets/image/rew3.webp') }}" alt="{{ $privilege->title ?? 'Privilege' }}">
                                 <div class="service-card-body">
-                                    <h5 class="fw-bold text-dark">{{ $privilege->title_th ?? 'ไม่มีชื่อ' }}</h5>
+                                    <h5 class="fw-bold text-dark">{{ $privilege->title_th ?? __('ไม่มีชื่อ') }}</h5>
                                     <div class="text-danger fw-bold mt-2">
-                                        ใช้ {{ $privilege->points_required ?? 0 }} คะแนน
+                                        {{ __('ใช้') }} {{ $privilege->points_required ?? 0 }} {{ __('คะแนน') }}
                                     </div>
                                 </div>
                             </div>
@@ -578,7 +578,7 @@
                     @endforeach
                 @else
                     <div class="col-12 text-center text-white">
-                        <p>ยังไม่มีสิทธิพิเศษแนะนำในขณะนี้</p>
+                        <p>{{ __('ยังไม่มีสิทธิพิเศษแนะนำในขณะนี้') }}</p>
                     </div>
                 @endif
             </div>
@@ -589,7 +589,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
                 <div class="modal-header text-white" style="background: var(--primary-navy);">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-box-open me-2"></i> สรุปรายละเอียดบริการ</h5>
+                    <h5 class="modal-title fw-bold"><i class="fas fa-box-open me-2"></i> {{ __('สรุปรายละเอียดบริการ') }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 text-center">
@@ -603,21 +603,21 @@
                             <strong id="modExpSn" class="text-dark"></strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <span class="text-muted">วันที่เริ่มบริการ</span>
+                            <span class="text-muted">{{ __('วันที่เริ่มบริการ') }}</span>
                             <strong id="modExpStart" class="text-dark"></strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <span class="text-muted">วันที่สิ้นสุด <i class="fas fa-exclamation-circle text-danger ms-1"></i></span>
+                            <span class="text-muted">{{ __('วันที่สิ้นสุด') }} <i class="fas fa-exclamation-circle text-danger ms-1"></i></span>
                             <strong id="modExpEnd" class="text-danger"></strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0" id="modExpQuotaContainer">
-                            <span class="text-muted">โควต้าเรียกช่างคงเหลือ</span>
+                            <span class="text-muted">{{ __('โควต้าเรียกช่างคงเหลือ') }}</span>
                             <strong id="modExpQuota" class="text-primary"></strong>
                         </li>
                     </ul>
 
                     <a href="#" id="modExpUrl" class="btn btn-primary w-100" style="background: var(--ease-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">
-                        ดูรายละเอียดฉบับเต็ม / ประวัติการซ่อม
+                        {{ __('ดูรายละเอียดฉบับเต็ม / ประวัติการซ่อม') }}
                     </a>
                 </div>
             </div>
@@ -651,5 +651,39 @@
             }
         });
     </script>
+
+    @if($popupAd ?? null)
+    <!-- Popup Ad: แสดงครั้งแรกที่เปิดหน้าแรกในแต่ละ session ของเบราว์เซอร์ (กำหนดรูป/ลิงก์ได้จากหลังบ้าน) -->
+    <div class="modal fade" id="popupAdModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden; background: transparent;">
+                <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" aria-label="Close" style="top: 10px; right: 10px; z-index: 10; background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 8px; opacity: 1;"></button>
+                @if($popupAd->link_url)
+                    <a href="{{ $popupAd->link_url }}" target="_blank" rel="noopener">
+                        <img src="{{ $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
+                    </a>
+                @else
+                    <img src="{{ $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (!sessionStorage.getItem('popup_ad_shown')) {
+                    var popupAdModalEl = document.getElementById('popupAdModal');
+                    if (popupAdModalEl && typeof bootstrap !== 'undefined') {
+                        new bootstrap.Modal(popupAdModalEl).show();
+                    }
+                    sessionStorage.setItem('popup_ad_shown', '1');
+                }
+            } catch (e) {
+                // เผื่อกรณีเบราว์เซอร์บล็อก sessionStorage (เช่น private mode บางตัว) ไม่ให้กระทบการทำงานส่วนอื่นของหน้าเว็บ
+            }
+        });
+    </script>
+    @endif
 
 @endsection
