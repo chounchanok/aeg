@@ -54,7 +54,7 @@ class TestPushNotification extends Command
         $this->newLine();
         $this->info('กำลังส่ง push notification ทดสอบ...');
 
-        PushNotificationService::sendToUser(
+        $results = PushNotificationService::sendToUser(
             $userId,
             $this->option('title'),
             $this->option('body'),
@@ -62,10 +62,33 @@ class TestPushNotification extends Command
         );
 
         $this->newLine();
-        $this->info('ส่งคำสั่งเรียบร้อยแล้ว — ตรวจผลจริงได้จาก:');
-        $this->line('  1. มือถือเครื่องนั้น ควรมี notification เด้งขึ้นมา');
-        $this->line('  2. เปิดไฟล์ storage/logs/laravel.log ดูว่ามีบรรทัดจาก [PushNotificationService] แจ้ง error/warning หรือไม่');
-        $this->line('     (ถ้าตั้งค่า Firebase ไม่ถูกต้อง หรือ token หมดอายุ จะขึ้น log ตรงนี้ ไม่ทำให้คำสั่งนี้ error)');
+
+        if (empty($results)) {
+            $this->error('ไม่มีผลลัพธ์กลับมาเลย (ไม่ได้ยิงส่งจริง) — เช็คหัวข้อ "ตรวจสอบการตั้งค่า Firebase" ด้านบนอีกครั้งว่ามีอะไรเป็น ❌ หรือไม่');
+            return self::FAILURE;
+        }
+
+        $successCount = 0;
+        foreach ($results as $r) {
+            $shortToken = substr($r['token'], 0, 24) . '...';
+            if ($r['success']) {
+                $successCount++;
+                $this->info("  ✅ สำเร็จ: {$shortToken} (message_id: {$r['message_id']})");
+            } else {
+                $this->error("  ❌ ล้มเหลว: {$shortToken} — {$r['error']}");
+            }
+        }
+
+        $this->newLine();
+        if ($successCount === count($results)) {
+            $this->info('Firebase รับข้อความไปส่งต่อเรียบร้อยแล้วทุก token (server-side สำเร็จ 100%)');
+            $this->line('ถ้ามือถือยังไม่มี notification เด้งขึ้นมา ให้เช็คฝั่งแอป/อุปกรณ์แทน เช่น:');
+            $this->line('  - แอปเปิดสิทธิ์แจ้งเตือน (notification permission) ไว้หรือไม่');
+            $this->line('  - ถ้าแอปเปิดอยู่หน้าจอ (foreground) ตอนทดสอบ บางแอปต้องเขียนโค้ดแสดง notification เองจาก onMessageReceived ไม่ได้เด้งอัตโนมัติเหมือนตอนแอปอยู่เบื้องหลัง/ปิดอยู่ — ลองปิดแอปแล้วทดสอบซ้ำดู');
+            $this->line('  - token ที่ทดสอบเป็นของเครื่อง/แอปเวอร์ชันที่ยังใช้งานอยู่จริงหรือไม่');
+        } else {
+            $this->warn('มีบาง token ที่ส่งไม่สำเร็จ ดูข้อความ error ด้านบนประกอบ (เช่น token หมดอายุ/ไม่ถูกต้อง ก็จะขึ้น error บอกตรงนี้เลย)');
+        }
 
         return self::SUCCESS;
     }

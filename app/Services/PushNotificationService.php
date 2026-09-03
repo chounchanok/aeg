@@ -33,25 +33,30 @@ class PushNotificationService
      * @param  string $body
      * @param  array  $data ข้อมูลเพิ่มเติมที่จะแนบไปกับ push (เช่น service_request_id)
      *                      เพื่อให้แอปมือถือใช้นำทางไปหน้าที่เกี่ยวข้องเมื่อผู้ใช้กดแตะการแจ้งเตือน
+     *
+     * @return array รายการผลลัพธ์ต่อ 1 token เช่น [['token' => '...', 'success' => true, 'message_id' => '...'], ...]
+     *               (ใช้เช็คผลตอนทดสอบผ่าน `php artisan push:test` — ที่อื่นในระบบไม่จำเป็นต้องสนใจค่าที่คืนมาก็ได้)
      */
-    public static function sendToUser(int $userId, string $title, string $body, array $data = []): void
+    public static function sendToUser(int $userId, string $title, string $body, array $data = []): array
     {
+        $results = [];
+
         if (!self::isConfigured()) {
             Log::info("[PushNotificationService] ข้ามการส่ง push (ยังไม่ได้ตั้งค่า Firebase credentials) user_id={$userId}, title=\"{$title}\"");
-            return;
+            return $results;
         }
 
         $tokens = DB::table('device_tokens')->where('user_id', $userId)->pluck('token');
 
         if ($tokens->isEmpty()) {
-            return;
+            return $results;
         }
 
         try {
             $messaging = self::messaging();
         } catch (\Throwable $e) {
             Log::error('[PushNotificationService] ไม่สามารถเชื่อมต่อ Firebase ได้: ' . $e->getMessage());
-            return;
+            return $results;
         }
 
         foreach ($tokens as $token) {
@@ -60,12 +65,20 @@ class PushNotificationService
                     ->withNotification(FirebaseNotification::create($title, $body))
                     ->withData(array_map('strval', $data));
 
-                $messaging->send($message);
+                $messageId = $messaging->send($message);
+
+                // 🌟 log ยืนยันตอนสำเร็จด้วย (ก่อนหน้านี้สำเร็จแล้วจะเงียบ ทำให้แยกไม่ออกว่า "ยังไม่ส่ง" หรือ "ส่งแล้วแค่ไม่บอก")
+                Log::info("[PushNotificationService] ส่ง push สำเร็จ user_id={$userId}, token=" . substr($token, 0, 12) . "..., message_id={$messageId}");
+
+                $results[] = ['token' => $token, 'success' => true, 'message_id' => $messageId];
             } catch (\Throwable $e) {
                 // ไม่ throw ต่อ เพื่อไม่ให้ token เสีย/หมดอายุตัวเดียว ทำให้การส่งไปยังอุปกรณ์อื่นของ user คนเดียวกันหยุดไปด้วย
                 Log::warning("[PushNotificationService] ส่ง push ไปยัง token ล้มเหลว (user_id={$userId}): " . $e->getMessage());
+                $results[] = ['token' => $token, 'success' => false, 'error' => $e->getMessage()];
             }
         }
+
+        return $results;
     }
 
     /**

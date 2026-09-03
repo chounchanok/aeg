@@ -225,9 +225,16 @@ class AuthController extends Controller
             'birthday' => 'nullable|date',
             'password' => 'required|string|min:6|confirmed',
             'company_type' => 'nullable|string',
-            'service_interesting' => 'nullable|string',
+            'service_interesting' => 'nullable|array',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // เพิ่มการตรวจสอบไฟล์รูปภาพ
         ]);
+
+        // จัดการ Array เหมือนตอน Update ปกติ
+        if ($request->has('service_interesting') && is_array($request->service_interesting)) {
+            $service_interesting = json_encode($request->service_interesting, JSON_UNESCAPED_UNICODE);
+        } else {
+            $service_interesting = json_encode([], JSON_UNESCAPED_UNICODE); 
+        }
 
         DB::beginTransaction();
         try {
@@ -252,7 +259,7 @@ class AuthController extends Controller
                 'gender' => $request->gender,
                 'birthday' => $request->birthday,
                 'company_type' => $request->company_type,
-                'service_interesting' => $request->service_interesting,
+                'service_interesting' => $service_interesting,
                 'update_first' => now(),
                 'created_at' => now(),
             ]);
