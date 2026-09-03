@@ -219,7 +219,7 @@ class AuthController extends Controller
             'lastname' => 'required|string',
             'username' => 'required|string|unique:users',
             'phone' => 'required|string|unique:users',
-            'email' => 'required|string|email|unique:users',
+            'email' => 'required|string|email',
             'company' => 'nullable|string',
             'gender' => 'nullable|string',
             'birthday' => 'nullable|date',

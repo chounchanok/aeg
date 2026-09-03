@@ -473,7 +473,7 @@ class EcommerceController extends Controller
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'reward_code' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:20480' // สูงสุด 20MB
         ]);
 
         $user = $request->user();
