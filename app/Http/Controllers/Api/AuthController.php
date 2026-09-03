@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
+use App\Services\DeviceTokenService;
 use Carbon\Carbon;
 
 class AuthController extends Controller
@@ -119,6 +120,9 @@ class AuthController extends Controller
 
         // 4. สร้าง Token (Sanctum)
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // 🌟 ถ้า Mobile แนบ FCM token มาด้วยกับการ login ให้บันทึกไว้เลย
+        DeviceTokenService::captureFromRequest($request, $user->id);
 
         return response()->json([
             'success' => true,
@@ -268,6 +272,9 @@ class AuthController extends Controller
 
             // 4. สร้าง Token ให้เข้าสู่ระบบได้เลยหลังสมัครเสร็จ
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // 🌟 ถ้า Mobile แนบ FCM token มาด้วยกับการสมัครสมาชิก ให้บันทึกไว้เลย
+            DeviceTokenService::captureFromRequest($request, $user->id);
 
             return $this->successResponse([
                 'access_token' => $token,
@@ -431,6 +438,9 @@ class AuthController extends Controller
 
             // 5. ออก Token (Sanctum) ให้แอปมือถือเอาไปใช้
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // 🌟 ถ้า Mobile แนบ FCM token มาด้วยกับการ login ให้บันทึกไว้เลย
+            DeviceTokenService::captureFromRequest($request, $user->id);
 
             return $this->successResponse([
                 'access_token' => $token,
@@ -617,6 +627,9 @@ class AuthController extends Controller
 
             // 3. สร้าง Token ให้แอปมือถือเอาไปใช้
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // 🌟 ถ้า Mobile แนบ FCM token มาด้วยกับการ login ให้บันทึกไว้เลย
+            DeviceTokenService::captureFromRequest($request, $user->id);
 
             return $this->successResponse([
                 'access_token' => $token,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -63,10 +64,61 @@ class OrderAdminController extends Controller
             'status' => 'required|in:pending_payment,paid,processing,completed,cancelled'
         ]);
 
-        DB::table('orders')->where('id', $id)->update([
-            'status' => $request->status,
-            'updated_at' => now()
-        ]);
+        $statusLabels = [
+            'pending_payment' => 'รอชำระเงิน',
+            'paid' => 'ชำระเงินเรียบร้อยแล้ว',
+            'processing' => 'กำลังดำเนินการจัดส่ง',
+            'completed' => 'จัดส่งสำเร็จ',
+            'cancelled' => 'ยกเลิกคำสั่งซื้อ',
+        ];
+
+        // 🌟 ดึง user_id (เจ้าของออเดอร์) ไว้ก่อน เพื่อใช้แจ้งเตือนหลังอัปเดตสถานะสำเร็จ
+        $order = DB::table('orders')->where('id', $id)->first();
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'ไม่พบคำสั่งซื้อนี้ในระบบ');
+        }
+
+        DB::beginTransaction();
+        try {
+            DB::table('orders')->where('id', $id)->update([
+                'status' => $request->status,
+                'updated_at' => now()
+            ]);
+
+            // 🌟 บันทึกการแจ้งเตือนในระบบ (แสดงในกระดิ่งแจ้งเตือนหน้าเว็บ) ให้ลูกค้าเจ้าของออเดอร์นี้
+            $notifyTitle = 'สถานะคำสั่งซื้อมีการอัปเดต';
+            $notifyBody = 'คำสั่งซื้อ #' . $order->order_number . ' ของคุณเปลี่ยนสถานะเป็น: '
+                . ($statusLabels[$request->status] ?? $request->status);
+
+            DB::table('notifications')->insert([
+                'user_id' => $order->user_id,
+                'title' => $notifyTitle,
+                'body' => $notifyBody,
+                'type' => 'order',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
+        }
+
+        // 🌟 ยิง Push Notification (FCM) ไปยังมือถือของลูกค้า — ทำหลัง commit เสร็จแล้ว และห้ามทำให้ request ล้มเหลว
+        // แม้ว่าการส่ง push จะผิดพลาด (เช่น ยังไม่ได้ตั้งค่า Firebase credentials) เพราะสถานะออเดอร์อัปเดตสำเร็จไปแล้ว
+        try {
+            PushNotificationService::sendToUser($order->user_id, $notifyTitle, $notifyBody, [
+                'type' => 'order_status',
+                'order_id' => (string) $id,
+                'order_number' => $order->order_number,
+                'status' => $request->status,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[OrderAdminController] ส่ง push แจ้งเตือนล้มเหลว: ' . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'อัปเดตสถานะคำสั่งซื้อเรียบร้อยแล้ว');
     }
