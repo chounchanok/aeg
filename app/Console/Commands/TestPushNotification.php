@@ -76,6 +76,9 @@ class TestPushNotification extends Command
                 $this->info("  ✅ สำเร็จ: {$shortToken} (message_id: {$r['message_id']})");
             } else {
                 $this->error("  ❌ ล้มเหลว: {$shortToken} — {$r['error']}");
+                if (isset($r['error_class'], $r['error_location'])) {
+                    $this->line("     (exception: {$r['error_class']} ที่ {$r['error_location']})");
+                }
             }
         }
 

@@ -65,7 +65,13 @@ class PushNotificationService
                     ->withNotification(FirebaseNotification::create($title, $body))
                     ->withData(array_map('strval', $data));
 
-                $messageId = $messaging->send($message);
+                $sendResult = $messaging->send($message);
+
+                // 🌟 SDK บางเวอร์ชันคืนค่าเป็น array (เช่น ['name' => 'projects/.../messages/...']) ไม่ใช่ string ตรงๆ
+                // ต้องแปลงเป็น string ก่อนเอาไป log/แสดงผล ไม่งั้นจะเจอ "Array to string conversion"
+                $messageId = is_array($sendResult)
+                    ? ($sendResult['name'] ?? json_encode($sendResult))
+                    : (string) $sendResult;
 
                 // 🌟 log ยืนยันตอนสำเร็จด้วย (ก่อนหน้านี้สำเร็จแล้วจะเงียบ ทำให้แยกไม่ออกว่า "ยังไม่ส่ง" หรือ "ส่งแล้วแค่ไม่บอก")
                 Log::info("[PushNotificationService] ส่ง push สำเร็จ user_id={$userId}, token=" . substr($token, 0, 12) . "..., message_id={$messageId}");
@@ -73,8 +79,22 @@ class PushNotificationService
                 $results[] = ['token' => $token, 'success' => true, 'message_id' => $messageId];
             } catch (\Throwable $e) {
                 // ไม่ throw ต่อ เพื่อไม่ให้ token เสีย/หมดอายุตัวเดียว ทำให้การส่งไปยังอุปกรณ์อื่นของ user คนเดียวกันหยุดไปด้วย
-                Log::warning("[PushNotificationService] ส่ง push ไปยัง token ล้มเหลว (user_id={$userId}): " . $e->getMessage());
-                $results[] = ['token' => $token, 'success' => false, 'error' => $e->getMessage()];
+                $errorClass = get_class($e);
+                $errorLocation = $e->getFile() . ':' . $e->getLine();
+
+                Log::warning("[PushNotificationService] ส่ง push ไปยัง token ล้มเหลว (user_id={$userId}): " . $e->getMessage(), [
+                    'exception_class' => $errorClass,
+                    'location' => $errorLocation,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                $results[] = [
+                    'token' => $token,
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'error_class' => $errorClass,
+                    'error_location' => $errorLocation,
+                ];
             }
         }
 
