@@ -224,6 +224,8 @@ class AuthController extends Controller
             'gender' => 'nullable|string',
             'birthday' => 'nullable|date',
             'password' => 'required|string|min:6|confirmed',
+            'company_type' => 'nullable|string',
+            'service_interesting' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // เพิ่มการตรวจสอบไฟล์รูปภาพ
         ]);
 
@@ -249,6 +251,8 @@ class AuthController extends Controller
                 'company' => $request->company,
                 'gender' => $request->gender,
                 'birthday' => $request->birthday,
+                'company_type' => $request->company_type,
+                'service_interesting' => $request->service_interesting,
                 'update_first' => now(),
                 'created_at' => now(),
             ]);

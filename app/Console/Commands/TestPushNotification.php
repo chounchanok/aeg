@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Services\PushNotificationService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * คำสั่งสำหรับทดสอบว่าระบบ Push Notification (FCM) เชื่อมต่อและส่งได้จริงหรือไม่
+ * โดยไม่ต้องไปไล่กดเปลี่ยนสถานะออเดอร์/งานซ่อมจริงในระบบ
+ *
+ * วิธีใช้: php artisan push:test {user_id}
+ * ตัวอย่าง: php artisan push:test 15
+ */
+class TestPushNotification extends Command
+{
+    protected $signature = 'push:test
+                            {user_id : ID ของ user (ในตาราง users) ที่จะทดสอบส่ง push ไปหา}
+                            {--title=ทดสอบการแจ้งเตือน : หัวข้อการแจ้งเตือนที่จะส่ง}
+                            {--body=นี่คือข้อความทดสอบจากระบบ AEG EASE CLUB : เนื้อหาการแจ้งเตือนที่จะส่ง}';
+
+    protected $description = 'ทดสอบส่ง Push Notification (FCM) ไปยัง device token ทั้งหมดของ user คนหนึ่ง เพื่อเช็คว่าตั้งค่า Firebase ถูกต้องหรือยัง';
+
+    public function handle(): int
+    {
+        $userId = (int) $this->argument('user_id');
+
+        // 1. เช็คการตั้งค่า Firebase ก่อน
+        $credentials = config('services.firebase.credentials');
+        $projectId = config('services.firebase.project_id');
+
+        $this->info('ตรวจสอบการตั้งค่า Firebase:');
+        $this->line('  FIREBASE_CREDENTIALS = ' . ($credentials ?: '(ยังไม่ได้ตั้งค่า)'));
+        $this->line('  ไฟล์มีอยู่จริงไหม     = ' . (($credentials && file_exists($credentials)) ? 'มี ✅' : 'ไม่มี/หาไม่เจอ ❌'));
+        $this->line('  FIREBASE_PROJECT_ID   = ' . ($projectId ?: '(ยังไม่ได้ตั้งค่า)'));
+        $this->line('  แพ็กเกจ kreait/firebase-php = ' . (class_exists(\Kreait\Firebase\Factory::class) ? 'ติดตั้งแล้ว ✅' : 'ยังไม่ได้ composer install/update ❌'));
+
+        // 2. เช็ค device token ของ user คนนี้
+        $tokens = DB::table('device_tokens')->where('user_id', $userId)->get();
+        $this->newLine();
+        $this->info("Device tokens ของ user_id={$userId}: พบ {$tokens->count()} รายการ");
+        foreach ($tokens as $t) {
+            $shortToken = substr($t->token, 0, 24) . '...';
+            $this->line("  - {$shortToken} (device_type: " . ($t->device_type ?? '-') . ", updated_at: {$t->updated_at})");
+        }
+
+        if ($tokens->isEmpty()) {
+            $this->warn('ไม่มี device token ของ user นี้เลย ต้องให้แอปมือถือ login (พร้อมแนบ FCM token) หรือเรียก POST /api/user/device-token ก่อน ถึงจะทดสอบส่งได้');
+            return self::FAILURE;
+        }
+
+        // 3. ยิงทดสอบจริง
+        $this->newLine();
+        $this->info('กำลังส่ง push notification ทดสอบ...');
+
+        PushNotificationService::sendToUser(
+            $userId,
+            $this->option('title'),
+            $this->option('body'),
+            ['test' => 'true']
+        );
+
+        $this->newLine();
+        $this->info('ส่งคำสั่งเรียบร้อยแล้ว — ตรวจผลจริงได้จาก:');
+        $this->line('  1. มือถือเครื่องนั้น ควรมี notification เด้งขึ้นมา');
+        $this->line('  2. เปิดไฟล์ storage/logs/laravel.log ดูว่ามีบรรทัดจาก [PushNotificationService] แจ้ง error/warning หรือไม่');
+        $this->line('     (ถ้าตั้งค่า Firebase ไม่ถูกต้อง หรือ token หมดอายุ จะขึ้น log ตรงนี้ ไม่ทำให้คำสั่งนี้ error)');
+
+        return self::SUCCESS;
+    }
+}
