@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Str;
+use App\Services\StaffNotificationService;
 
 class EcommerceController extends Controller
 {
@@ -89,7 +90,12 @@ class EcommerceController extends Controller
                 'point_earn' => $p->point_earn,
                 'is_contact_only' => (bool) $p->is_contact_only,
                 // 🌟 3. ส่งสถานะ Favorite กลับไป (คืนค่า true/false)
-                'is_favorite' => in_array($p->id, $favoriteProductIds), 
+                'is_favorite' => in_array($p->id, $favoriteProductIds),
+                // 🌟 ข้อมูลเพิ่มเติมสำหรับตัดสินใจซื้อ (เมลข้อ 3) — แสดงย่อในหน้ารายการได้
+                'brand' => $p->brand ?? null,
+                'model' => $p->model ?? null,
+                'stock_quantity' => $p->stock_quantity ?? null,
+                'in_stock' => is_null($p->stock_quantity) ? true : $p->stock_quantity > 0,
             ];
         });
 
@@ -227,10 +233,120 @@ class EcommerceController extends Controller
             'image_url' => count($images) > 0 ? $images[0] : null,
             'images' => $images, // 🌟 ส่ง Array กลับไป
             'point_earn' => $product->point_earn,
+            // 🌟 is_contact_only = true หมายถึงสินค้ากลุ่ม "ต้องสำรวจหน้างาน/ขอใบเสนอราคา" (เมลข้อ 3.2)
+            // mobile ควรใช้ค่านี้สลับปุ่ม "ซื้อเลย/ใส่ตะกร้า" (false) กับ "ขอใบเสนอราคา" (true)
+            // แทนการโชว์ปุ่ม "ติดต่อฝ่ายขาย" เหมือนกันทุกสินค้า
             'is_contact_only' => (bool) $product->is_contact_only,
+            // 🌟 ข้อมูลที่ QA ระบุว่า "จำเป็นต่อการตัดสินใจซื้อ" (เมลข้อ 3)
+            'brand' => $product->brand ?? null,
+            'model' => $product->model ?? null,
+            'stock_quantity' => $product->stock_quantity ?? null,
+            'in_stock' => is_null($product->stock_quantity) ? true : $product->stock_quantity > 0,
+            'warranty_months' => $product->warranty_months ?? null,
+            'return_policy' => $product->return_policy_th ?? null,
+            'shipping_fee' => $product->shipping_fee ?? null,
+            'install_fee' => $product->install_fee ?? null,
+            'compatible_with' => $product->compatible_with ?? null,
         ];
 
         return $this->successResponse($data, 'Product detail retrieved');
+    }
+
+    // ==========================================
+    // 3. ขอใบเสนอราคา (Request For Quote) — สำหรับสินค้าที่ is_contact_only = true
+    // ตามเมลข้อ 3.2: "สินค้าที่ต้องสำรวจหน้างาน" — ให้ลูกค้าระบุสถานที่ อัปโหลดภาพหน้างาน
+    // และเลือกวันนัดหมายสำรวจได้ พร้อมออกหมายเลขคำขอให้ติดตามสถานะ
+    // ==========================================
+    public function submitQuoteRequest(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'nullable|integer|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|max:20',
+            'customer_email' => 'nullable|email|max:255',
+            'site_address' => 'required|string',
+            'site_image' => 'nullable|file|image|max:10240', // สูงสุด 10MB
+            'preferred_survey_date' => 'nullable|date|after_or_equal:today',
+            'detail' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+
+        $siteImageUrl = null;
+        if ($request->hasFile('site_image')) {
+            $path = $request->file('site_image')->store('quote-requests', 'public');
+            $siteImageUrl = '/storage/' . $path;
+        }
+
+        // 🌟 สร้างหมายเลขคำขอ เช่น RFQ-20260904-0001 (นับตามจำนวนคำขอของวันนั้น)
+        $todayPrefix = 'RFQ-' . now()->format('Ymd');
+        $countToday = DB::table('quote_requests')->where('request_number', 'like', $todayPrefix . '%')->count();
+        $requestNumber = $todayPrefix . '-' . str_pad($countToday + 1, 4, '0', STR_PAD_LEFT);
+
+        $id = DB::table('quote_requests')->insertGetId([
+            'request_number' => $requestNumber,
+            'user_id' => $user?->id,
+            'product_id' => $request->product_id,
+            'quantity' => $request->quantity ?? 1,
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'customer_email' => $request->customer_email,
+            'site_address' => $request->site_address,
+            'site_image_url' => $siteImageUrl,
+            'preferred_survey_date' => $request->preferred_survey_date,
+            'detail' => $request->detail,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 🌟 แจ้งเตือนแผนก Marketing ที่ดูแลสินค้า/บริการ โดยอัตโนมัติ (เมล QA ข้อ 5)
+        StaffNotificationService::notifyRole(
+            'marketing',
+            'มีคำขอใบเสนอราคาใหม่',
+            "เลขที่ {$requestNumber} จาก {$request->customer_name}",
+            '/admin/quote-requests/' . $id,
+            'quote_request'
+        );
+
+        return $this->successResponse([
+            'id' => $id,
+            'request_number' => $requestNumber,
+            'status' => 'pending',
+        ], 'ส่งคำขอใบเสนอราคาเรียบร้อยแล้ว ทีมงานจะติดต่อกลับเพื่อนัดสำรวจหน้างาน');
+    }
+
+    public function getMyQuoteRequests(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $requests = DB::table('quote_requests')
+            ->leftJoin('products', 'quote_requests.product_id', '=', 'products.id')
+            ->where('quote_requests.user_id', $userId)
+            ->select('quote_requests.*', 'products.name_th as product_name')
+            ->orderBy('quote_requests.created_at', 'desc')
+            ->get();
+
+        return $this->successResponse($requests, 'Quote requests retrieved successfully');
+    }
+
+    public function getQuoteRequestDetail(Request $request, $id)
+    {
+        $userId = $request->user()->id;
+
+        $quote = DB::table('quote_requests')
+            ->leftJoin('products', 'quote_requests.product_id', '=', 'products.id')
+            ->where('quote_requests.id', $id)
+            ->where('quote_requests.user_id', $userId)
+            ->select('quote_requests.*', 'products.name_th as product_name')
+            ->first();
+
+        if (!$quote) {
+            return $this->errorResponse('Quote request not found', 404);
+        }
+
+        return $this->successResponse($quote, 'Quote request detail retrieved');
     }
 
     // ==========================================
@@ -842,6 +958,17 @@ class EcommerceController extends Controller
             }
 
             DB::commit();
+
+            // 🌟 แจ้งเตือนแผนก Security และบัญชี ที่ดูแลออเดอร์ โดยอัตโนมัติ (เมล QA ข้อ 5)
+            // — จุดนี้การันตีว่าเป็นครั้งแรกที่ออเดอร์นี้เปลี่ยนเป็น completed เท่านั้น (เช็ค status
+            // เดิมไปแล้วด้านบนก่อนเข้า transaction กันแจ้งซ้ำถ้า callback ยิงเข้ามาซ้ำ)
+            StaffNotificationService::notifyRoles(
+                ['security_admin', 'accounting'],
+                'มีคำสั่งซื้อใหม่ที่ชำระเงินแล้ว',
+                "คำสั่งซื้อ #{$order->order_number} ยอดรวม " . number_format($order->total_amount ?? 0, 2) . ' บาท',
+                '/admin/orders/' . $order->id,
+                'order'
+            );
 
             // 🌟 ส่ง $responseData กลับไปให้แอปพลิเคชันเพื่อนำไปวาดหน้า UI ตามภาพ
             return $this->successResponse($responseData, 'ยืนยันการชำระเงินสำเร็จ และเพิ่มแพ็กเกจให้ลูกค้าเรียบร้อยแล้ว');

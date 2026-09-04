@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ใช้เมธอด alias เพื่อลงทะเบียนชื่อย่อให้ Middleware
         $middleware->alias([
             'admin' => \App\Http\Middleware\CheckAdminRole::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
         $middleware->preventRequestsDuringMaintenance(except: [
             'api/*', // ยอมให้แอปฝั่งช่างและลูกค้าเข้า API ได้ปกติ

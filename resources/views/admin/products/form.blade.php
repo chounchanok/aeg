@@ -67,6 +67,48 @@
                         </div>
                     </div>
 
+                    <div class="mt-4 border-t border-slate-200/60 pt-4">
+                        <label class="form-label font-medium text-slate-500 mb-2">ข้อมูลเพิ่มเติมสำหรับหน้ารายละเอียดสินค้า (ช่วยลูกค้าตัดสินใจซื้อ)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="form-label">ยี่ห้อ (Brand)</label>
+                                <input name="brand" type="text" class="form-control" value="{{ $product->brand ?? '' }}">
+                            </div>
+                            <div>
+                                <label class="form-label">รุ่น (Model)</label>
+                                <input name="model" type="text" class="form-control" value="{{ $product->model ?? '' }}">
+                            </div>
+                            <div>
+                                <label class="form-label">จำนวนคงเหลือ (เว้นว่าง = ไม่จำกัด/ไม่นับสต็อก)</label>
+                                <input name="stock_quantity" type="number" min="0" class="form-control" value="{{ $product->stock_quantity ?? '' }}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                            <div>
+                                <label class="form-label">ระยะเวลารับประกัน (เดือน)</label>
+                                <input name="warranty_months" type="number" min="0" class="form-control" value="{{ $product->warranty_months ?? '' }}">
+                            </div>
+                            <div>
+                                <label class="form-label">ค่าจัดส่ง (บาท)</label>
+                                <input name="shipping_fee" type="number" step="0.01" min="0" class="form-control" value="{{ $product->shipping_fee ?? '' }}">
+                            </div>
+                            <div>
+                                <label class="form-label">ค่าติดตั้ง (บาท)</label>
+                                <input name="install_fee" type="number" step="0.01" min="0" class="form-control" value="{{ $product->install_fee ?? '' }}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <label class="form-label">เงื่อนไขการคืนหรือเปลี่ยนสินค้า</label>
+                                <textarea name="return_policy_th" class="form-control" rows="3">{{ $product->return_policy_th ?? '' }}</textarea>
+                            </div>
+                            <div>
+                                <label class="form-label">อุปกรณ์ที่ใช้งานร่วมกันได้</label>
+                                <textarea name="compatible_with" class="form-control" rows="3" placeholder="เช่น ใช้ร่วมกับกล่องควบคุมรุ่น SP55/SP68">{{ $product->compatible_with ?? '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     @if(isset($product) && isset($productImages) && count($productImages) > 0)
                     <div class="mt-4 border-t border-slate-200/60 pt-4">
                         <label class="form-label font-medium text-slate-500 mb-2">รูปภาพปัจจุบันในระบบ</label>

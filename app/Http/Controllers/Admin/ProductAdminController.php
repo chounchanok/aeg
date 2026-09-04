@@ -41,6 +41,14 @@ class ProductAdminController extends Controller
             'description_en' => 'nullable|string',
             'type' => 'required|numeric',
             'price' => 'required|numeric',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'brand' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'warranty_months' => 'nullable|integer|min:0',
+            'return_policy_th' => 'nullable|string',
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'install_fee' => 'nullable|numeric|min:0',
+            'compatible_with' => 'nullable|string',
             'images' => 'nullable|array', // เปลี่ยนจาก image เป็น images (Array)
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480' // ตรวจสอบไฟล์ใน Array
         ]);
@@ -60,6 +68,15 @@ class ProductAdminController extends Controller
                 'image_url' => null, // คอลัมน์เก่าปล่อยว่าง หรือใส่รูปแรกเป็น Cover ได้ด้านล่าง
                 'is_contact_only' => $request->has('is_contact_only'),
                 'is_active' => $request->has('is_active'),
+                // 🌟 ข้อมูลเพิ่มเติมสำหรับตัดสินใจซื้อ (เมลข้อ 3)
+                'stock_quantity' => $request->stock_quantity,
+                'brand' => $request->brand,
+                'model' => $request->model,
+                'warranty_months' => $request->warranty_months,
+                'return_policy_th' => $request->return_policy_th,
+                'shipping_fee' => $request->shipping_fee,
+                'install_fee' => $request->install_fee,
+                'compatible_with' => $request->compatible_with,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -127,6 +144,14 @@ class ProductAdminController extends Controller
             'description_en' => 'nullable|string',
             'type' => 'required|numeric',
             'price' => 'required|numeric',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'brand' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'warranty_months' => 'nullable|integer|min:0',
+            'return_policy_th' => 'nullable|string',
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'install_fee' => 'nullable|numeric|min:0',
+            'compatible_with' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480'
         ]);
@@ -145,6 +170,15 @@ class ProductAdminController extends Controller
                 'point_earn' => $request->point_earn ?? 0,
                 'is_contact_only' => $request->has('is_contact_only'),
                 'is_active' => $request->has('is_active'),
+                // 🌟 ข้อมูลเพิ่มเติมสำหรับตัดสินใจซื้อ (เมลข้อ 3)
+                'stock_quantity' => $request->stock_quantity,
+                'brand' => $request->brand,
+                'model' => $request->model,
+                'warranty_months' => $request->warranty_months,
+                'return_policy_th' => $request->return_policy_th,
+                'shipping_fee' => $request->shipping_fee,
+                'install_fee' => $request->install_fee,
+                'compatible_with' => $request->compatible_with,
                 'updated_at' => now()
             ]);
 
@@ -191,6 +225,30 @@ class ProductAdminController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 🌟 เพิ่ม method นี้ที่ขาดหายไป — route resource ('admin.products.destroy') ประกาศไว้อยู่แล้ว
+     * แต่ไม่เคยมี method จริงมาก่อน (จะ error ถ้าเรียกใช้) แก้พร้อมกันตอนขยาย schema สินค้า
+     */
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $images = DB::table('product_images')->where('product_id', $id)->get();
+            foreach ($images as $img) {
+                $relativePath = str_replace(url('storage/'), '', $img->image_url);
+                Storage::disk('public')->delete($relativePath);
+            }
+            DB::table('product_images')->where('product_id', $id)->delete();
+            DB::table('products')->where('id', $id)->delete();
+
+            DB::commit();
+            return redirect()->route('admin.products')->with('success', 'ลบสินค้า/บริการเรียบร้อยแล้ว');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการลบ: ' . $e->getMessage());
         }
     }
 }

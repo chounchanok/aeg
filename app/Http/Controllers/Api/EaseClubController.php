@@ -154,8 +154,21 @@ class EaseClubController extends Controller
                 ->exists(); // ใช้ exists() จะไวกว่า first() เพราะคืนค่า true/false ทันที
 
             $reward->is_favorited = $isFavorited;
+
+            // 🌟 แนบข้อมูลคะแนนของผู้ใช้คนนี้ไปด้วย ตามที่ QA ขอ (ข้อ 2 ของเมล) — คะแนนคงเหลือ /
+            // คะแนนที่ยังขาด / สถานะแลกได้หรือไม่ — เพื่อให้ mobile แสดงผลได้ถูกต้องโดยไม่ต้องยิง
+            // ไปดึงจาก endpoint อื่นแยกกัน (getUserInfo) ซึ่งเสี่ยงข้อมูลไม่ sync กัน
+            $wallet = DB::table('customer_wallets')->where('user_id', $userId)->first();
+            $currentPoints = $wallet->current_points ?? 0;
+
+            $reward->current_points = $currentPoints;
+            $reward->points_missing = max(0, $reward->points_required - $currentPoints);
+            $reward->can_redeem = $currentPoints >= $reward->points_required;
         } else {
             $reward->is_favorited = false;
+            $reward->current_points = null;
+            $reward->points_missing = null;
+            $reward->can_redeem = false;
         }
 
         return $this->successResponse($reward, 'Reward detail retrieved');
@@ -176,8 +189,12 @@ class EaseClubController extends Controller
 
         if (!$reward) return $this->errorResponse('ไม่พบของรางวัลนี้', 404);
 
-        $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-        if (!$wallet || $wallet->current_points < $reward->points_required) {
+        // 🌟 เช็คคะแนนแบบคร่าวๆ ก่อน (นอก transaction) เพื่อตอบ error กลับเร็วๆ ถ้าคะแนนไม่พอตั้งแต่แรก
+        // อยู่แล้ว โดยไม่ต้องเปิด transaction เปล่าๆ — การเช็ค "ตัวจริง" ที่ป้องกันคะแนนติดลบ/แลกซ้ำ
+        // จากการกดยืนยันซ้ำเร็วๆ (double-tap) หรือยิง request พร้อมกัน จะอยู่หลัง lockForUpdate()
+        // ด้านล่างอีกที ตามที่ QA เตือนไว้ (ข้อ 2 ของเมล: "ป้องกันการกดยืนยันซ้ำ")
+        $walletPreCheck = DB::table('customer_wallets')->where('user_id', $user->id)->first();
+        if (!$walletPreCheck || $walletPreCheck->current_points < $reward->points_required) {
             return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
         }
 
@@ -196,6 +213,16 @@ class EaseClubController extends Controller
 
         DB::beginTransaction();
         try {
+            // 🌟 ล็อกแถว wallet ของ user คนนี้ไว้ก่อน (SELECT ... FOR UPDATE) กันไม่ให้ request ที่ยิง
+            // เข้ามาพร้อมกัน (เช่น กดยืนยันซ้ำเร็วๆ) อ่านคะแนนเดิมพร้อมกันแล้วผ่านเงื่อนไขทั้งคู่
+            // จนคะแนนติดลบหรือแลกของรางวัลซ้ำได้ — แล้วเช็คคะแนน "รอบสุดท้าย" อีกครั้งหลัง lock
+            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->lockForUpdate()->first();
+
+            if (!$wallet || $wallet->current_points < $reward->points_required) {
+                DB::rollBack();
+                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
+            }
+
             // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
             DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
 

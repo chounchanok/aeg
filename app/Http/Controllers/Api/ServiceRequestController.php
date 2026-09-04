@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Str;
+use App\Services\StaffNotificationService;
 
 class ServiceRequestController extends Controller
 {
@@ -63,6 +64,16 @@ class ServiceRequestController extends Controller
             DB::commit();
 
             $newRequest = DB::table('service_requests')->where('id', $requestId)->first();
+
+            // 🌟 แจ้งเตือนแผนก Security ที่ดูแลงานแจ้งซ่อมโดยอัตโนมัติ (เมล QA ข้อ 5)
+            StaffNotificationService::notifyRole(
+                'security_admin',
+                'มีรายการแจ้งซ่อมใหม่',
+                "เลขที่ {$newRequest->ticket_number} — " . \Illuminate\Support\Str::limit($request->problem_description, 100),
+                '/admin/service-requests/' . $requestId,
+                'service_request'
+            );
+
             return $this->successResponse($newRequest, 'บันทึกรายการแจ้งซ่อมสำเร็จ');
         } catch (\Exception $e) {
             DB::rollBack();

@@ -226,13 +226,22 @@ Route::middleware('auth')->group(function() {
         Route::get('/home', [DashboardAdminController::class, 'index'])->name('admin.home');
         Route::get('/admin/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
-        // --- Service Requests ---
-        Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
-        Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
-        Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');
-        Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
+        // --- แจ้งเตือนภายในระบบของแผนกตัวเอง (ไม่ผูก permission — ทุกแผนกดูของตัวเองได้เสมอ) ---
+        Route::prefix('admin/staff-notifications')->name('admin.staff-notifications.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\StaffNotificationAdminController::class, 'index'])->name('index');
+            Route::get('/unread-count', [\App\Http\Controllers\Admin\StaffNotificationAdminController::class, 'unreadCount'])->name('unread-count');
+            Route::post('/{id}/read', [\App\Http\Controllers\Admin\StaffNotificationAdminController::class, 'markRead'])->name('read');
+        });
 
-        // --- Customers ---
+        // --- Service Requests (RBAC: security_admin) ---
+        Route::middleware('permission:service_requests.manage')->group(function() {
+            Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
+            Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
+            Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');
+            Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
+        });
+
+        // --- Customers (RBAC: ดูได้ทุก role staff — ไม่ผูก permission เพิ่ม แค่ middleware 'admin' พอ) ---
         // ⚠️ ต้องอยู่ก่อน '/admin/customers/{id}' ไม่งั้น Laravel จะจับคำว่า "points-import" เป็นค่า {id} แทน
         Route::get('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportForm'])->name('admin.customers.points-import');
         Route::post('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportStore'])->name('admin.customers.points-import.store');
@@ -249,50 +258,59 @@ Route::middleware('auth')->group(function() {
         // 🌟 ใช้คูปองแทนลูกค้า (แอดมินกดปิดโค้ดที่ยัง active ให้กลายเป็น used)
         Route::post('/admin/customers/{id}/reward-codes/{codeId}/redeem', [CustomerAdminController::class, 'markRewardCodeUsed'])->name('admin.customers.reward-codes.redeem');
 
-        // --- Products ---
-        Route::get('/admin/products', [ProductAdminController::class, 'index'])->name('admin.products');
-        Route::resource('admin/products', ProductAdminController::class)->names([
-            'index'   => 'admin.products',
-            'create'  => 'admin.products.create',
-            'store'   => 'admin.products.store',
-            'edit'    => 'admin.products.edit',
-            'update'  => 'admin.products.update',
-            'destroy' => 'admin.products.destroy',
-        ]);
+        // --- Products (RBAC: marketing) ---
+        Route::middleware('permission:products.manage')->group(function() {
+            Route::resource('admin/products', ProductAdminController::class)->names([
+                'index'   => 'admin.products',
+                'create'  => 'admin.products.create',
+                'store'   => 'admin.products.store',
+                'edit'    => 'admin.products.edit',
+                'update'  => 'admin.products.update',
+                'destroy' => 'admin.products.destroy',
+            ]);
+        });
 
-        // --- Notifications (แจ้งเตือน) ---
-        Route::prefix('admin/notifications')->name('admin.notifications.')->group(function() {
+        // --- Notifications (แจ้งเตือน) (RBAC: marketing) ---
+        Route::prefix('admin/notifications')->name('admin.notifications.')->middleware('permission:notifications.manage')->group(function() {
             Route::get('/', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'create'])->name('create');
             Route::post('/store', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'store'])->name('store');
             Route::delete('/{id}/delete', [\App\Http\Controllers\Admin\NotificationAdminController::class, 'destroy'])->name('delete');
         });
 
-        // --- Support Chats (แชทติดต่อสอบถามทั่วไป) ---
-        Route::prefix('admin/support-chats')->name('admin.support-chats.')->group(function() {
+        // --- Support Chats (แชทติดต่อสอบถามทั่วไป) (RBAC: sales_admin, security_admin, marketing, insurance_admin) ---
+        Route::prefix('admin/support-chats')->name('admin.support-chats.')->middleware('permission:support_chats.reply')->group(function() {
             Route::get('/', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'index'])->name('index');
             // รับค่า user_id และ topic ผ่าน URL เพื่อดูประวัติแชทเจาะจงเรื่องนั้นๆ
             Route::get('/{user_id}', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'show'])->name('show');
             Route::post('/{user_id}/reply', [\App\Http\Controllers\Admin\SupportChatAdminController::class, 'reply'])->name('reply');
         });
 
-        // --- Staff ---
-        Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
-        Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store');
+        // --- Staff (RBAC: it — จัดการรายชื่อพนักงาน+มอบ role) ---
+        Route::middleware('permission:staff.manage')->group(function() {
+            Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
+            Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store');
+            Route::get('/admin/staff/{id}/edit', [StaffAdminController::class, 'edit'])->name('admin.staff.edit');
+            Route::post('/admin/staff/{id}/update', [StaffAdminController::class, 'update'])->name('admin.staff.update');
+        });
 
-        // --- Orders ---
-        Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
-        Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
-        Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+        // --- Orders (RBAC: security_admin, accounting) ---
+        Route::middleware('permission:orders.manage')->group(function() {
+            Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
+            Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
+            Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+        });
 
-        // --- Service Categories ---
-        Route::get('/admin/service-categories', [ServiceCategoryAdminController::class, 'index'])->name('admin.service-categories');
-        Route::post('/admin/service-categories', [ServiceCategoryAdminController::class, 'store'])->name('admin.service-categories.store');
-        Route::post('/admin/service-categories/{id}/update', [ServiceCategoryAdminController::class, 'update'])->name('admin.service-categories.update');
-        Route::post('/admin/service-categories/{id}/delete', [ServiceCategoryAdminController::class, 'destroy'])->name('admin.service-categories.delete');
+        // --- Service Categories (RBAC: marketing) ---
+        Route::middleware('permission:service_categories.manage')->group(function() {
+            Route::get('/admin/service-categories', [ServiceCategoryAdminController::class, 'index'])->name('admin.service-categories');
+            Route::post('/admin/service-categories', [ServiceCategoryAdminController::class, 'store'])->name('admin.service-categories.store');
+            Route::post('/admin/service-categories/{id}/update', [ServiceCategoryAdminController::class, 'update'])->name('admin.service-categories.update');
+            Route::post('/admin/service-categories/{id}/delete', [ServiceCategoryAdminController::class, 'destroy'])->name('admin.service-categories.delete');
+        });
 
-        // --- CMS ---
-        Route::prefix('admin/cms')->name('admin.cms.')->group(function() {
+        // --- CMS (RBAC: marketing) ---
+        Route::prefix('admin/cms')->name('admin.cms.')->middleware('permission:cms.manage')->group(function() {
             Route::get('/banners', [CmsAdminController::class, 'banners'])->name('banners');
             Route::post('/banners', [CmsAdminController::class, 'storeBanner'])->name('banners.store');
             Route::post('/banners/{id}/update', [CmsAdminController::class, 'updateBanner'])->name('banners.update');
@@ -314,23 +332,30 @@ Route::middleware('auth')->group(function() {
             Route::post('/ease-club/rewards/{id}/delete', [CmsAdminController::class, 'deleteReward'])->name('ease-club.rewards.delete');
         });
 
-        // จัดการตู้เซฟ (Smart Lockers)
-        Route::get('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'index'])->name('admin.smart-lockers.index');
-        Route::post('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'store'])->name('admin.smart-lockers.store');
-        Route::post('/admin/smart-lockers/{id}/update', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'update'])->name('admin.smart-lockers.update');
-        Route::post('/admin/smart-lockers/{id}/delete', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'destroy'])->name('admin.smart-lockers.delete');
+        // จัดการตู้เซฟ (Smart Lockers) (RBAC: smart_locker)
+        Route::middleware('permission:smart_lockers.manage')->group(function() {
+            Route::get('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'index'])->name('admin.smart-lockers.index');
+            Route::post('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'store'])->name('admin.smart-lockers.store');
+            Route::post('/admin/smart-lockers/{id}/update', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'update'])->name('admin.smart-lockers.update');
+            Route::post('/admin/smart-lockers/{id}/delete', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'destroy'])->name('admin.smart-lockers.delete');
+        });
 
-        // 🌟 ย้ายมาวางตรงนี้ครับ (ให้ระบบมันสร้าง prefix คำว่า admin ให้อัตโนมัติ)
-        Route::resource('admin/insurances', InsuranceAdminController::class)->names([
-            'index'   => 'admin.insurances.index',
-            'create'  => 'admin.insurances.create',
-            'store'   => 'admin.insurances.store',
-            'edit'    => 'admin.insurances.edit',
-            'update'  => 'admin.insurances.update',
-            'destroy' => 'admin.insurances.destroy',
-        ]);
-        // เพิ่มในฝั่ง Backend (ใน group admin):
-        Route::get('/admin/reviews', [ReviewAdminController::class, 'index'])->name('admin.reviews');
+        // ข้อมูลประกันภัย (RBAC: insurance_admin)
+        Route::middleware('permission:insurances.manage')->group(function() {
+            Route::resource('admin/insurances', InsuranceAdminController::class)->names([
+                'index'   => 'admin.insurances.index',
+                'create'  => 'admin.insurances.create',
+                'store'   => 'admin.insurances.store',
+                'edit'    => 'admin.insurances.edit',
+                'update'  => 'admin.insurances.update',
+                'destroy' => 'admin.insurances.destroy',
+            ]);
+        });
+
+        // รีวิวจากลูกค้า (RBAC: จัดกลุ่มร่วมกับ CMS -> marketing)
+        Route::middleware('permission:cms.manage')->group(function() {
+            Route::get('/admin/reviews', [ReviewAdminController::class, 'index'])->name('admin.reviews');
+        });
 
     });
 

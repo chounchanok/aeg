@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponseTrait;
 use App\Services\FaqBotService;
+use App\Services\StaffNotificationService;
 
 class SupportController extends Controller
 {
@@ -241,40 +242,139 @@ class SupportController extends Controller
     }
 
     // ==========================================
-    // 4. ติดต่อแอดมิน (Contact Admin Form อัปเดตใหม่ตาม UI)
+    // 4. ติดต่อแอดมิน / ฝ่ายขาย (Contact Admin Form)
+    // ปรับปรุงตามเมล QA ข้อ 6: auto-fill จากข้อมูลสมาชิก, แยกที่อยู่เป็นฟิลด์ย่อย,
+    // แนบสินค้า/จำนวนที่สนใจ, แนบรูปสถานที่ติดตั้ง, ออกหมายเลขคำขอให้ติดตามสถานะได้
     // ==========================================
     public function submitContactAdmin(Request $request)
     {
-        // 1. ตรวจสอบข้อมูลให้ตรงกับ UI ใหม่
+        // 🌟 ฟิลด์ที่ auto-fill ได้จากข้อมูลสมาชิกทำให้เป็น nullable ตรงนี้ก่อน แล้วไปบังคับ
+        // (ว่าต้องไม่ว่างเปล่าหลัง fallback) อีกทีด้านล่าง — เพื่อลดการกรอกซ้ำตามที่ QA ขอ
         $request->validate([
-            'topic' => 'required|string', // เลือก ธุรกิจ หรือ ส่วนตัว
-            'user_type' => 'required|in:business,personal', // เลือก ธุรกิจ หรือ ส่วนตัว
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'address_full' => 'required|string', // จังหวัด, เขต, แขวง, รหัสไปรษณีย์
-            'email' => 'required|email',
-            'phone' => 'required|string',
+            'topic' => 'required|string',
+            'user_type' => 'required|in:business,personal',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
+            'address_full' => 'nullable|string', // เผื่อแอปเวอร์ชันเก่ายังส่งที่อยู่แบบรวมช่องเดียวมา
+            'province' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
+            'subdistrict' => 'nullable|string|max:100',
+            'zipcode' => 'nullable|string|max:10',
             'company_name' => 'nullable|string', // จำเป็นถ้าเป็น business
-            'preferred_contact_time' => 'nullable|string'
+            'preferred_contact_time' => 'nullable|string',
+            'product_id' => 'nullable|integer|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'detail' => 'nullable|string',
+            'image' => 'nullable|file|image|max:10240', // สูงสุด 10MB
         ]);
 
-        // 2. บันทึกลง Database (ใช้ตารางใหม่ contact_admin_requests)
-        DB::table('contact_admin_requests')->insert([
+        $user = auth('sanctum')->user();
+
+        // 🌟 Auto-fill จากข้อมูลสมาชิก — ใช้ค่าที่แอปส่งมาก่อนเสมอ ถ้าไม่ส่งมาค่อย fallback ไปดึงจากโปรไฟล์
+        $firstName = $request->first_name;
+        $lastName = $request->last_name;
+        $email = $request->email;
+        $phone = $request->phone;
+        $province = $request->province;
+        $district = $request->district;
+        $subdistrict = $request->subdistrict;
+        $zipcode = $request->zipcode;
+
+        if ($user) {
+            $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
+            $firstName = $firstName ?: ($profile->first_name ?? null);
+            $lastName = $lastName ?: ($profile->last_name ?? null);
+            $email = $email ?: $user->email;
+            $phone = $phone ?: $user->phone;
+
+            // ถ้ายังไม่ได้ระบุที่อยู่มาเองเลย ลองดึงที่อยู่ default ของสมาชิกมาเติมให้
+            if (empty($province) && empty($request->address_full)) {
+                $defaultAddress = DB::table('customer_addresses')
+                    ->where('user_id', $user->id)
+                    ->where('is_default', true)
+                    ->first();
+
+                if ($defaultAddress) {
+                    $province = $defaultAddress->province;
+                    $district = $defaultAddress->district;
+                    $subdistrict = $defaultAddress->subdistrict;
+                    $zipcode = $defaultAddress->zipcode;
+                }
+            }
+        }
+
+        // หลัง fallback แล้ว ข้อมูลที่จำเป็นต่อการติดต่อกลับต้องไม่ว่างเปล่า
+        if (empty($firstName) || empty($lastName) || empty($email) || empty($phone)) {
+            return $this->errorResponse('กรุณากรอกชื่อ นามสกุล อีเมล และเบอร์โทรศัพท์ให้ครบถ้วน', 422);
+        }
+
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('contact-admin', 'public');
+            $imageUrl = '/storage/' . $path;
+        }
+
+        // 🌟 ออกหมายเลขคำขอ เช่น CONTACT-20260904-0001 ให้ลูกค้าติดตามสถานะได้ (เมลข้อ 6)
+        $todayPrefix = 'CONTACT-' . now()->format('Ymd');
+        $countToday = DB::table('contact_admin_requests')->where('request_number', 'like', $todayPrefix . '%')->count();
+        $requestNumber = $todayPrefix . '-' . str_pad($countToday + 1, 4, '0', STR_PAD_LEFT);
+
+        $id = DB::table('contact_admin_requests')->insertGetId([
             // ถ้า User ล็อกอินอยู่ จะเก็บ ID ให้ด้วย ถ้าไม่ล็อกอินก็เป็น null
-            'user_id' => auth('sanctum')->check() ? auth('sanctum')->id() : null,
+            'user_id' => $user?->id,
+            'request_number' => $requestNumber,
             'topic' => $request->topic,
             'user_type' => $request->user_type,
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'address_full' => $request->address_full,
-            'email' => $request->email,
-            'phone' => $request->phone,
+            'province' => $province,
+            'district' => $district,
+            'subdistrict' => $subdistrict,
+            'zipcode' => $zipcode,
+            'email' => $email,
+            'phone' => $phone,
             'company_name' => $request->user_type === 'business' ? $request->company_name : null,
             'preferred_contact_time' => $request->preferred_contact_time,
+            'product_id' => $request->product_id,
+            'quantity' => $request->quantity,
+            'detail' => $request->detail,
+            'image_url' => $imageUrl,
+            'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
-        return $this->successResponse(null, 'Contact form submitted successfully');
+        // 🌟 แจ้งเตือนแผนก Sales Admin โดยอัตโนมัติ (เมล QA ข้อ 5)
+        StaffNotificationService::notifyRole(
+            'sales_admin',
+            'มีคำขอติดต่อฝ่ายขายใหม่',
+            "เลขที่ {$requestNumber} จาก {$firstName} {$lastName} (หัวข้อ: {$request->topic})",
+            '/admin/contact-requests/' . $id,
+            'contact_admin'
+        );
+
+        return $this->successResponse([
+            'id' => $id,
+            'request_number' => $requestNumber,
+            'status' => 'pending',
+        ], 'ส่งข้อมูลติดต่อฝ่ายขายเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด');
+    }
+
+    /**
+     * ประวัติคำขอติดต่อฝ่ายขายของสมาชิกคนนี้ ใช้สำหรับติดตามสถานะ (เมลข้อ 6)
+     */
+    public function getMyContactRequests(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $requests = DB::table('contact_admin_requests')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->successResponse($requests, 'Contact requests retrieved successfully');
     }
 }

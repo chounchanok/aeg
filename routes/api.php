@@ -109,6 +109,12 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     Route::post('/addresses/{id}/update', [EcommerceController::class, 'updateAddress']);
     Route::get('/orders/{id}', [EcommerceController::class, 'getOrderDetail']);
 
+    // 🌟 ระบบขอใบเสนอราคา (RFQ) — สำหรับสินค้าที่ต้องสำรวจหน้างานก่อน (is_contact_only = true)
+    // ตามเมลข้อ 3.2 (แยกจาก /support-chat/bot/leads ที่เป็นฟอร์มติดต่อทั่วไป)
+    Route::post('/quote-requests', [EcommerceController::class, 'submitQuoteRequest']);
+    Route::get('/quote-requests', [EcommerceController::class, 'getMyQuoteRequests']);
+    Route::get('/quote-requests/{id}', [EcommerceController::class, 'getQuoteRequestDetail']);
+
     // ระบบ Checkout และ Payment
     Route::post('/checkout', [EcommerceController::class, 'checkout']);
     Route::post('/buy-now', [EcommerceController::class, 'buyNow']); // 🌟 เพิ่มตรงนี้
@@ -192,6 +198,7 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
 
     // --- ติดต่อเรา (Contact Admin Email) ---
     Route::post('/contact-admin', [SupportController::class, 'submitContactAdmin']);
+    Route::get('/contact-admin/my-requests', [SupportController::class, 'getMyContactRequests']);
 
     // --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
     Route::get('/point-history', [ProfileController::class, 'getPointHistory']);

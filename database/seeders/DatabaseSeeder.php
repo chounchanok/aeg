@@ -173,7 +173,9 @@ class DatabaseSeeder extends Seeder
             Phase2Seeder::class, // Products & Cart
             Phase3Seeder::class, // Notifications & Device Token
             Phase4Seeder::class, // Service Requests (ที่มีรูปภาพ)
-            Phase5Seeder::class  // FAQs & Chats
+            Phase5Seeder::class,  // FAQs & Chats
+            RolePermissionSeeder::class, // 🌟 RBAC: สร้างแผนก (roles) และสิทธิ์ (permissions)
+            StaffTestSeeder::class,      // 🌟 RBAC: user ทดสอบ 1 คนต่อแผนก สำหรับทดสอบสิทธิ์
         ]);
     }
 }

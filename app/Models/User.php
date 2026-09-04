@@ -55,4 +55,75 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // ==========================================
+    // RBAC (Role-Based Access Control) — ระบบสิทธิ์ละเอียดระดับโมดูล
+    // แยกจากคอลัมน์ 'role' เดิม (customer/technician/admin/super_admin/content_admin)
+    // ซึ่งยังใช้แค่แยก "ลูกค้า vs พนักงาน" เหมือนเดิม ไม่กระทบกัน
+    // ==========================================
+
+    /**
+     * บทบาท (role) ทั้งหมดที่ user คนนี้สวมอยู่ (สวมได้พร้อมกันหลายอัน)
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(\App\Models\Role::class, 'user_roles', 'user_id', 'role_id')->withTimestamps();
+    }
+
+    /**
+     * เช็คว่า user มี role (key) นี้อยู่ไหม เช่น $user->hasRole('security_admin')
+     */
+    public function hasRole(string $roleKey): bool
+    {
+        return $this->roles()->where('key', $roleKey)->exists();
+    }
+
+    /**
+     * เช็คว่า user มีสิทธิ์ (permission key) นี้หรือไม่ เช่น $user->hasPermission('products.manage')
+     * role ที่ตั้ง is_full_access = true (เช่น 'it') จะผ่านทุก permission โดยอัตโนมัติ
+     */
+    public function hasPermission(string $permissionKey): bool
+    {
+        $roleIds = $this->roles()->pluck('roles.id');
+
+        if ($roleIds->isEmpty()) {
+            return false;
+        }
+
+        // role แบบ full access (IT) ให้ผ่านทุกอย่างโดยไม่ต้อง map permission ทีละอัน
+        $hasFullAccess = \App\Models\Role::whereIn('id', $roleIds)->where('is_full_access', true)->exists();
+        if ($hasFullAccess) {
+            return true;
+        }
+
+        return \App\Models\Permission::where('key', $permissionKey)
+            ->whereHas('roles', function ($q) use ($roleIds) {
+                $q->whereIn('roles.id', $roleIds);
+            })
+            ->exists();
+    }
+
+    /**
+     * รายการ permission key ทั้งหมดที่ user มี (ใช้สำหรับ filter เมนู sidebar)
+     * คืนค่า ['*'] ถ้า user มี role แบบ full access (IT)
+     */
+    public function permissionKeys(): array
+    {
+        $roleIds = $this->roles()->pluck('roles.id');
+
+        if ($roleIds->isEmpty()) {
+            return [];
+        }
+
+        $hasFullAccess = \App\Models\Role::whereIn('id', $roleIds)->where('is_full_access', true)->exists();
+        if ($hasFullAccess) {
+            return ['*'];
+        }
+
+        return \App\Models\Permission::whereHas('roles', function ($q) use ($roleIds) {
+                $q->whereIn('roles.id', $roleIds);
+            })
+            ->pluck('key')
+            ->toArray();
+    }
 }
