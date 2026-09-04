@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\ApiResponseTrait;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
@@ -56,6 +57,7 @@ class ProfileController extends Controller
         $request->validate([
             'first_name' => 'nullable|string',
             'last_name' => 'nullable|string',
+            'email' => 'required|string|email',
             'phone' => 'nullable|string',
             'gender' => 'nullable|string',
             'birthday' => 'nullable|date',
@@ -88,6 +90,8 @@ class ProfileController extends Controller
                 ['user_id' => $user->id],
                 $updateData
             );
+
+        User::where('id', $user->id)->update(['email' => $request->email]);
 
         $updatedProfile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
 
