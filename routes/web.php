@@ -116,6 +116,7 @@ Route::view('/locker-detail', 'frontend.locker-detail')->name('locker-detail');
 Route::view('/safe-detail', 'frontend.safe-detail')->name('safe-detail');
 Route::view('/privacy-policy', 'frontend.privacy-policy')->name('privacy-policy');
 Route::view('/terms-conditions', 'frontend.terms-conditions')->name('terms-conditions');
+Route::view('/account-deletion', 'frontend.account-deletion')->name('account-deletion');
 
 // --- E-Commerce & Packages (ดูสินค้าและแพ็กเกจได้) ---
 // 1. หน้าสินค้าทั้งหมด
