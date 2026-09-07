@@ -11,7 +11,7 @@
     <!-- BEGIN: Search -->
     <div class="intro-x relative mr-3 sm:mr-6">
         <div class="search hidden sm:block">
-            <input type="text" class="search__input form-control border-transparent" placeholder="Search...">
+            <input type="text" class="search__input form-control border-transparent" placeholder="Search..." autocomplete="off">
             <i data-lucide="search" class="search__icon dark:text-slate-500"></i>
         </div>
         <a class="notification sm:hidden" href="">

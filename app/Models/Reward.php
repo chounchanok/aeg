@@ -17,6 +17,9 @@ class Reward extends Model
         'points_required',
         'discount_amount', // 🌟 เพิ่มตรงนี้
         'image_url',
-        'is_active'
+        'is_active',
+        'return_policy',     // เงื่อนไขการยกเลิกหรือคืนคะแนน
+        'shipping_fee',      // ค่าจัดส่ง (บาท)
+        'delivery_estimate', // ระยะเวลาจัดส่ง
     ];
 }

@@ -306,7 +306,10 @@ class CmsAdminController extends Controller
             'category_id' => 'required',
             'title_th' => 'required|string',
             'points_required' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'return_policy' => 'nullable|string|max:5000',
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'delivery_estimate' => 'nullable|string|max:100',
         ]);
 
         $imageUrl = null;
@@ -325,6 +328,10 @@ class CmsAdminController extends Controller
             'stock_quantity' => $request->stock_quantity ?? 0,
             'minimum_tier_required' => $request->minimum_tier_required, // เช่น Advance, Platinum หรือ null
             'image_url' => $imageUrl,
+            // 🌟 เงื่อนไข/การจัดส่ง — ส่งไปแสดงบนแอปผ่าน GET /ease-club/rewards/{id}
+            'return_policy' => $request->return_policy,              // เงื่อนไขการยกเลิกหรือคืนคะแนน
+            'shipping_fee' => $request->filled('shipping_fee') ? $request->shipping_fee : 0, // ค่าจัดส่ง (บาท) 0 = ส่งฟรี
+            'delivery_estimate' => $request->delivery_estimate,      // ระยะเวลาจัดส่ง เช่น 3-5 วันทำการ
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -337,7 +344,10 @@ class CmsAdminController extends Controller
         $request->validate([
             'title_th' => 'required|string',
             'points_required' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'return_policy' => 'nullable|string|max:5000',
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'delivery_estimate' => 'nullable|string|max:100',
         ]);
 
         $reward = DB::table('rewards')->where('id', $id)->first();
@@ -358,6 +368,10 @@ class CmsAdminController extends Controller
             'stock_quantity' => $request->stock_quantity ?? 0,
             'minimum_tier_required' => $request->minimum_tier_required,
             'image_url' => $imageUrl,
+            // 🌟 เงื่อนไข/การจัดส่ง — ส่งไปแสดงบนแอปผ่าน GET /ease-club/rewards/{id}
+            'return_policy' => $request->return_policy,
+            'shipping_fee' => $request->filled('shipping_fee') ? $request->shipping_fee : 0,
+            'delivery_estimate' => $request->delivery_estimate,
             'updated_at' => now()
         ]);
 

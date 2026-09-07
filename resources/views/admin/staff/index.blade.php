@@ -66,26 +66,29 @@
 
     <div id="add-staff-modal" class="modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            {{-- ใช้ <form autocomplete="off"> ครอบ modal เพื่อจำกัดขอบเขต autofill ของ Chrome ให้อยู่แค่ในฟอร์มนี้
+                 (ถ้าไม่มี <form> Chrome จะมองทั้งหน้าเป็นฟอร์มเดียว แล้วเอา username ที่จำไว้ไปเติมในช่อง Search ของหน้า) --}}
+            <form class="modal-content" autocomplete="off" onsubmit="return false;">
                 <div class="modal-header">
                     <h2 class="font-medium text-base mr-auto">เพิ่มบัญชีพนักงานใหม่</h2>
                 </div>
                 <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                     <div class="col-span-12">
                         <label class="form-label">ชื่อ-นามสกุล</label>
-                        <input id="staff-name" type="text" class="form-control" placeholder="เช่น นายสมชาย ช่างแอร์">
+                        <input id="staff-name" name="staff_name" type="text" class="form-control" placeholder="เช่น นายสมชาย ช่างแอร์" autocomplete="off">
                     </div>
                     <div class="col-span-12">
                         <label class="form-label">เบอร์โทรศัพท์</label>
-                        <input id="staff-phone" type="text" class="form-control" placeholder="089xxxxxxx">
+                        <input id="staff-phone" name="staff_phone" type="text" class="form-control" placeholder="089xxxxxxx" autocomplete="off">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Username (ใช้เข้าสู่ระบบ)</label>
-                        <input id="staff-username" type="text" class="form-control" placeholder="tech_somchai">
+                        <input id="staff-username" name="staff_username" type="text" class="form-control" placeholder="tech_somchai" autocomplete="off">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">รหัสผ่านชั่วคราว</label>
-                        <input id="staff-password" type="password" class="form-control" placeholder="******">
+                        {{-- autocomplete="new-password" = บอก Chrome ว่านี่คือช่องตั้งรหัสใหม่ ไม่ใช่ช่อง login → ไม่ดึงรหัส/username ที่จำไว้มาเติม --}}
+                        <input id="staff-password" name="staff_password" type="password" class="form-control" placeholder="******" autocomplete="new-password">
                     </div>
                     <div class="col-span-12">
                         <label class="form-label">ตำแหน่ง</label>
@@ -110,13 +113,13 @@
                     <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
                     <button type="button" id="btn-save-staff" class="btn btn-primary w-24">บันทึก</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
     <div id="edit-staff-modal" class="modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <form class="modal-content" autocomplete="off" onsubmit="return false;">
                 <div class="modal-header">
                     <h2 class="font-medium text-base mr-auto">แก้ไขข้อมูลพนักงาน</h2>
                 </div>
@@ -124,11 +127,11 @@
                     <input type="hidden" id="edit-staff-id">
                     <div class="col-span-12">
                         <label class="form-label">ชื่อ-นามสกุล</label>
-                        <input id="edit-staff-name" type="text" class="form-control">
+                        <input id="edit-staff-name" name="edit_staff_name" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12">
                         <label class="form-label">เบอร์โทรศัพท์</label>
-                        <input id="edit-staff-phone" type="text" class="form-control">
+                        <input id="edit-staff-phone" name="edit_staff_phone" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ตำแหน่ง</label>
@@ -140,7 +143,8 @@
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>
-                        <input id="edit-staff-password" type="password" class="form-control" placeholder="******">
+                        {{-- autocomplete="new-password" = บอก Chrome ว่านี่คือช่องตั้งรหัสใหม่ ไม่ใช่ช่อง login → ไม่ดึงรหัส/username ที่จำไว้มาเติม --}}
+                        <input id="edit-staff-password" name="edit_staff_password" type="password" class="form-control" placeholder="******" autocomplete="new-password">
                     </div>
                     <div class="col-span-12">
                         <div class="form-check form-switch">
@@ -164,7 +168,7 @@
                     <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
                     <button type="button" id="btn-update-staff" class="btn btn-primary w-24">บันทึก</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
     @endsection
@@ -178,7 +182,11 @@
     $(document).ready(function(){
         $('.datatable').DataTable({
             "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
-            "pageLength": 10
+            "pageLength": 10,
+            // ปิด autocomplete ของช่องค้นหา DataTable กัน Chrome เอา username ที่จำไว้ (เบอร์โทรที่ใช้ login) มาเติมเอง
+            "initComplete": function() {
+                $('.dataTables_filter input').attr('autocomplete', 'off');
+            }
         });
 
         $('#btn-save-staff').click(function() {

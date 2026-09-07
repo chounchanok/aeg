@@ -243,72 +243,71 @@ class SupportController extends Controller
 
     // ==========================================
     // 4. ติดต่อแอดมิน / ฝ่ายขาย (Contact Admin Form)
-    // ปรับปรุงตามเมล QA ข้อ 6: auto-fill จากข้อมูลสมาชิก, แยกที่อยู่เป็นฟิลด์ย่อย,
-    // แนบสินค้า/จำนวนที่สนใจ, แนบรูปสถานที่ติดตั้ง, ออกหมายเลขคำขอให้ติดตามสถานะได้
+    // สัญญา (contract) ของ request ตามที่ตกลงกับฝั่ง mobile (7 ก.ย. 2569):
+    //   REQUIRED           : user_type, first_name, last_name, address_full, email, phone, topic
+    //   OPTIONAL - ADDRESS : province, district, subdistrict, zipcode
+    //   OPTIONAL - PRODUCT : product_id, product_name, quantity
+    //   OPTIONAL - DETAIL  : detail
+    //   OPTIONAL - BUSINESS: company_name, tax_id, branch
+    //   OPTIONAL - CONTACT : preferred_contact_time
+    //   OPTIONAL - FILE    : image (multipart, สูงสุด 10MB)
+    // ข้อมูลทุกช่องเก็บตามที่แอปส่งมาตรงๆ (ไม่ auto-fill จากโปรไฟล์อีกแล้ว เพราะฟิลด์ที่จำเป็นบังคับส่งมาหมด)
     // ==========================================
     public function submitContactAdmin(Request $request)
     {
-        // 🌟 ฟิลด์ที่ auto-fill ได้จากข้อมูลสมาชิกทำให้เป็น nullable ตรงนี้ก่อน แล้วไปบังคับ
-        // (ว่าต้องไม่ว่างเปล่าหลัง fallback) อีกทีด้านล่าง — เพื่อลดการกรอกซ้ำตามที่ QA ขอ
-        $request->validate([
-            'topic' => 'required|string',
+        $validated = $request->validate([
+            // --- REQUIRED ---
             'user_type' => 'required|in:business,personal',
-            'first_name' => 'nullable|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string',
-            'address_full' => 'nullable|string', // เผื่อแอปเวอร์ชันเก่ายังส่งที่อยู่แบบรวมช่องเดียวมา
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'address_full' => 'required|string|max:1000',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'topic' => 'required|string|max:255',
+
+            // --- OPTIONAL - ADDRESS ---
             'province' => 'nullable|string|max:100',
             'district' => 'nullable|string|max:100',
             'subdistrict' => 'nullable|string|max:100',
             'zipcode' => 'nullable|string|max:10',
-            'company_name' => 'nullable|string', // จำเป็นถ้าเป็น business
-            'preferred_contact_time' => 'nullable|string',
+
+            // --- OPTIONAL - PRODUCT ---
             'product_id' => 'nullable|integer|exists:products,id',
+            'product_name' => 'nullable|string|max:255',
             'quantity' => 'nullable|integer|min:1',
-            'detail' => 'nullable|string',
+
+            // --- OPTIONAL - DETAIL ---
+            'detail' => 'nullable|string|max:5000',
+
+            // --- OPTIONAL - BUSINESS ---
+            'company_name' => 'nullable|string|max:255',
+            'tax_id' => 'nullable|string|max:20',
+            'branch' => 'nullable|string|max:100',
+
+            // --- OPTIONAL - CONTACT ---
+            'preferred_contact_time' => 'nullable|string|max:255',
+
+            // --- OPTIONAL - FILE ---
             'image' => 'nullable|file|image|max:10240', // สูงสุด 10MB
+        ], [
+            // ข้อความ error ระบุ field ที่ขาดให้ชัดเจน (QA ข้อ 6: "กรุณากรอกนามสกุล" แทน "กรุณากรอก")
+            'user_type.required' => 'กรุณาระบุประเภทผู้ติดต่อ (business หรือ personal)',
+            'user_type.in' => 'ประเภทผู้ติดต่อต้องเป็น business หรือ personal เท่านั้น',
+            'first_name.required' => 'กรุณากรอกชื่อ',
+            'last_name.required' => 'กรุณากรอกนามสกุล',
+            'address_full.required' => 'กรุณากรอกที่อยู่',
+            'email.required' => 'กรุณากรอกอีเมล',
+            'email.email' => 'รูปแบบอีเมลไม่ถูกต้อง',
+            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์',
+            'topic.required' => 'กรุณาเลือกหัวข้อที่ต้องการติดต่อ',
+            'product_id.exists' => 'ไม่พบสินค้าที่เลือก',
+            'quantity.min' => 'จำนวนสินค้าต้องอย่างน้อย 1 ชิ้น',
+            'image.image' => 'ไฟล์แนบต้องเป็นรูปภาพเท่านั้น',
+            'image.max' => 'รูปภาพต้องมีขนาดไม่เกิน 10MB',
         ]);
 
+        // ถ้า User ล็อกอินอยู่ (ส่ง Bearer token มา) จะเก็บ user_id ให้ด้วย ถ้าไม่ล็อกอินก็เป็น null
         $user = auth('sanctum')->user();
-
-        // 🌟 Auto-fill จากข้อมูลสมาชิก — ใช้ค่าที่แอปส่งมาก่อนเสมอ ถ้าไม่ส่งมาค่อย fallback ไปดึงจากโปรไฟล์
-        $firstName = $request->first_name;
-        $lastName = $request->last_name;
-        $email = $request->email;
-        $phone = $request->phone;
-        $province = $request->province;
-        $district = $request->district;
-        $subdistrict = $request->subdistrict;
-        $zipcode = $request->zipcode;
-
-        if ($user) {
-            $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first();
-            $firstName = $firstName ?: ($profile->first_name ?? null);
-            $lastName = $lastName ?: ($profile->last_name ?? null);
-            $email = $email ?: $user->email;
-            $phone = $phone ?: $user->phone;
-
-            // ถ้ายังไม่ได้ระบุที่อยู่มาเองเลย ลองดึงที่อยู่ default ของสมาชิกมาเติมให้
-            if (empty($province) && empty($request->address_full)) {
-                $defaultAddress = DB::table('customer_addresses')
-                    ->where('user_id', $user->id)
-                    ->where('is_default', true)
-                    ->first();
-
-                if ($defaultAddress) {
-                    $province = $defaultAddress->province;
-                    $district = $defaultAddress->district;
-                    $subdistrict = $defaultAddress->subdistrict;
-                    $zipcode = $defaultAddress->zipcode;
-                }
-            }
-        }
-
-        // หลัง fallback แล้ว ข้อมูลที่จำเป็นต่อการติดต่อกลับต้องไม่ว่างเปล่า
-        if (empty($firstName) || empty($lastName) || empty($email) || empty($phone)) {
-            return $this->errorResponse('กรุณากรอกชื่อ นามสกุล อีเมล และเบอร์โทรศัพท์ให้ครบถ้วน', 422);
-        }
 
         $imageUrl = null;
         if ($request->hasFile('image')) {
@@ -316,32 +315,49 @@ class SupportController extends Controller
             $imageUrl = '/storage/' . $path;
         }
 
-        // 🌟 ออกหมายเลขคำขอ เช่น CONTACT-20260904-0001 ให้ลูกค้าติดตามสถานะได้ (เมลข้อ 6)
+        // 🌟 ออกหมายเลขคำขอ เช่น CONTACT-20260907-0001 ให้ลูกค้าติดตามสถานะได้ (เมลข้อ 6)
         $todayPrefix = 'CONTACT-' . now()->format('Ymd');
         $countToday = DB::table('contact_admin_requests')->where('request_number', 'like', $todayPrefix . '%')->count();
         $requestNumber = $todayPrefix . '-' . str_pad($countToday + 1, 4, '0', STR_PAD_LEFT);
 
         $id = DB::table('contact_admin_requests')->insertGetId([
-            // ถ้า User ล็อกอินอยู่ จะเก็บ ID ให้ด้วย ถ้าไม่ล็อกอินก็เป็น null
             'user_id' => $user?->id,
             'request_number' => $requestNumber,
-            'topic' => $request->topic,
-            'user_type' => $request->user_type,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'address_full' => $request->address_full,
-            'province' => $province,
-            'district' => $district,
-            'subdistrict' => $subdistrict,
-            'zipcode' => $zipcode,
-            'email' => $email,
-            'phone' => $phone,
-            'company_name' => $request->user_type === 'business' ? $request->company_name : null,
-            'preferred_contact_time' => $request->preferred_contact_time,
-            'product_id' => $request->product_id,
-            'quantity' => $request->quantity,
-            'detail' => $request->detail,
+
+            // REQUIRED
+            'user_type' => $validated['user_type'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'address_full' => $validated['address_full'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'topic' => $validated['topic'],
+
+            // OPTIONAL - ADDRESS
+            'province' => $validated['province'] ?? null,
+            'district' => $validated['district'] ?? null,
+            'subdistrict' => $validated['subdistrict'] ?? null,
+            'zipcode' => $validated['zipcode'] ?? null,
+
+            // OPTIONAL - PRODUCT
+            'product_id' => $validated['product_id'] ?? null,
+            'product_name' => $validated['product_name'] ?? null,
+            'quantity' => $validated['quantity'] ?? null,
+
+            // OPTIONAL - DETAIL
+            'detail' => $validated['detail'] ?? null,
+
+            // OPTIONAL - BUSINESS
+            'company_name' => $validated['company_name'] ?? null,
+            'tax_id' => $validated['tax_id'] ?? null,
+            'branch' => $validated['branch'] ?? null,
+
+            // OPTIONAL - CONTACT
+            'preferred_contact_time' => $validated['preferred_contact_time'] ?? null,
+
+            // OPTIONAL - FILE
             'image_url' => $imageUrl,
+
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now()
@@ -351,7 +367,7 @@ class SupportController extends Controller
         StaffNotificationService::notifyRole(
             'sales_admin',
             'มีคำขอติดต่อฝ่ายขายใหม่',
-            "เลขที่ {$requestNumber} จาก {$firstName} {$lastName} (หัวข้อ: {$request->topic})",
+            "เลขที่ {$requestNumber} จาก {$validated['first_name']} {$validated['last_name']} (หัวข้อ: {$validated['topic']})",
             '/admin/contact-requests/' . $id,
             'contact_admin'
         );

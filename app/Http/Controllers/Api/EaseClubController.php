@@ -144,6 +144,12 @@ class EaseClubController extends Controller
             return $this->errorResponse('Reward not found', 404);
         }
 
+        // 🌟 ข้อมูลเงื่อนไข/การจัดส่งของรางวัล (แอดมินกรอกจากหลังบ้าน /admin/cms/ease-club)
+        // set ค่าให้ชัดเจนเสมอ เพื่อให้ mobile ได้ key ครบทุกครั้งแม้แอดมินยังไม่ได้กรอก
+        $reward->return_policy = $reward->return_policy ?? null;          // เงื่อนไขการยกเลิกหรือคืนคะแนน
+        $reward->shipping_fee = (float) ($reward->shipping_fee ?? 0);      // ค่าจัดส่ง (บาท) 0 = ส่งฟรี
+        $reward->delivery_estimate = $reward->delivery_estimate ?? null;  // ระยะเวลาจัดส่ง เช่น "3-5 วันทำการ"
+
         // ตรวจสอบสถานะ Favorite สำหรับหน้า Detail
         $userId = $request->user() ? $request->user()->id : null;
 
@@ -164,11 +170,13 @@ class EaseClubController extends Controller
             $reward->current_points = $currentPoints;
             $reward->points_missing = max(0, $reward->points_required - $currentPoints);
             $reward->can_redeem = $currentPoints >= $reward->points_required;
+            $reward->user_id = $userId;
         } else {
             $reward->is_favorited = false;
             $reward->current_points = null;
             $reward->points_missing = null;
             $reward->can_redeem = false;
+            $reward->user_id = $request->user();
         }
 
         return $this->successResponse($reward, 'Reward detail retrieved');

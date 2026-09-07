@@ -40,7 +40,17 @@
                                 <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $rw->title_en ?? '-' }}</div>
                             </td>
                             <td><span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">{{ $rw->category_name }}</span></td>
-                            <td class="text-center text-primary font-medium">{{ number_format($rw->points_required) }} Pt</td>
+                            <td class="text-center">
+                                <div class="text-primary font-medium">{{ number_format($rw->points_required) }} Pt</div>
+                                <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">
+                                    @if(($rw->shipping_fee ?? 0) > 0)
+                                        ส่ง {{ number_format($rw->shipping_fee, 2) }} ฿
+                                    @else
+                                        ส่งฟรี
+                                    @endif
+                                    @if(!empty($rw->delivery_estimate)) · {{ $rw->delivery_estimate }} @endif
+                                </div>
+                            </td>
                             <td class="text-center">
                                 <span class="{{ $rw->stock_quantity <= 5 ? 'text-danger font-medium' : '' }}">{{ $rw->stock_quantity }}</span>
                             </td>
@@ -122,6 +132,24 @@
                         <label class="form-label">รายละเอียด (EN)</label>
                         <textarea name="description_en" class="form-control" rows="3"></textarea>
                     </div>
+
+                    {{-- 🌟 เงื่อนไข/การจัดส่ง — แสดงบนแอปหน้ารายละเอียดรางวัล (GET /ease-club/rewards/{id}) --}}
+                    <div class="col-span-12 border-t border-slate-200/60 pt-3 mt-1">
+                        <div class="font-medium text-slate-600">เงื่อนไขและการจัดส่ง</div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ค่าจัดส่ง (บาท)</label>
+                        <input name="shipping_fee" type="number" class="form-control" value="0" min="0" step="0.01" placeholder="0 = จัดส่งฟรี">
+                        <div class="form-help text-xs text-slate-500 mt-1">ใส่ 0 หากจัดส่งฟรี</div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ระยะเวลาจัดส่ง</label>
+                        <input name="delivery_estimate" type="text" class="form-control" maxlength="100" placeholder="เช่น 3-5 วันทำการ">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เงื่อนไขการยกเลิกหรือคืนคะแนน</label>
+                        <textarea name="return_policy" class="form-control" rows="3" placeholder="เช่น ไม่สามารถยกเลิกหรือขอคืนคะแนนได้หลังจากยืนยันการแลกแล้ว"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer text-right">
                     <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
@@ -181,6 +209,24 @@
                         <label class="form-label">รายละเอียด (EN)</label>
                         <textarea name="description_en" id="edit_description_en" class="form-control" rows="3"></textarea>
                     </div>
+
+                    {{-- 🌟 เงื่อนไข/การจัดส่ง — แสดงบนแอปหน้ารายละเอียดรางวัล (GET /ease-club/rewards/{id}) --}}
+                    <div class="col-span-12 border-t border-slate-200/60 pt-3 mt-1">
+                        <div class="font-medium text-slate-600">เงื่อนไขและการจัดส่ง</div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ค่าจัดส่ง (บาท)</label>
+                        <input name="shipping_fee" id="edit_shipping_fee" type="number" class="form-control" min="0" step="0.01" placeholder="0 = จัดส่งฟรี">
+                        <div class="form-help text-xs text-slate-500 mt-1">ใส่ 0 หากจัดส่งฟรี</div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ระยะเวลาจัดส่ง</label>
+                        <input name="delivery_estimate" id="edit_delivery_estimate" type="text" class="form-control" maxlength="100" placeholder="เช่น 3-5 วันทำการ">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เงื่อนไขการยกเลิกหรือคืนคะแนน</label>
+                        <textarea name="return_policy" id="edit_return_policy" class="form-control" rows="3" placeholder="เช่น ไม่สามารถยกเลิกหรือขอคืนคะแนนได้หลังจากยืนยันการแลกแล้ว"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer text-right">
                     <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-24 mr-1">ยกเลิก</button>
@@ -213,6 +259,11 @@
             $('#edit_minimum_tier_required').val(reward.minimum_tier_required || '');
             $('#edit_description_th').val(reward.description_th);
             $('#edit_description_en').val(reward.description_en);
+
+            // 🌟 เงื่อนไข/การจัดส่ง
+            $('#edit_shipping_fee').val(reward.shipping_fee ?? 0);
+            $('#edit_delivery_estimate').val(reward.delivery_estimate || '');
+            $('#edit_return_policy').val(reward.return_policy || '');
         });
     });
 </script>
