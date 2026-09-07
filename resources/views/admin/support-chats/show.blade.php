@@ -42,7 +42,7 @@
     <div class="intro-y flex items-center mt-8 mb-5">
         <h2 class="text-lg font-medium mr-auto">
             แชทกับ: {{ $customer->username }} ({{ $customer->phone }}) <br>
-            <span class="text-sm text-slate-500 font-normal">หัวข้อ: {{ $topic }}</span>
+            <span class="text-sm text-slate-500 font-normal">หัวข้อ: <span class="text-primary font-medium">{{ $topicLabel }}</span> · แผนกที่รับผิดชอบ: {{ $departmentName }}</span>
         </h2>
         <a href="{{ route('admin.support-chats.index') }}" class="btn btn-outline-secondary w-24">ย้อนกลับ</a>
     </div>
@@ -110,8 +110,8 @@
             .listen('.message.sent', (e) => {
                 const msg = e.messageData;
                 
-                // ถ้าลูกค้าเป็นคนพิมพ์ ให้โชว์ฝั่งซ้าย
-                if(msg.sender_type === 'customer') {
+                // ถ้าลูกค้าเป็นคนพิมพ์ ให้โชว์ฝั่งซ้าย — เฉพาะข้อความของหัวข้อนี้ (channel เดียวกันรวมทุกหัวข้อของลูกค้าคนนี้)
+                if(msg.sender_type === 'customer' && (!msg.topic || msg.topic === topic)) {
                     const time = new Date(msg.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + ' น.';
                     const html = `
                         <div class="msg-row-customer">

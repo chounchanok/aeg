@@ -71,6 +71,18 @@ Mobile ต้องทำ:
 - OPTIONAL - FILE: `image` (multipart, รูปภาพ ≤ 10MB)
 - Response: `{ id, request_number, status }` / validation error 422 พร้อมข้อความระบุ field ที่ขาด
 
+## 7. แชทติดต่อสอบถาม — ต้องเลือก "หัวข้อ" ก่อนคุยกับเจ้าหน้าที่ (7 ก.ย.)
+**Backend แก้แล้ว — mobile ต้อง integrate ใหม่**
+- หลังบ้านแยกแชทตามแผนกแล้ว (Insurance เห็นเฉพาะประกัน, Sec Admin เห็นระบบรักษาความปลอดภัย+บริการช่าง ฯลฯ) ดังนั้นทุกข้อความต้องมี `topic` ที่ถูกต้อง ไม่งั้นไปไม่ถึงแผนก
+- ใหม่: `GET /api/support-chats/topics` (public) → `{ data: [ { key, label, label_en, icon } ], default_topic }` — ใช้ทำหน้าเลือกหัวข้อ
+- `GET /api/support-chats/history?topic={key}` และ `POST /api/support-chats/send { topic, message }` → `topic` **บังคับ** และต้องเป็น key จากรายการด้านบน (ส่งค่าอื่นได้ 422) — `general` ยังใช้ได้ (= สอบถามทั่วไป → Sales Admin)
+- key ปัจจุบัน: `general`, `security-system`, `technician-service`, `insurance`, `locker`, `ease-club`, `application` (ชุดเดียวกับหมวดของแชทบอท `GET /api/chatbot/topics` → ถ้าลูกค้ากด "คุยกับเจ้าหน้าที่" จากในหมวดบอท ให้ส่ง key หมวดนั้นเป็น `topic` ได้เลย ไม่ต้องให้เลือกซ้ำ)
+
+Mobile ต้องทำ:
+- ก่อนเข้าหน้าแชทกับเจ้าหน้าที่ ให้เลือกหัวข้อจาก `GET /support-chats/topics` (หรือ auto-select จากหมวดบอทที่อยู่)
+- แสดงชื่อหัวข้อที่กำลังคุย + ปุ่มเปลี่ยนหัวข้อ (ประวัติแชทแยกกันต่อหัวข้อ)
+- Pusher channel `support-chat.{user_id}` รวมทุกหัวข้อ → กรอง `messageData.topic` ให้ตรงกับหัวข้อที่เปิดอยู่ก่อนแสดง
+
 ---
 
 ## สรุป Gap ฝั่ง Backend ที่ยังไม่ได้ทำ (ไม่ใช่งาน mobile แต่กระทบ feature)

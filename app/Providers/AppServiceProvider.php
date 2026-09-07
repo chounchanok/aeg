@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,18 @@ class AppServiceProvider extends ServiceProvider
             \SocialiteProviders\Manager\SocialiteWasCalled::class,
             [\SocialiteProviders\Line\LineExtendSocialite::class, 'handle']
         );
+
+        // 🌟 ผูก permission key ของระบบ RBAC เข้ากับ Gate ของ Laravel เพื่อให้ใช้ @can('customers.manage')
+        // ใน Blade และ Gate::allows('contacts.sales') ใน controller ได้โดยตรง — เงื่อนไขเดียวกับ
+        // CheckPermission middleware (super_admin เดิมผ่านทุกอย่าง / role แบบ full access ผ่านทุกอย่าง)
+        // ability ที่ไม่มีจุด (.) จะไม่ถูกจับตรงนี้ ปล่อยให้ Gate/Policy ปกติทำงานต่อ
+        Gate::before(function ($user, string $ability) {
+            if (str_contains($ability, '.') && method_exists($user, 'canAccess')) {
+                return $user->canAccess($ability);
+            }
+
+            return null;
+        });
 
         View::share('layout', 'side-menu');
         View::share('dark_mode', false);
@@ -77,6 +90,17 @@ class AppServiceProvider extends ServiceProvider
                 'icon' => 'message-circle', 'title' => 'แชทติดต่อสอบถาม',
                 'route_name' => 'admin.support-chats.index', 'params' => [],
                 'permission' => 'support_chats.reply',
+            ],
+            // 🌟 รายการติดต่อจากลูกค้า (ฟอร์มติดต่อหน้าเว็บ/แอป) — แต่ละแผนกเห็นเฉพาะช่องทางของตัวเอง
+            // key ของ sub_menu ต้องตรงกับ type ใน ContactAdminController::TYPES
+            'contacts' => [
+                'icon' => 'inbox', 'title' => 'รายการติดต่อจากลูกค้า',
+                'sub_menu' => [
+                    'insurance' => ['icon' => 'shield', 'title' => 'ประกันภัย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'insurance'], 'permission' => 'contacts.insurance'],
+                    'safe' => ['icon' => 'lock', 'title' => 'ตู้เซฟนิรภัย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'safe'], 'permission' => 'contacts.safe'],
+                    'product' => ['icon' => 'box', 'title' => 'สินค้า/บริการ (เว็บ)', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'product'], 'permission' => 'contacts.product'],
+                    'sales' => ['icon' => 'phone-call', 'title' => 'ติดต่อฝ่ายขาย (แอป)', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'sales'], 'permission' => 'contacts.sales'],
+                ]
             ],
             'devider',
             'cms' => [

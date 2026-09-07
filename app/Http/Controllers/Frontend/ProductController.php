@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\ServiceCategory;
+use App\Services\StaffNotificationService;
 
 class ProductController extends Controller
 {
@@ -88,7 +89,7 @@ class ProductController extends Controller
 
         try {
             // บันทึกลง Database
-            DB::table('product_contacts')->insert([
+            $id = DB::table('product_contacts')->insertGetId([
                 'product_id' => $request->product_id,
                 'name' => $request->name,
                 'phone' => $request->phone,
@@ -99,6 +100,16 @@ class ProductController extends Controller
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+            // 🌟 แจ้งเตือนแผนก Sales Admin ให้ไปดำเนินการต่อที่ /admin/contacts/product
+            $productName = DB::table('products')->where('id', $request->product_id)->value('name_th');
+            StaffNotificationService::notifyRole(
+                'sales_admin',
+                'มีลูกค้าติดต่อเรื่องสินค้า/บริการใหม่ (เว็บ)',
+                "{$request->name} ({$request->phone}) สนใจ: " . ($productName ?: '-') . " · สะดวกช่วง {$request->contact_time}",
+                '/admin/contacts/product/' . $id,
+                'contact_product'
+            );
 
             // ส่ง JSON กลับไปให้ Frontend (เพื่อเรียกโชว์ Modal)
             return response()->json([
@@ -136,7 +147,7 @@ class ProductController extends Controller
         ]);
 
         try {
-            DB::table('safe_contacts')->insert([
+            $id = DB::table('safe_contacts')->insertGetId([
                 'smart_locker_id' => $request->smart_locker_id,
                 'name' => $request->name,
                 'phone' => $request->phone,
@@ -147,6 +158,16 @@ class ProductController extends Controller
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+            // 🌟 แจ้งเตือนแผนก Smart Locker ให้ไปดำเนินการต่อที่ /admin/contacts/safe
+            $lockerTitle = DB::table('smart_lockers')->where('id', $request->smart_locker_id)->value('title_th');
+            StaffNotificationService::notifyRole(
+                'smart_locker',
+                'มีลูกค้าติดต่อเรื่องตู้เซฟนิรภัยใหม่',
+                "{$request->name} ({$request->phone}) สนใจ: " . ($lockerTitle ?: '-') . " · สะดวกช่วง {$request->contact_time}",
+                '/admin/contacts/safe/' . $id,
+                'contact_safe'
+            );
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

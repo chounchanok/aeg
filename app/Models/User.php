@@ -84,23 +84,32 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permissionKey): bool
     {
-        $roleIds = $this->roles()->pluck('roles.id');
+        // ใช้ permissionKeys() ที่ cache ไว้ต่อ request แทนการ query ใหม่ทุกครั้ง —
+        // เพราะตอนนี้มีการเช็คสิทธิ์หลายจุดใน 1 หน้า (middleware + @can ในเมนู/ปุ่มต่างๆ)
+        $keys = $this->permissionKeys();
 
-        if ($roleIds->isEmpty()) {
-            return false;
-        }
+        return in_array('*', $keys, true) || in_array($permissionKey, $keys, true);
+    }
 
-        // role แบบ full access (IT) ให้ผ่านทุกอย่างโดยไม่ต้อง map permission ทีละอัน
-        $hasFullAccess = \App\Models\Role::whereIn('id', $roleIds)->where('is_full_access', true)->exists();
-        if ($hasFullAccess) {
-            return true;
-        }
+    /**
+     * เช็คสิทธิ์แบบรวมเงื่อนไข backward-compat: users.role = 'super_admin' ผ่านทุกอย่างเสมอ
+     * (เหมือน CheckPermission middleware) — ใช้ใน Blade ผ่าน @can('xxx.manage') ได้เลย
+     * (ดู Gate::before ใน AppServiceProvider)
+     */
+    public function canAccess(string $permissionKey): bool
+    {
+        return $this->role === 'super_admin' || $this->hasPermission($permissionKey);
+    }
 
-        return \App\Models\Permission::where('key', $permissionKey)
-            ->whereHas('roles', function ($q) use ($roleIds) {
-                $q->whereIn('roles.id', $roleIds);
-            })
-            ->exists();
+    /**
+     * cache ผลลัพธ์ permissionKeys() ต่อ instance (หมดอายุพร้อม request) — เรียก forgetPermissionCache()
+     * ถ้าเพิ่งเปลี่ยน role ของ user คนเดียวกันใน request เดียวกัน
+     */
+    protected ?array $permissionKeyCache = null;
+
+    public function forgetPermissionCache(): void
+    {
+        $this->permissionKeyCache = null;
     }
 
     /**
@@ -109,18 +118,22 @@ class User extends Authenticatable
      */
     public function permissionKeys(): array
     {
+        if ($this->permissionKeyCache !== null) {
+            return $this->permissionKeyCache;
+        }
+
         $roleIds = $this->roles()->pluck('roles.id');
 
         if ($roleIds->isEmpty()) {
-            return [];
+            return $this->permissionKeyCache = [];
         }
 
         $hasFullAccess = \App\Models\Role::whereIn('id', $roleIds)->where('is_full_access', true)->exists();
         if ($hasFullAccess) {
-            return ['*'];
+            return $this->permissionKeyCache = ['*'];
         }
 
-        return \App\Models\Permission::whereHas('roles', function ($q) use ($roleIds) {
+        return $this->permissionKeyCache = \App\Models\Permission::whereHas('roles', function ($q) use ($roleIds) {
                 $q->whereIn('roles.id', $roleIds);
             })
             ->pluck('key')

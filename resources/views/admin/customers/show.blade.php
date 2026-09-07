@@ -51,6 +51,8 @@
             <div class="box p-5">
                 <div class="flex items-center border-b border-slate-200/60 pb-5">
                     <div class="font-medium text-base mr-auto">สินค้าและบริการที่ลูกค้าครอบครอง</div>
+                    {{-- 🌟 หน้าลูกค้าเป็น Read-only สำหรับทุกแผนก — ปุ่มเพิ่มรายการแสดงเฉพาะคนที่มี customers.manage (IT) --}}
+                    @can('customers.manage')
                     <div class="dropdown">
                         <button class="dropdown-toggle btn btn-primary btn-sm flex items-center" aria-expanded="false" data-tw-toggle="dropdown">
                             <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มรายการ <i data-lucide="chevron-down" class="w-4 h-4 ml-2"></i>
@@ -75,6 +77,7 @@
                             </ul>
                         </div>
                     </div>
+                    @endcan
                 </div>
 
                 <div class="mt-5">
@@ -156,10 +159,12 @@
                             <div class="text-right flex-shrink-0">
                                 @if($rw->status === 'active')
                                     <span class="bg-success text-white text-xs px-2 py-1 rounded d-inline-block mb-2">ใช้งานได้</span><br>
+                                    @can('customers.manage')
                                     <form action="{{ route('admin.customers.reward-codes.redeem', [$customer->id, $rw->id]) }}" method="POST" onsubmit="return confirm('ยืนยันใช้คูปองนี้แทนลูกค้า? เมื่อกดแล้วโค้ดนี้จะไม่สามารถใช้ซ้ำได้อีก');">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-primary">ใช้คูปองแทนลูกค้า</button>
                                     </form>
+                                    @endcan
                                 @else
                                     <span class="bg-slate-200 text-slate-500 text-xs px-2 py-1 rounded">ใช้ไปแล้ว</span>
                                 @endif
@@ -173,6 +178,8 @@
         </div>
     </div>
 
+    {{-- modal เพิ่มรายการให้ลูกค้า — render เฉพาะคนที่มีสิทธิ์เขียน (customers.manage) เพราะ route ฝั่งหลังถูกล็อกไว้แล้ว --}}
+    @can('customers.manage')
     <div id="add-product-modal" class="modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form action="{{ route('admin.customers.products.store', $customer->id) }}" method="POST" class="modal-content">
@@ -286,4 +293,5 @@
             </form>
         </div>
     </div>
+    @endcan
     @endsection

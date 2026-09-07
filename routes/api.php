@@ -43,6 +43,9 @@ Route::get('/faqs', [SupportController::class, 'getFaqs']);
 // --- FAQ Bot (ให้ลูกค้าถามเองก่อน ไม่ต้องล็อกอินก็ถามได้) ---
 Route::post('/faq-bot/ask', [SupportController::class, 'askBot']);
 
+// 🌟 หัวข้อแชทติดต่อสอบถาม — แอปต้องให้ลูกค้าเลือกหัวข้อจากรายการนี้ก่อนส่ง /support-chats/send (public)
+Route::get('/support-chats/topics', [SupportChatController::class, 'getTopics']);
+
 // --- Chat Bot เมนูปุ่มกด (ดูเมนู/ข้อมูลบริการได้แม้ยังไม่ล็อกอิน ส่วนถามเพิ่มเติม/สนใจซื้อ ต้องล็อกอิน - เช็คภายใน controller) ---
 Route::prefix('chatbot')->group(function () {
     Route::get('/topics', [ChatbotController::class, 'topics']);
@@ -168,10 +171,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- Support Chats (แชทติดต่อสอบถามทั่วไป สำหรับ Mobile App) ---
     Route::prefix('support-chats')->group(function () {
-        // ดึงประวัติแชททั้งหมด (แยกตาม topic ได้ เช่น ?topic=general)
+        // ดึงประวัติแชทของหัวข้อนั้น (?topic=... ต้องเป็น key จาก GET /support-chats/topics)
         Route::get('/history', [SupportChatController::class, 'getHistory']);
 
-        // ส่งข้อความหาแอดมิน
+        // ส่งข้อความหาเจ้าหน้าที่ — body: { topic, message } (topic บังคับ และต้องเป็น key จากรายการหัวข้อ)
         Route::post('/send', [SupportChatController::class, 'sendMessage']);
     });
 

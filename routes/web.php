@@ -100,6 +100,8 @@ Route::post('/product-contact/submit', [ProductController::class, 'submitContact
 
 // --- Chat Bot (public - ดูเมนู/ข้อมูลบริการได้แม้ไม่ได้ล็อกอิน ส่วนถามเพิ่มเติม/สนใจซื้อ เช็คสิทธิ์ในตัว controller) ---
 Route::post('/support-chat/bot/ask', [SupportController::class, 'askBot'])->name('support-chat.bot.ask');
+// 🌟 หัวข้อแชทติดต่อสอบถาม (ให้ลูกค้าเลือกก่อนคุยกับเจ้าหน้าที่) — public, อ่านจาก config/support_chat.php
+Route::get('/support-chat/topics', [SupportChatController::class, 'getTopics'])->name('support-chat.topics');
 Route::prefix('support-chat/bot')->name('support-chat.bot.')->group(function () {
     Route::get('/topics', [ChatbotController::class, 'topics'])->name('topics');
     Route::get('/topics/{topicId}/services', [ChatbotController::class, 'services'])->name('services');
@@ -241,22 +243,37 @@ Route::middleware('auth')->group(function() {
             Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
         });
 
-        // --- Customers (RBAC: ดูได้ทุก role staff — ไม่ผูก permission เพิ่ม แค่ middleware 'admin' พอ) ---
-        // ⚠️ ต้องอยู่ก่อน '/admin/customers/{id}' ไม่งั้น Laravel จะจับคำว่า "points-import" เป็นค่า {id} แทน
-        Route::get('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportForm'])->name('admin.customers.points-import');
-        Route::post('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportStore'])->name('admin.customers.points-import.store');
-        Route::get('/admin/customers/points-import/{batchId}', [CustomerAdminController::class, 'pointsImportShow'])->name('admin.customers.points-import.show');
+        // --- Customers ---
+        // อ่าน (index/show): ดูได้ทุก role staff — ไม่ผูก permission เพิ่ม แค่ middleware 'admin' พอ (Read-only ตามข้อกำหนด)
+        // เขียน (เพิ่มสินค้า/ประกัน/ตู้เซฟให้ลูกค้า, ใช้คูปองแทนลูกค้า, นำเข้าแต้ม): ต้องมี permission 'customers.manage'
+        // ซึ่งค่าเริ่มต้นมีแค่ IT (full access) — ดู RolePermissionSeeder ถ้าจะเปิดให้แผนกอื่น
+        Route::middleware('permission:customers.manage')->group(function() {
+            // ⚠️ ต้องอยู่ก่อน '/admin/customers/{id}' ไม่งั้น Laravel จะจับคำว่า "points-import" เป็นค่า {id} แทน
+            Route::get('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportForm'])->name('admin.customers.points-import');
+            Route::post('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportStore'])->name('admin.customers.points-import.store');
+            Route::get('/admin/customers/points-import/{batchId}', [CustomerAdminController::class, 'pointsImportShow'])->name('admin.customers.points-import.show');
+
+            Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
+            Route::post('/admin/customers/{id}/insurances', [CustomerAdminController::class, 'storeInsurance'])->name('admin.customers.insurances.store');
+            Route::post('/admin/customers/{id}/lockers', [CustomerAdminController::class, 'storeLocker'])->name('admin.customers.lockers.store');
+
+            // ใช้คูปองแทนลูกค้า (แอดมินกดปิดโค้ดที่ยัง active ให้กลายเป็น used)
+            Route::post('/admin/customers/{id}/reward-codes/{codeId}/redeem', [CustomerAdminController::class, 'markRewardCodeUsed'])->name('admin.customers.reward-codes.redeem');
+        });
 
         Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
         Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
-        Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
 
-        // 🌟 2 เส้นทางใหม่ สำหรับเพิ่มประกันและตู้เซฟ
-        Route::post('/admin/customers/{id}/insurances', [CustomerAdminController::class, 'storeInsurance'])->name('admin.customers.insurances.store');
-        Route::post('/admin/customers/{id}/lockers', [CustomerAdminController::class, 'storeLocker'])->name('admin.customers.lockers.store');
-
-        // 🌟 ใช้คูปองแทนลูกค้า (แอดมินกดปิดโค้ดที่ยัง active ให้กลายเป็น used)
-        Route::post('/admin/customers/{id}/reward-codes/{codeId}/redeem', [CustomerAdminController::class, 'markRewardCodeUsed'])->name('admin.customers.reward-codes.redeem');
+        // --- รายการติดต่อจากลูกค้า (ฟอร์มติดต่อหน้าเว็บ/แอป) ---
+        // RBAC แยกตาม {type}: insurance → contacts.insurance (Insurance), safe → contacts.safe (Smart Locker),
+        // product → contacts.product (Sales Admin), sales → contacts.sales (Sales Admin) — เช็คสิทธิ์ใน controller
+        // เพราะ middleware 'permission:' รับ key ตายตัว แต่ตรงนี้ key ขึ้นกับ {type} ใน URL
+        Route::prefix('admin/contacts/{type}')->name('admin.contacts.')->where(['type' => 'insurance|safe|product|sales'])->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\ContactAdminController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\ContactAdminController::class, 'show'])->name('show');
+            // บันทึกการดำเนินการ (โทร/อีเมล/นัดหมาย/บันทึก) + เปลี่ยนสถานะ + มอบหมายผู้รับผิดชอบ ในฟอร์มเดียว
+            Route::post('/{id}/update', [\App\Http\Controllers\Admin\ContactAdminController::class, 'update'])->name('update');
+        });
 
         // --- Products (RBAC: marketing) ---
         Route::middleware('permission:products.manage')->group(function() {

@@ -6,9 +6,15 @@
 
     ตัวแปรที่รับเข้ามา:
     - $botUserId : int|null  -> id ของผู้ใช้ที่ล็อกอินอยู่ (null = guest ยังไม่ได้ล็อกอิน)
+    - $chatTopic : string|null -> หัวข้อแชทที่ต้องการเปิดทันที (เช่น หน้า /support-chat?topic=insurance) — null = ให้ลูกค้าเลือกเอง
+
+    🌟 แชทกับเจ้าหน้าที่ต้องเลือก "หัวข้อ" ก่อนเสมอ (config/support_chat.php) เพื่อให้ข้อความไปถึงแผนกที่ถูกต้อง
+       ถ้าลูกค้ากด "คุยกับเจ้าหน้าที่" จากในหมวดของบอท (เช่น กำลังดูเรื่องประกันภัย) จะเลือกหัวข้อนั้นให้อัตโนมัติ
 --}}
 @php
     $botUserId = $botUserId ?? null;
+    $chatTopics = \App\Services\SupportChatTopicService::forCustomer();
+    $chatTopic = isset($chatTopic) && \App\Services\SupportChatTopicService::isValid($chatTopic) ? $chatTopic : null;
 @endphp
 
 <style>
@@ -37,6 +43,16 @@
     .bot-btn-outline { background: #fff; color: var(--primary-navy, #1a2d5e); border: 1px solid #c7cbd4; }
     .bot-subhead { font-weight: 700; color: var(--primary-navy, #1a2d5e); margin-top: 12px; margin-bottom: 4px; font-size: 0.9rem; }
     .bot-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+    .topic-picker { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; background: #f4f5f7; }
+    .topic-picker-title { font-weight: 700; color: var(--primary-navy, #1a2d5e); margin-bottom: 4px; }
+    .topic-picker-sub { font-size: 0.85rem; color: #777; margin-bottom: 14px; }
+    .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .topic-btn { background: #fff; border: 1px solid #d7dce3; border-radius: 12px; padding: 12px 10px; text-align: left; cursor: pointer; font-size: 0.9rem; color: #222; display: flex; align-items: center; gap: 10px; font-family: inherit; }
+    .topic-btn i { color: var(--primary-red, #c41e3a); width: 18px; text-align: center; }
+    .topic-btn:hover { border-color: var(--primary-navy, #1a2d5e); background: #f8f9fb; }
+    .topic-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 20px; background: #fff; border-bottom: 1px solid #eee; font-size: 0.8rem; color: #555; }
+    .topic-bar a { color: var(--primary-red, #c41e3a); cursor: pointer; text-decoration: none; white-space: nowrap; }
     .bot-input { padding: 9px 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 0.9rem; font-family: inherit; }
     .bot-textarea { min-height: 70px; resize: vertical; }
 
@@ -56,7 +72,7 @@
         <div class="chat-header" id="panelTitle">{{ __('ถามบอทตอบอัตโนมัติ') }}</div>
         <div class="header-actions">
             @if($botUserId)
-                <button type="button" class="btn-agent" id="toggleAgentBtn" onclick="switchToAgent()">
+                <button type="button" class="btn-agent" id="toggleAgentBtn" onclick="switchToAgent(agentTopicFromBot())">
                     <i class="fas fa-headset"></i> {{ __('คุยกับเจ้าหน้าที่') }}
                 </button>
             @else
@@ -82,12 +98,33 @@
     {{-- ===================== โหมดที่ 2: คุยกับเจ้าหน้าที่ (เฉพาะผู้ที่ล็อกอินแล้ว) ===================== --}}
     @if($botUserId)
         <div id="agentPanel" style="display:none; flex-direction:column; flex:1; min-height:0;">
-            <div class="chat-box" id="chatBox">
-                <div class="text-center text-muted" style="font-size:0.8rem;">{{ __('กำลังโหลดข้อมูล...') }}</div>
+            {{-- ขั้นที่ 1: เลือกหัวข้อก่อน เพื่อให้ข้อความไปถึงแผนกที่ถูกต้อง --}}
+            <div id="agentTopicPicker" class="topic-picker" style="display:none;">
+                <div class="topic-picker-title">{{ __('ต้องการสอบถามเรื่องอะไรครับ/คะ?') }}</div>
+                <div class="topic-picker-sub">{{ __('เลือกหัวข้อเพื่อให้เจ้าหน้าที่แผนกที่เกี่ยวข้องตอบคำถามของคุณโดยตรง') }}</div>
+                <div class="topic-grid">
+                    @foreach($chatTopics as $t)
+                        <button type="button" class="topic-btn" onclick="selectChatTopic('{{ $t['key'] }}')">
+                            <i class="fas {{ $t['icon'] ?? 'fa-comments' }}"></i>
+                            <span>{{ __($t['label']) }}</span>
+                        </button>
+                    @endforeach
+                </div>
             </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" class="chat-input" placeholder="{{ __('พิมพ์ข้อความของคุณที่นี่...') }}" onkeypress="handleEnter(event)">
-                <button onclick="sendMessage()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+
+            {{-- ขั้นที่ 2: แชทในหัวข้อที่เลือก --}}
+            <div id="agentChatArea" style="display:none; flex-direction:column; flex:1; min-height:0;">
+                <div class="topic-bar">
+                    <span>{{ __('หัวข้อ') }}: <strong id="agentTopicLabel">-</strong></span>
+                    <a onclick="showTopicPicker()"><i class="fas fa-arrow-right-arrow-left"></i> {{ __('เปลี่ยนหัวข้อ') }}</a>
+                </div>
+                <div class="chat-box" id="chatBox">
+                    <div class="text-center text-muted" style="font-size:0.8rem;">{{ __('กำลังโหลดข้อมูล...') }}</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="{{ __('พิมพ์ข้อความของคุณที่นี่...') }}" onkeypress="handleEnter(event)">
+                    <button onclick="sendMessage()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
             <div class="back-to-bot" onclick="switchToBot()">{{ __('← กลับไปถามบอทอัตโนมัติ') }}</div>
         </div>
@@ -118,7 +155,11 @@
 
 <script>
     const botUserId = {{ $botUserId ? $botUserId : 'null' }};
-    const chatTopic = 'general';
+    // 🌟 หัวข้อแชทกับเจ้าหน้าที่ — ต้องเลือกก่อนส่งข้อความเสมอ (null = ยังไม่ได้เลือก จะโชว์หน้าเลือกหัวข้อ)
+    const chatTopics = {!! json_encode($chatTopics, JSON_UNESCAPED_UNICODE) !!};
+    const presetChatTopic = {!! json_encode($chatTopic) !!};
+    let chatTopic = null;
+    let loadedTopic = null; // หัวข้อที่โหลดประวัติไว้แล้ว (กันโหลดซ้ำ / โหลดใหม่เมื่อเปลี่ยนหัวข้อ)
     const csrfToken = "{{ csrf_token() }}";
     const chatBox = document.getElementById('chatBox');
     const chatInput = document.getElementById('chatInput');
@@ -142,7 +183,12 @@
     };
 
     let lastUnansweredQuestion = null;
-    let agentHistoryLoaded = false;
+
+    function chatTopicLabel(key) {
+        const t = chatTopics.find(x => x.key === key);
+        return t ? t.label : key;
+    }
+    function isChatTopic(key) { return !!chatTopics.find(x => x.key === key); }
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -165,7 +211,8 @@
         window.Echo.channel('support-chat.' + botUserId)
             .listen('.message.sent', (e) => {
                 const msg = e.messageData;
-                if (msg.sender_type === 'admin') {
+                // channel เดียวรวมทุกหัวข้อของลูกค้าคนนี้ — แสดงเฉพาะข้อความของหัวข้อที่กำลังเปิดอยู่
+                if (msg.sender_type === 'admin' && chatTopic && (!msg.topic || msg.topic === chatTopic)) {
                     appendAgentMessage(msg);
                     scrollToBottom();
                 }
@@ -187,7 +234,9 @@
     }
 
     function loadAgentHistory() {
-        fetch(`{{ route('support-chat.history') }}?topic=${chatTopic}`)
+        if (!chatTopic) return;
+        chatBox.innerHTML = '<div class="text-center text-muted" style="font-size:0.8rem;">กำลังโหลดข้อมูล...</div>';
+        fetch(`{{ route('support-chat.history') }}?topic=${encodeURIComponent(chatTopic)}`)
             .then((res) => res.json())
             .then((json) => {
                 chatBox.innerHTML = '';
@@ -207,6 +256,7 @@
     function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
 
     function sendMessage() {
+        if (!chatTopic) { showTopicPicker(); return; } // ยังไม่ได้เลือกหัวข้อ → ให้เลือกก่อน
         const text = chatInput.value.trim();
         if (!text) return;
         chatInput.value = '';
@@ -223,25 +273,55 @@
 
     // ===================== สลับโหมด บอท <-> เจ้าหน้าที่ =====================
 
-    function switchToAgent() {
+    // หัวข้อแชทที่ควรเลือกให้อัตโนมัติจากหมวดของบอทที่ลูกค้ากำลังดูอยู่ (key ของ chatbot_topics ตรงกับ config/support_chat.php)
+    function agentTopicFromBot() {
+        const t = (typeof findTopic === 'function' && currentTopicId) ? findTopic(currentTopicId) : null;
+        return (t && isChatTopic(t.key)) ? t.key : null;
+    }
+
+    // topicKey: ระบุมาเมื่อรู้หัวข้ออยู่แล้ว (จากหมวดบอท / ?topic=) — ไม่ระบุ = ให้ลูกค้าเลือกจากหน้าเลือกหัวข้อ
+    function switchToAgent(topicKey = null) {
         if (!botUserId) { window.location.href = loginUrl; return; }
         document.getElementById('botPanel').style.display = 'none';
-        const agentPanel = document.getElementById('agentPanel');
-        agentPanel.style.display = 'flex';
-        document.getElementById('panelTitle').textContent = 'ปรึกษาผู้เชี่ยวชาญ';
+        document.getElementById('agentPanel').style.display = 'flex';
         document.getElementById('toggleAgentBtn').style.display = 'none';
 
-        if (!agentHistoryLoaded) {
+        if (topicKey && isChatTopic(topicKey)) {
+            selectChatTopic(topicKey);
+        } else if (chatTopic) {
+            selectChatTopic(chatTopic);
+        } else {
+            showTopicPicker();
+        }
+    }
+
+    function showTopicPicker() {
+        document.getElementById('panelTitle').textContent = 'ปรึกษาผู้เชี่ยวชาญ';
+        document.getElementById('agentChatArea').style.display = 'none';
+        document.getElementById('agentTopicPicker').style.display = 'block';
+    }
+
+    function selectChatTopic(key) {
+        if (!isChatTopic(key)) { showTopicPicker(); return; }
+        chatTopic = key;
+        document.getElementById('panelTitle').textContent = 'ปรึกษาผู้เชี่ยวชาญ · ' + chatTopicLabel(key);
+        document.getElementById('agentTopicLabel').textContent = chatTopicLabel(key);
+        document.getElementById('agentTopicPicker').style.display = 'none';
+        document.getElementById('agentChatArea').style.display = 'flex';
+
+        if (loadedTopic !== key) {
             loadAgentHistory();
-            agentHistoryLoaded = true;
+            loadedTopic = key;
         }
 
+        // คำถามที่บอทตอบไม่ได้ → ส่งต่อให้เจ้าหน้าที่ในหัวข้อที่เพิ่งเลือก
         if (lastUnansweredQuestion) {
             chatInput.value = lastUnansweredQuestion;
-            sendMessage();
             lastUnansweredQuestion = null;
+            sendMessage();
         }
         scrollToBottom();
+        chatInput.focus();
     }
 
     function switchToBot() {
@@ -409,7 +489,7 @@
     function showTechnicianContact() {
         renderUserHtml('ติดต่อช่าง');
         const btns = `
-            <button type="button" class="bot-btn" onclick="switchToAgent()">ติดต่อเจ้าหน้าที่</button>
+            <button type="button" class="bot-btn" onclick="switchToAgent(agentTopicFromBot())">ติดต่อเจ้าหน้าที่</button>
             <button type="button" class="bot-btn" onclick="goToRepairRequest()">แจ้งซ่อม</button>
             <button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← กลับ</button>`;
         renderBotHtml(`เลือกได้เลยครับ ต้องการคุยกับเจ้าหน้าที่ทันที หรือไปที่หน้าแจ้งซ่อมเพื่อเลือกอุปกรณ์/แพ็กเกจที่ต้องการแจ้งซ่อม<div class="bot-buttons">${btns}</div>`);
@@ -506,7 +586,7 @@
         } else if (botUserId) {
             lastUnansweredQuestion = text;
             renderBotHtml(escapeHtml(data.escalation_message || 'ทางเราได้รับเรื่องแล้ว กำลังส่งต่อให้เจ้าหน้าที่ครับ'));
-            setTimeout(() => { if (lastUnansweredQuestion) switchToAgent(); }, 1200);
+            setTimeout(() => { if (lastUnansweredQuestion) switchToAgent(agentTopicFromBot()); }, 1200);
         } else {
             renderBotHtml(`ขออภัยครับ บอทยังไม่พบคำตอบที่ตรงกับคำถามนี้ กรุณาเข้าสู่ระบบเพื่อคุยกับเจ้าหน้าที่ต่อได้เลยครับ<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">เข้าสู่ระบบ</a></div>`);
         }
@@ -556,4 +636,9 @@
 
     // เริ่มการสนทนาบอทตอนโหลด widget นี้
     initBot();
+
+    // 🌟 เปิดมาพร้อมหัวข้อ (เช่น /support-chat?topic=insurance จากปุ่มในหน้าประกัน) → เข้าโหมดคุยกับเจ้าหน้าที่หัวข้อนั้นทันที
+    if (presetChatTopic && botUserId) {
+        switchToAgent(presetChatTopic);
+    }
 </script>

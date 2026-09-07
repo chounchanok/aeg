@@ -13,6 +13,8 @@
                         <h2 class="text-lg font-medium truncate mr-5">ภาพรวมระบบ (General Report)</h2>
                     </div>
                     <div class="grid grid-cols-12 gap-6 mt-5">
+                        {{-- 🌟 RBAC: ยอดขายเห็นเฉพาะแผนกที่มี orders.manage / งานซ่อมเฉพาะ service_requests.manage --}}
+                        @if($canViewOrders)
                         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
                             <div class="report-box zoom-in">
                                 <div class="box p-5">
@@ -24,6 +26,8 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
+                        @if($canViewServiceRequests)
                         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
                             <div class="report-box zoom-in">
                                 <div class="box p-5">
@@ -35,6 +39,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
                             <div class="report-box zoom-in">
                                 <div class="box p-5">
@@ -59,6 +64,7 @@
                         </div>
                     </div>
                 </div>
+                @if($canViewOrders)
                 <div class="col-span-12 lg:col-span-8 mt-8">
                     <div class="intro-y block sm:flex items-center h-10">
                         <h2 class="text-lg font-medium truncate mr-5">สถิติยอดขาย 7 วันย้อนหลัง</h2>
@@ -67,6 +73,8 @@
                         <canvas id="salesChart" height="150"></canvas>
                     </div>
                 </div>
+                @endif
+                @if($canViewServiceRequests)
                 <div class="col-span-12 lg:col-span-4 mt-8">
                     <div class="intro-y flex items-center h-10">
                         <h2 class="text-lg font-medium truncate mr-5">งานแจ้งซ่อมล่าสุด</h2>
@@ -88,12 +96,14 @@
                         <a href="{{ route('admin.service-requests') }}" class="intro-y w-full block text-center rounded-md py-3 border border-dotted border-slate-400 dark:border-darkmode-300 text-slate-500">ดูทั้งหมด</a>
                     </div>
                 </div>
+                @endif
                 </div>
         </div>
     </div>
 @endsection
 
 @section('script')
+@if($canViewOrders)
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('salesChart').getContext('2d');
@@ -120,4 +130,5 @@
         }
     });
 </script>
+@endif
 @endsection

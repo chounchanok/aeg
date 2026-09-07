@@ -368,7 +368,7 @@ class SupportController extends Controller
             'sales_admin',
             'มีคำขอติดต่อฝ่ายขายใหม่',
             "เลขที่ {$requestNumber} จาก {$validated['first_name']} {$validated['last_name']} (หัวข้อ: {$validated['topic']})",
-            '/admin/contact-requests/' . $id,
+            '/admin/contacts/sales/' . $id,
             'contact_admin'
         );
 

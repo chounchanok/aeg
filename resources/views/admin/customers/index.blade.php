@@ -8,9 +8,12 @@
 @section('subcontent')
     <div class="intro-y flex items-center mt-10">
         <h2 class="text-lg font-medium mr-auto">รายชื่อลูกค้าทั้งหมด (Customers)</h2>
+        {{-- 🌟 หน้าลูกค้าเป็น Read-only สำหรับทุกแผนก — ปุ่มเขียนแสดงเฉพาะคนที่มี customers.manage (IT) --}}
+        @can('customers.manage')
         <a href="{{ route('admin.customers.points-import') }}" class="btn btn-primary shadow-md">
             <i data-lucide="upload" class="w-4 h-4 mr-1"></i> นำเข้าแต้มลูกค้า (Excel)
         </a>
+        @endcan
     </div>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
