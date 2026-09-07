@@ -86,6 +86,8 @@ class SupportChatAdminController extends Controller
         $customer = DB::table('users')->where('id', $user_id)->first();
         if (!$customer) abort(404);
 
+        $customer_profile = DB::table('customer_profiles')->where('user_id', $user_id)->first();
+
         $messages = DB::table('support_chats')
             ->where('user_id', $user_id)
             ->where('topic', $topic)
@@ -95,6 +97,8 @@ class SupportChatAdminController extends Controller
         return view('admin.support-chats.show', [
             'messages' => $messages,
             'customer' => $customer,
+            'first_name' => $customer_profile->first_name ?? '',
+            'last_name' => $customer_profile->last_name ?? '',
             'topic' => $topic,
             'topicLabel' => SupportChatTopicService::label($topic),
             'departmentName' => SupportChatTopicService::departmentNames()[$topic] ?? '-',

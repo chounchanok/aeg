@@ -9,7 +9,7 @@
     <div class="intro-y flex flex-col sm:flex-row items-start sm:items-center mt-10">
         <div class="mr-auto">
             <h2 class="text-lg font-medium">{{ $config['title'] }}</h2>
-            <div class="text-slate-500 text-xs mt-1">ที่มา: {{ $config['source'] }}</div>
+            <!-- <div class="text-slate-500 text-xs mt-1">ที่มา: {{ $config['source'] }}</div> -->
         </div>
     </div>
 

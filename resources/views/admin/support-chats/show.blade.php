@@ -41,7 +41,7 @@
 @section('subcontent')
     <div class="intro-y flex items-center mt-8 mb-5">
         <h2 class="text-lg font-medium mr-auto">
-            แชทกับ: {{ $customer->username }} ({{ $customer->phone }}) <br>
+            แชทกับ: {{ $first_name }} {{ $last_name }} ({{ $customer->phone }}) <br>
             <span class="text-sm text-slate-500 font-normal">หัวข้อ: <span class="text-primary font-medium">{{ $topicLabel }}</span> · แผนกที่รับผิดชอบ: {{ $departmentName }}</span>
         </h2>
         <a href="{{ route('admin.support-chats.index') }}" class="btn btn-outline-secondary w-24">ย้อนกลับ</a>
