@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
@@ -34,16 +35,36 @@ class StaffAdminController extends Controller
         });
 
         // 🌟 รายการแผนก (RBAC roles) ทั้งหมด สำหรับ dropdown เลือกตอนเพิ่ม/แก้ไขพนักงาน
-        $roles = Role::orderBy('name')->get();
+        // + permissions ของแต่ละแผนก (อ่านจากฐานข้อมูลจริง) เพื่อแสดงตาราง "แผนกไหนทำอะไรได้บ้าง"
+        $roles = Role::with('permissions')->orderBy('name')->get();
+
+        // 🌟 เทียบฐานข้อมูลกับนิยามใน RolePermissionSeeder — ถ้าไม่ตรง (เช่น deploy โค้ดใหม่แล้วยังไม่ได้ซิงค์)
+        // หน้าเว็บจะเตือนพร้อมปุ่มซิงค์ให้กดได้เลย ไม่ต้องรัน artisan
+        $rbacDiff = RolePermissionSeeder::diff();
 
         return view('admin.staff.index', [
             'staffs' => $staffs,
             'roles' => $roles,
+            'rbacDiff' => $rbacDiff,
             // ให้เมนูซ้ายมือ Active ตรงกับเมนูตั้งค่า > พนักงาน
             'first_level_active_index' => 'settings',
             'second_level_active_index' => 'staff',
             'third_level_active_index' => ''
         ]);
+    }
+
+    /**
+     * 🌟 ซิงค์แผนก/สิทธิ์ในฐานข้อมูลให้ตรงกับ RolePermissionSeeder (ปุ่มในหน้าพนักงาน — เฉพาะผู้มี staff.manage)
+     * idempotent: ไม่กระทบ role ที่ assign ให้พนักงานไว้แล้ว
+     */
+    public function syncPermissions()
+    {
+        $roleKeys = RolePermissionSeeder::sync();
+
+        // ล้าง cache สิทธิ์ของคนที่กดเอง เผื่อสิทธิ์ตัวเองเปลี่ยนใน request นี้
+        auth()->user()?->forgetPermissionCache();
+
+        return redirect()->route('admin.staff')->with('success', 'ซิงค์แผนกและสิทธิ์เรียบร้อยแล้ว (' . count($roleKeys) . ' แผนก) — พนักงานที่ล็อกอินอยู่จะเห็นเมนูใหม่ทันทีเมื่อรีเฟรชหน้า');
     }
 
     public function store(Request $request)

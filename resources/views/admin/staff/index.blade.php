@@ -7,11 +7,47 @@
 
 @section('subcontent')
     <h2 class="intro-y text-lg font-medium mt-10">รายชื่อพนักงานและช่างซ่อม (Staff & Technicians)</h2>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible show flex items-center mb-2 mt-5" role="alert">
+            <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i> {{ session('success') }}
+            <button type="button" class="btn-close text-white" data-tw-dismiss="alert" aria-label="Close"> <i data-lucide="x" class="w-4 h-4"></i> </button>
+        </div>
+    @endif
+
+    {{-- 🌟 เตือนเมื่อสิทธิ์ในฐานข้อมูลยังไม่ตรงกับที่กำหนดในโค้ด (RolePermissionSeeder) เช่น เพิ่งอัปเดตระบบแล้วยังไม่ได้ซิงค์
+         → เมนู/สิทธิ์ใหม่จะไม่ขึ้นให้บางแผนก จนกว่าจะกดซิงค์ --}}
+    @if(!empty($rbacDiff))
+        <div class="alert alert-warning show mt-5" role="alert">
+            <div class="flex items-start">
+                <i data-lucide="alert-triangle" class="w-6 h-6 mr-2 flex-shrink-0"></i>
+                <div class="flex-1">
+                    <div class="font-medium">สิทธิ์ของแผนกในฐานข้อมูลยังไม่ตรงกับเวอร์ชันล่าสุดของระบบ — บางแผนกอาจไม่เห็นเมนูใหม่</div>
+                    <ul class="list-disc ml-5 mt-1 text-xs">
+                        @foreach($rbacDiff as $line)
+                            <li>{{ $line }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                <form action="{{ route('admin.staff.sync-permissions') }}" method="POST" class="ml-3 flex-shrink-0" onsubmit="return confirm('ซิงค์แผนกและสิทธิ์ให้ตรงกับระบบเวอร์ชันล่าสุด? (ไม่กระทบแผนกที่กำหนดให้พนักงานแต่ละคนไว้)');">
+                    @csrf
+                    <button type="submit" class="btn btn-warning whitespace-nowrap"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i> ซิงค์สิทธิ์ตอนนี้</button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
             <button class="btn btn-primary shadow-md mr-2" data-tw-toggle="modal" data-tw-target="#add-staff-modal">
                 <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มพนักงาน/ช่างใหม่
             </button>
+            <form action="{{ route('admin.staff.sync-permissions') }}" method="POST" class="ml-auto" onsubmit="return confirm('ซิงค์แผนกและสิทธิ์ให้ตรงกับระบบเวอร์ชันล่าสุด? (ไม่กระทบแผนกที่กำหนดให้พนักงานแต่ละคนไว้)');">
+                @csrf
+                <button type="submit" class="btn btn-outline-secondary" title="เขียนแผนก/สิทธิ์ตาม RolePermissionSeeder ลงฐานข้อมูล (รันซ้ำได้)">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i> ซิงค์สิทธิ์แผนก
+                </button>
+            </form>
         </div>
 
         <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
@@ -61,6 +97,40 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        {{-- 🌟 ตารางสรุป "แผนกไหนทำอะไรได้บ้าง" อ่านจากฐานข้อมูลจริง (ใช้ตรวจสอบว่าสิทธิ์ที่ตั้งไว้ถูกต้องไหม) --}}
+        <div class="intro-y col-span-12 box p-5">
+            <div class="flex items-center border-b border-slate-200/60 pb-4 mb-4">
+                <i data-lucide="shield-check" class="w-5 h-5 mr-2 text-primary"></i>
+                <div class="font-medium text-base mr-auto">แผนกและสิทธิ์การใช้งาน (RBAC) — ตามข้อมูลในฐานข้อมูลปัจจุบัน</div>
+                <span class="text-xs text-slate-500">{{ $roles->count() }} แผนก</span>
+            </div>
+            <div class="grid grid-cols-12 gap-4">
+                @foreach($roles as $role)
+                    <div class="col-span-12 md:col-span-6 xl:col-span-4 border border-slate-200/60 rounded-md p-4">
+                        <div class="flex items-center">
+                            <div class="font-medium mr-auto">{{ $role->name }}</div>
+                            <code class="text-xs text-slate-400">{{ $role->key }}</code>
+                        </div>
+                        @if($role->description)
+                            <div class="text-slate-500 text-xs mt-1">{{ $role->description }}</div>
+                        @endif
+                        <div class="mt-3 flex flex-wrap gap-1">
+                            @if($role->is_full_access)
+                                <span class="px-2 py-0.5 rounded-full text-xs bg-success/20 text-success font-medium">เข้าถึงได้ทุกเมนู (full access)</span>
+                            @endif
+                            @forelse($role->permissions as $perm)
+                                <span class="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600" title="{{ $perm->key }}">{{ $perm->name }}</span>
+                            @empty
+                                @if(!$role->is_full_access)
+                                    <span class="text-xs text-danger">ยังไม่มีสิทธิ์ใดๆ — กด "ซิงค์สิทธิ์แผนก" ด้านบน</span>
+                                @endif
+                            @endforelse
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 

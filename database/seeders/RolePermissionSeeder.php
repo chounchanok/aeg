@@ -12,7 +12,14 @@ use App\Models\Permission;
  */
 class RolePermissionSeeder extends Seeder
 {
-    public function run(): void
+    /**
+     * 🌟 นิยาม "แผนก → สิทธิ์" ทั้งหมดของระบบ (source of truth) — แยกออกมาเป็น static เพื่อให้
+     * หน้าพนักงาน (/admin/staff) เอาไปเทียบกับฐานข้อมูลได้ว่าซิงค์แล้วหรือยัง และกดซิงค์จากหน้าเว็บได้เลย
+     * โดยไม่ต้องรัน artisan (migration 2026_09_07_120000 ก็เรียก run() นี้อัตโนมัติตอน php artisan migrate)
+     *
+     * @return array{permissions: array<int, array{key:string,name:string,module:string}>, roles: array<string, array>}
+     */
+    public static function definitions(): array
     {
         $permissions = [
             ['key' => 'service_requests.manage', 'name' => 'จัดการแจ้งซ่อม (นัดหมาย/มอบหมายช่าง/อัปเดตสถานะ/แชทงานซ่อม)', 'module' => 'service_requests'],
@@ -38,10 +45,6 @@ class RolePermissionSeeder extends Seeder
             ['key' => 'contacts.product', 'name' => 'รายการติดต่อเรื่องสินค้า/บริการจากหน้าเว็บ (product_contacts)', 'module' => 'contacts'],
             ['key' => 'contacts.sales', 'name' => 'คำขอติดต่อฝ่ายขายจากแอปมือถือ (contact_admin_requests)', 'module' => 'contacts'],
         ];
-
-        foreach ($permissions as $p) {
-            Permission::updateOrCreate(['key' => $p['key']], $p);
-        }
 
         $allPermissionKeys = array_column($permissions, 'key');
 
@@ -87,7 +90,22 @@ class RolePermissionSeeder extends Seeder
             ],
         ];
 
-        foreach ($roles as $key => $data) {
+        return ['permissions' => $permissions, 'roles' => $roles];
+    }
+
+    /**
+     * เขียนนิยามด้านบนลงฐานข้อมูล (idempotent — รันซ้ำได้ ไม่กระทบ role ที่ assign ให้พนักงานไว้แล้ว)
+     * เรียกได้ทั้งจาก artisan db:seed, จาก migration และจากปุ่ม "ซิงค์สิทธิ์" ในหน้าพนักงาน
+     */
+    public static function sync(): array
+    {
+        $defs = self::definitions();
+
+        foreach ($defs['permissions'] as $p) {
+            Permission::updateOrCreate(['key' => $p['key']], $p);
+        }
+
+        foreach ($defs['roles'] as $key => $data) {
             $role = Role::updateOrCreate(
                 ['key' => $key],
                 [
@@ -101,6 +119,54 @@ class RolePermissionSeeder extends Seeder
             $role->permissions()->sync($permissionIds);
         }
 
-        $this->command->info('สร้าง Role/Permission (RBAC) เรียบร้อยแล้ว: ' . implode(', ', array_keys($roles)));
+        return array_keys($defs['roles']);
+    }
+
+    /**
+     * ตรวจว่าฐานข้อมูลตรงกับนิยามหรือยัง — คืนรายการความต่าง (ว่าง = ซิงค์แล้ว)
+     * @return string[] ข้อความอธิบายสิ่งที่ยังไม่ตรง
+     */
+    public static function diff(): array
+    {
+        $defs = self::definitions();
+        $problems = [];
+
+        $existingPermissionKeys = Permission::pluck('key')->all();
+        foreach ($defs['permissions'] as $p) {
+            if (!in_array($p['key'], $existingPermissionKeys, true)) {
+                $problems[] = "ยังไม่มีสิทธิ์ '{$p['key']}' ในฐานข้อมูล";
+            }
+        }
+
+        $roles = Role::with('permissions')->get()->keyBy('key');
+        foreach ($defs['roles'] as $key => $data) {
+            $role = $roles->get($key);
+            if (!$role) {
+                $problems[] = "ยังไม่มีแผนก '{$data['name']}' ({$key}) ในฐานข้อมูล";
+                continue;
+            }
+            $dbKeys = $role->permissions->pluck('key')->sort()->values()->all();
+            $defKeys = collect($data['permissions'])->sort()->values()->all();
+            $missing = array_diff($defKeys, $dbKeys);
+            $extra = array_diff($dbKeys, $defKeys);
+            if ($missing) {
+                $problems[] = "แผนก '{$data['name']}' ยังขาดสิทธิ์: " . implode(', ', $missing);
+            }
+            if ($extra) {
+                $problems[] = "แผนก '{$data['name']}' มีสิทธิ์เกินจากที่กำหนด: " . implode(', ', $extra);
+            }
+            if ((bool) $role->is_full_access !== (bool) ($data['is_full_access'] ?? false)) {
+                $problems[] = "แผนก '{$data['name']}' ค่า full access ไม่ตรง";
+            }
+        }
+
+        return $problems;
+    }
+
+    public function run(): void
+    {
+        $roleKeys = self::sync();
+
+        $this->command?->info('สร้าง Role/Permission (RBAC) เรียบร้อยแล้ว: ' . implode(', ', $roleKeys));
     }
 }

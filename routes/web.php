@@ -307,6 +307,8 @@ Route::middleware('auth')->group(function() {
         Route::middleware('permission:staff.manage')->group(function() {
             Route::get('/admin/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
             Route::post('/admin/staff', [StaffAdminController::class, 'store'])->name('admin.staff.store');
+            // ซิงค์แผนก/สิทธิ์ (RBAC) ให้ตรงกับ RolePermissionSeeder จากหน้าเว็บ — ไม่ต้องรัน artisan
+            Route::post('/admin/staff/sync-permissions', [StaffAdminController::class, 'syncPermissions'])->name('admin.staff.sync-permissions');
             Route::get('/admin/staff/{id}/edit', [StaffAdminController::class, 'edit'])->name('admin.staff.edit');
             Route::post('/admin/staff/{id}/update', [StaffAdminController::class, 'update'])->name('admin.staff.update');
         });
