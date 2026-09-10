@@ -174,7 +174,7 @@ class EaseClubController extends Controller
         } else {
             $reward->is_favorited = false;
             $reward->current_points = null;
-            $reward->points_missing = null;
+            $reward->points_missing = $reward->points_required;
             $reward->can_redeem = false;
             $reward->user_id = $request->user();
         }
