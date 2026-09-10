@@ -589,6 +589,8 @@ class EcommerceController extends Controller
             'preferred_date' => 'nullable|date',
             'note' => 'nullable|string',
             'reward_code' => 'nullable|string',
+            'tax_id' => 'nullable|string|max:20', // 🌟 เลขผู้เสียภาษี (สำหรับออกใบกำกับภาษี)
+            'branch' => 'nullable|string|max:100', // 🌟 สาขา
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:20480' // สูงสุด 20MB
         ]);
 
@@ -647,6 +649,13 @@ class EcommerceController extends Controller
 
         DB::beginTransaction();
         try {
+            // 🌟 บันทึก/อัปเดตเลขผู้เสียภาษีและสาขาลงโปรไฟล์ลูกค้า (ถ้าลูกค้าส่งมาตอน Checkout)
+            $taxData = array_filter($request->only(['tax_id', 'branch']), fn ($v) => $v !== null && $v !== '');
+            if (!empty($taxData)) {
+                $taxData['updated_at'] = now();
+                DB::table('customer_profiles')->updateOrInsert(['user_id' => $user->id], $taxData);
+            }
+
             $orderId = DB::table('orders')->insertGetId([
                 'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,
@@ -731,6 +740,8 @@ class EcommerceController extends Controller
             'note' => 'nullable|string',
             'reward_code' => 'nullable|string',
             'duration_months' => 'nullable|integer|in:1,3,6,12',
+            'tax_id' => 'nullable|string|max:20', // 🌟 เลขผู้เสียภาษี (สำหรับออกใบกำกับภาษี)
+            'branch' => 'nullable|string|max:100', // 🌟 สาขา
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,mp4,mov|max:10240'
         ]);
 
@@ -779,6 +790,13 @@ class EcommerceController extends Controller
 
         DB::beginTransaction();
         try {
+            // 🌟 บันทึก/อัปเดตเลขผู้เสียภาษีและสาขาลงโปรไฟล์ลูกค้า (ถ้าลูกค้าส่งมาตอน Buy Now)
+            $taxData = array_filter($request->only(['tax_id', 'branch']), fn ($v) => $v !== null && $v !== '');
+            if (!empty($taxData)) {
+                $taxData['updated_at'] = now();
+                DB::table('customer_profiles')->updateOrInsert(['user_id' => $user->id], $taxData);
+            }
+
             $orderId = DB::table('orders')->insertGetId([
                 'order_number' => 'ORD-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'user_id' => $user->id,

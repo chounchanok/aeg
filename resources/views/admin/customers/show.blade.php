@@ -34,6 +34,8 @@
                 <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
                     <div class="mb-2"><i data-lucide="phone" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->phone ?? 'ไม่ระบุ' }}</div>
                     <div class="mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->address ?? 'ยังไม่มีข้อมูลที่อยู่' }}</div>
+                    <div class="mb-2"><i data-lucide="receipt" class="w-4 h-4 inline mr-2 text-slate-500"></i> เลขผู้เสียภาษี: {{ $customer->tax_id ?? 'ไม่ระบุ' }}</div>
+                    <div class="mb-2"><i data-lucide="building-2" class="w-4 h-4 inline mr-2 text-slate-500"></i> สาขา: {{ $customer->branch ?? 'ไม่ระบุ' }}</div>
                 </div>
                 <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
                     <div class="flex items-center justify-between mb-1">

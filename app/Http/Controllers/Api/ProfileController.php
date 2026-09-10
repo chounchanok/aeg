@@ -64,12 +64,14 @@ class ProfileController extends Controller
             'other' => 'nullable|string',
             'company' => 'nullable|string',
             'company_type' => 'nullable|string',
+            'tax_id' => 'nullable|string|max:20', // 🌟 เลขผู้เสียภาษี
+            'branch' => 'nullable|string|max:100', // 🌟 สาขา
             'service_interesting' => 'nullable|array',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' 
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         // แยก service_interesting ออกมาก่อน เพราะเราต้องจัดฟอร์แมตมันใหม่
-        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other', 'company', 'company_type']);
+        $updateData = $request->only(['first_name', 'last_name', 'phone', 'gender', 'birthday', 'other', 'company', 'company_type', 'tax_id', 'branch']);
 
         // 🌟 ดักจับ Array และบังคับเข้ารหัส JSON แบบอ่านภาษาไทยออก ก่อนเซฟลง Database
         if ($request->has('service_interesting')) {

@@ -31,7 +31,7 @@ class CustomerAdminController extends Controller
     // 2. หน้าดูรายละเอียดลูกค้าและสินค้าที่ลูกค้ามี
     public function show($id)
     {
-        $customer = DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')->where('users.id', $id)->select('users.*', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.address', 'customer_profiles.profile_image_url')->first();
+        $customer = DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')->where('users.id', $id)->select('users.*', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.address', 'customer_profiles.profile_image_url', 'customer_profiles.tax_id', 'customer_profiles.branch')->first();
         if (!$customer) abort(404);
 
         $customerProducts = DB::table('customer_products')->where('customer_id', $id)->orderBy('created_at', 'desc')->get();

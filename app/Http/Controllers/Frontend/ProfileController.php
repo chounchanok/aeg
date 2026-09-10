@@ -36,6 +36,8 @@ class ProfileController extends Controller
             'last_name'  => 'nullable|string|max:255',
             'company'  => 'nullable|string|max:255',
             'phone'      => 'required|string|max:20',
+            'tax_id'     => 'nullable|string|max:20', // 🌟 เลขผู้เสียภาษี
+            'branch'     => 'nullable|string|max:100', // 🌟 สาขา
             'password'   => 'nullable|string|min:6|confirmed',
         ]);
 
@@ -61,6 +63,8 @@ class ProfileController extends Controller
                         'last_name'  => $validated['last_name'],
                         'company'  => $validated['company'] ?? null,
                         'phone'      => $validated['phone'],
+                        'tax_id'     => $validated['tax_id'] ?? null,
+                        'branch'     => $validated['branch'] ?? null,
                         'updated_at' => now()
                     ]
                 );

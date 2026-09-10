@@ -98,6 +98,14 @@
                                         <div class="info-label">{{ __('บริษัท') }}</div>
                                         <div class="info-value">{{ $profile->company ?? '-' }}</div>
                                     </div>
+                                    <div class="col-6">
+                                        <div class="info-label">{{ __('เลขผู้เสียภาษี') }}</div>
+                                        <div class="info-value">{{ $profile->tax_id ?? '-' }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="info-label">{{ __('สาขา') }}</div>
+                                        <div class="info-value">{{ $profile->branch ?? '-' }}</div>
+                                    </div>
                                 </div>
                                 <div class="text-end mt-3">
                                     <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#profileModal">{{ __('แก้ไขข้อมูลส่วนตัว') }}</button>
@@ -304,6 +312,16 @@
                             <div class="col-6">
                                 <label for="company">{{ __('บริษัท') }}</label>
                                 <input type="text" class="form-control" id="company" name="company" value="{{ old('company', $profile->company) }}" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="tax_id">{{ __('เลขผู้เสียภาษี') }}</label>
+                                <input type="text" class="form-control" id="tax_id" name="tax_id" value="{{ old('tax_id', $profile->tax_id ?? '') }}" autocomplete="off">
+                            </div>
+                            <div class="col-6">
+                                <label for="branch">{{ __('สาขา') }}</label>
+                                <input type="text" class="form-control" id="branch" name="branch" value="{{ old('branch', $profile->branch ?? '') }}" autocomplete="off" placeholder="{{ __('เช่น สำนักงานใหญ่') }}">
                             </div>
                         </div>
 
