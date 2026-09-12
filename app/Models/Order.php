@@ -12,7 +12,8 @@ class Order extends Model
     protected $fillable = [
         'order_number', 'user_id', 'address_id', 'subtotal', 
         'discount', 'total_amount', 'status', 'payment_gateway', 
-        'gateway_transaction_id', 'gateway_response'
+        'gateway_transaction_id', 'gateway_response', 'quotation_url', 
+        'receipt_url'
     ];
 
     public function items()
