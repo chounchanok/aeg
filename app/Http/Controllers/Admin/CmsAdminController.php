@@ -37,6 +37,7 @@ class CmsAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string',
+            'link_url' => 'nullable|url',
             'location' => 'required|in:main,ease_club,service',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile (ไม่บังคับ)
@@ -60,6 +61,7 @@ class CmsAdminController extends Controller
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
             'image_url_m' => $imageUrlM, // 🌟 บันทึกรูป Mobile ลง Database
+            'link_url' => $request->link_url ?? '',
             'location' => $request->location,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
@@ -75,6 +77,7 @@ class CmsAdminController extends Controller
     {
         $request->validate([
             'title_th' => 'required|string',
+            'link_url' => 'nullable|url',
             'location' => 'required|in:main,ease_club,service',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile
@@ -101,6 +104,7 @@ class CmsAdminController extends Controller
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
             'image_url_m' => $imageUrlM, // 🌟 อัปเดตรูป Mobile
+            'link_url' => $request->link_url ?? '',
             'location' => $request->location,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),

@@ -1160,6 +1160,7 @@ class EcommerceController extends Controller
         $codes = DB::table('customer_reward_codes')
             ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
             ->where('customer_reward_codes.user_id', $user->id)
+            ->where('customer_reward_codes.discount_amount', '>', 0)
             ->where('customer_reward_codes.status', 'active')
             ->select(
                 'customer_reward_codes.id',

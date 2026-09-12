@@ -71,6 +71,10 @@
                         <label class="form-label">ชื่อแบนเนอร์ (EN)</label>
                         <input name="title_en" type="text" class="form-control">
                     </div>
+                    <div class="col-span-12 sm:col-span-12">
+                        <label class="form-label">URL</label>
+                        <input name="link_url" type="text" class="form-control">
+                    </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">จุดที่ต้องการให้แสดง</label>
                         <select name="location" class="form-select" required>
@@ -117,6 +121,10 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ชื่อแบนเนอร์ (EN)</label>
                         <input name="title_en" id="edit_title_en" type="text" class="form-control">
+                    </div>
+                    <div class="col-span-12 sm:col-span-12">
+                        <label class="form-label">URL</label>
+                        <input name="link_url" id="edit_link_url" type="text" class="form-control">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">จุดที่ต้องการให้แสดง</label>
@@ -171,6 +179,7 @@
             // นำข้อมูลไปหยอดตามช่องต่างๆ
             $('#edit_title_th').val(banner.title_th);
             $('#edit_title_en').val(banner.title_en);
+            $('#edit_link_url').val(banner.link_url);
             $('#edit_location').val(banner.location);
             $('#edit_sort_order').val(banner.sort_order);
             $('#edit_is_active').prop('checked', banner.is_active == 1);
