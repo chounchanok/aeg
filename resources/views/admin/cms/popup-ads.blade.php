@@ -7,7 +7,7 @@
 @section('subcontent')
     <h2 class="intro-y text-lg font-medium mt-10">ระบบจัดการ Popup Ads (โฆษณาแบบ Popup)</h2>
     <div class="text-slate-500 mt-1">
-        รูปภาพที่เปิดใช้งาน (ลำดับแรกสุด) จะถูกแสดงเป็น popup ให้ลูกค้าเห็นครั้งแรกที่เปิดหน้าแรกของเว็บในแต่ละครั้งที่เข้าชม (session)
+        รูปภาพที่เปิดใช้งานทั้งหมดจะถูกแสดงเป็น popup แบบสลับกันไปทีละรูปตามลำดับ (Sort order) — ลูกค้าที่เคยเห็นรูปหนึ่งไปแล้ว เมื่อรีเฟรชหน้าเว็บใหม่จะเห็นรูปถัดไปแทน โดยรูปแต่ละรูปจะแสดงให้ลูกค้าคนเดิมเห็นได้ไม่เกิน 1 ครั้งต่อวัน (พอครบทุกรูปแล้วจะไม่มี popup ขึ้นอีกจนกว่าจะขึ้นวันใหม่)
     </div>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
@@ -70,7 +70,8 @@
                     </div>
                     <div class="col-span-12">
                         <label class="form-label">ไฟล์รูปภาพ Popup <span class="text-danger">*</span></label>
-                        <input name="image" type="file" class="form-control" accept="image/*" required>
+                        <input name="images[]" type="file" class="form-control" accept="image/*" multiple required>
+                        <div class="mt-1 text-xs text-slate-500">เลือกได้หลายไฟล์พร้อมกัน — ระบบจะสร้าง Popup Ad แยกทีละรูป และสลับแสดงตามลำดับไฟล์ที่เลือก</div>
                     </div>
                     <div class="col-span-12 sm:col-span-8">
                         <label class="form-label">ลิงก์ปลายทางเมื่อกดที่รูป (ถ้ามี)</label>

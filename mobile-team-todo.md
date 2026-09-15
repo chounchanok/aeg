@@ -83,10 +83,38 @@ Mobile ต้องทำ:
 - แสดงชื่อหัวข้อที่กำลังคุย + ปุ่มเปลี่ยนหัวข้อ (ประวัติแชทแยกกันต่อหัวข้อ)
 - Pusher channel `support-chat.{user_id}` รวมทุกหัวข้อ → กรอง `messageData.topic` ให้ตรงกับหัวข้อที่เปิดอยู่ก่อนแสดง
 
+## 8. ลิงก์ใบเสนอราคา/ใบเสร็จรับเงิน (payment→invoice/receipt link) (15 ก.ย.)
+**Backend แก้แล้ว — mobile ต้อง integrate ใหม่**
+- แอดมินอัปโหลดไฟล์ใบเสนอราคา/ใบเสร็จ (PDF หรือรูปภาพ) ให้คำสั่งซื้อ/ใบแจ้งซ่อมแต่ละรายการได้จากหลังบ้านแล้ว (สร้างเมื่อไหร่ก็ได้ ไม่บังคับต้องมีตั้งแต่แรก)
+- `GET /ecommerce/orders` และ `GET /ecommerce/orders/{id}` (auth) → เพิ่ม field `quotation_url`, `receipt_url` (string url หรือ `null` ถ้ายังไม่มี) — เป็นลิงก์ตรง ดาวน์โหลด/เปิดดูได้เลยไม่ต้องยิง API เพิ่ม
+- `GET /service-requests` และ `GET /service-requests/{id}` (auth) → เพิ่ม field `quotation_url`, `receipt_url` เช่นกัน
+- **(15 ก.ย.)** `GET /user/my-packages` (auth) → แต่ละรายการใน `service_history` ของแต่ละแพ็กเกจ เพิ่ม `quotation_url`, `receipt_url` ด้วย (ผูกกับใบแจ้งซ่อมครั้งนั้นๆ) ให้แอปแสดงปุ่มโหลดเอกสารในประวัติการซ่อมแต่ละครั้งได้เลย
+- เมื่อแอดมินอัปโหลดเอกสารใหม่ ระบบจะส่ง Notification (in-app + push) ให้ลูกค้าอัตโนมัติ — `type` ที่ส่งมาใน push data payload คือ `order_document` (คำสั่งซื้อ) หรือ `service_request_document` (ใบแจ้งซ่อม)
+
+Mobile ต้องทำ:
+- หน้ารายละเอียดคำสั่งซื้อ/ใบแจ้งซ่อม: ถ้า `quotation_url`/`receipt_url` ไม่เป็น null ให้แสดงปุ่ม "ดาวน์โหลดใบเสนอราคา" / "ดาวน์โหลดใบเสร็จ" เปิดลิงก์นั้นตรงๆ (เปิดในเบราว์เซอร์ในแอป หรือดาวน์โหลดไฟล์ก็ได้)
+- รองรับ push notification ชนิดใหม่ 2 แบบข้างต้น ให้กดแล้วพาไปหน้ารายละเอียดออเดอร์/ใบแจ้งซ่อมนั้น
+
+**Gap:** ยังไม่มี full workflow ออกใบเสนอราคาอัตโนมัติจากระบบ (แอดมินต้องสร้างไฟล์เองแล้วอัปโหลด ไม่ใช่ auto-generate PDF จากรายการสินค้า)
+
+## 9. Popup โฆษณาหน้าแรก — สลับรูป + จำกัด 1 ครั้ง/วัน (15 ก.ย.)
+**Backend แก้แล้ว (contract เปลี่ยน) — mobile ยังไม่เคย integrate เรื่องนี้มาก่อน ต้องทำใหม่ทั้งหมด**
+- หลังบ้านอัปโหลดรูป popup พร้อมกันได้หลายไฟล์ในครั้งเดียวแล้ว (สร้างเป็นหลาย record เรียงตามลำดับไฟล์ที่เลือก)
+- `GET /main/popup-ads` (public) — **เปลี่ยน contract**: เดิมคืน array ของ popup ทั้งหมด → ตอนนี้คืน `data` เป็น **object เดียว** (รูปถัดไปที่ควรแสดง) หรือ `null` (ถ้าวันนี้แสดงครบทุกรูปที่ Active แล้ว)
+  - Query param ใหม่ (ไม่บังคับ): `shown_ids` = list ของ popup ad id ที่แอปเคยแสดงให้ผู้ใช้เห็นไปแล้ว "วันนี้" คั่นด้วยคอมมา เช่น `?shown_ids=1,4,7`
+  - **แอปต้องเก็บสถานะเองฝั่ง local** (เช่น SharedPreferences/UserDefaults): เก็บ `{date, shown_ids[]}` — ถ้าวันที่เก็บไว้ไม่ตรงกับวันนี้ ให้เคลียร์ `shown_ids` เป็น `[]` ก่อน (ขึ้นวันใหม่ = เริ่มรอบใหม่) แล้วค่อยเรียก API
+  - เมื่อ API ส่ง ad กลับมาไม่เป็น null และแอปแสดง popup นั้นให้ผู้ใช้เห็นแล้ว ให้เพิ่ม id นั้นเข้า `shown_ids` ที่เก็บไว้ (สำหรับใช้ครั้งถัดไป)
+
+Mobile ต้องทำ (ยังไม่เคยมี popup ads ในแอปมาก่อน — ทำใหม่ทั้งหมด):
+- เรียก `GET /main/popup-ads?shown_ids=...` ทุกครั้งที่เข้าหน้าแรก/เปิดแอป
+- ถ้า `data` ไม่เป็น null → แสดง popup (รูป `image_url`, กดแล้วเปิด `link_url` ถ้ามี) แล้วบันทึก id ลง local storage ตามด้านบน
+- ถ้า `data` เป็น null → ไม่ต้องแสดงอะไร
+
 ---
 
 ## สรุป Gap ฝั่ง Backend ที่ยังไม่ได้ทำ (ไม่ใช่งาน mobile แต่กระทบ feature)
 1. บันทึก Serial Number/วันรับประกันหลังส่งมอบสินค้า (ข้อ 3)
 2. Full workflow order→quote→อนุมัติ→เตรียมอุปกรณ์→มอบหมายช่าง→เอกสาร+รับประกัน (ข้อ 5)
 3. ~~tax_id + สาขา ในฟอร์มติดต่อฝ่ายขายกรณีธุรกิจ (ข้อ 6)~~ — ทำแล้ว 7 ก.ย. (migration `2026_09_07_100000`)
-4. 4 ข้อเพิ่มเติมจาก K.Jai (homepage, quick menu, payment→invoice/receipt, update shopping items) — ยังไม่ได้วิเคราะห์
+4. 4 ข้อเพิ่มเติมจาก K.Jai (homepage, quick menu, payment→invoice/receipt, update shopping items) — **payment→invoice/receipt เสร็จแล้ว (ข้อ 8 ด้านบน)**, ที่เหลือ (homepage, quick menu, update shopping items) ยังไม่ได้วิเคราะห์
+5. ใบเสนอราคายังเป็นการอัปโหลดไฟล์โดยแอดมินเอง ไม่ใช่ระบบ auto-generate PDF จากรายการสินค้า/บริการ

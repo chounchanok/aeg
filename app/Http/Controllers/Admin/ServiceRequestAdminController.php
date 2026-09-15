@@ -222,4 +222,71 @@ class ServiceRequestAdminController extends Controller
             return response()->json(['success' => false, 'message' => 'ไม่สามารถส่งข้อความได้'], 500);
         }
     }
+
+    // ==========================================
+    // 🌟 อัปโหลดใบเสนอราคา / ใบเสร็จรับเงิน ให้ใบแจ้งซ่อมนี้ (แอดมินสร้าง/แนบไฟล์จากหลังบ้าน)
+    // ลูกค้าจะเห็นลิงก์และดาวน์โหลดได้จากแอป ผ่าน GET /service-requests/{id} และ GET /service-requests
+    // ==========================================
+    public function uploadDocuments(Request $request, $id)
+    {
+        $request->validate([
+            'quotation' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:20480', // สูงสุด 20MB
+            'receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:20480',
+        ]);
+
+        if (!$request->hasFile('quotation') && !$request->hasFile('receipt')) {
+            return redirect()->back()->with('error', 'กรุณาเลือกไฟล์ใบเสนอราคาหรือใบเสร็จอย่างน้อย 1 ไฟล์');
+        }
+
+        $serviceRequest = DB::table('service_requests')->where('id', $id)->first();
+        if (!$serviceRequest) {
+            return redirect()->back()->with('error', 'ไม่พบใบแจ้งซ่อมนี้ในระบบ');
+        }
+
+        $updateData = ['updated_at' => now()];
+        $notifyMessages = [];
+
+        if ($request->hasFile('quotation')) {
+            $path = $request->file('quotation')->store('service-request-documents/quotations', 'public');
+            $updateData['quotation_url'] = url('storage/' . $path);
+            $notifyMessages[] = 'ใบเสนอราคา';
+        }
+
+        if ($request->hasFile('receipt')) {
+            $path = $request->file('receipt')->store('service-request-documents/receipts', 'public');
+            $updateData['receipt_url'] = url('storage/' . $path);
+            $notifyMessages[] = 'ใบเสร็จรับเงิน';
+        }
+
+        DB::table('service_requests')->where('id', $id)->update($updateData);
+
+        // 🌟 แจ้งเตือนลูกค้าเจ้าของใบแจ้งซ่อมว่ามีเอกสารใหม่ให้ดาวน์โหลด
+        $docLabel = implode(' และ', $notifyMessages);
+        $notifyTitle = "$docLabel พร้อมให้ดาวน์โหลดแล้ว";
+        $notifyBody = "$docLabel สำหรับใบแจ้งซ่อม #{$serviceRequest->ticket_number} พร้อมให้ดาวน์โหลดแล้ว กดดูรายละเอียดเพื่อดาวน์โหลด";
+
+        if ($serviceRequest->customer_id) {
+            DB::table('notifications')->insert([
+                'user_id' => $serviceRequest->customer_id,
+                'title' => $notifyTitle,
+                'body' => $notifyBody,
+                'type' => 'service',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            try {
+                PushNotificationService::sendToUser($serviceRequest->customer_id, $notifyTitle, $notifyBody, [
+                    'type' => 'service_request_document',
+                    'service_request_id' => (string) $id,
+                    'ticket_number' => $serviceRequest->ticket_number,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('[ServiceRequestAdminController] ส่ง push แจ้งเตือนเอกสารล้มเหลว: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->back()->with('success', "อัปโหลด{$docLabel}เรียบร้อยแล้ว");
+    }
 }

@@ -172,7 +172,9 @@ class ProfileController extends Controller
                     'problem_description' => $req->problem_description,
                     'status' => $req->status,
                     'preferred_date' => $req->preferred_date,
-                    'created_at' => $req->created_at
+                    'created_at' => $req->created_at,
+                    'quotation_url' => $req->quotation_url ?? null, // 🌟 ลิงก์ใบเสนอราคาของการแจ้งซ่อมครั้งนี้ (ถ้ามี)
+                    'receipt_url' => $req->receipt_url ?? null, // 🌟 ลิงก์ใบเสร็จรับเงินของการแจ้งซ่อมครั้งนี้ (ถ้ามี)
                 ];
             })->toArray();
 

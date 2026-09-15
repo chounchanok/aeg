@@ -111,6 +111,46 @@
 
         <div class="col-span-12 lg:col-span-4">
             <div class="box p-5">
+                <div class="font-medium text-base flex items-center border-b border-slate-200/60 pb-3 mb-4">
+                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> ใบเสนอราคา / ใบเสร็จรับเงิน
+                </div>
+
+                <div class="mb-3">
+                    <div class="text-slate-500 text-xs mb-1">ใบเสนอราคา</div>
+                    @if($request->quotation_url)
+                        <a href="{{ $request->quotation_url }}" target="_blank" class="text-primary underline flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> เปิดดู/ดาวน์โหลด
+                        </a>
+                    @else
+                        <span class="text-slate-400">ยังไม่ได้อัปโหลด</span>
+                    @endif
+                </div>
+                <div class="mb-4">
+                    <div class="text-slate-500 text-xs mb-1">ใบเสร็จรับเงิน</div>
+                    @if($request->receipt_url)
+                        <a href="{{ $request->receipt_url }}" target="_blank" class="text-primary underline flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> เปิดดู/ดาวน์โหลด
+                        </a>
+                    @else
+                        <span class="text-slate-400">ยังไม่ได้อัปโหลด</span>
+                    @endif
+                </div>
+
+                <form action="{{ route('admin.service-requests.documents', $request->id) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">อัปโหลด/แทนที่ใบเสนอราคา</label>
+                        <input type="file" name="quotation" class="form-control" accept=".pdf,image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อัปโหลด/แทนที่ใบเสร็จรับเงิน</label>
+                        <input type="file" name="receipt" class="form-control" accept=".pdf,image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">บันทึกเอกสาร</button>
+                </form>
+            </div>
+
+            <div class="box p-5 mt-5">
                 <div class="font-medium text-base flex items-center border-b border-slate-200/60 pb-3">
                     <i data-lucide="message-circle" class="w-4 h-4 mr-2"></i> แชทพูดคุยกับลูกค้า
                 </div>

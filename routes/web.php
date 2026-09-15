@@ -241,6 +241,8 @@ Route::middleware('auth')->group(function() {
             Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
             Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');
             Route::post('/admin/service-requests/{id}/chat', [ServiceRequestAdminController::class, 'sendChat'])->name('admin.service-requests.chat');
+            // 🌟 อัปโหลดใบเสนอราคา/ใบเสร็จ ให้ใบแจ้งซ่อม
+            Route::post('/admin/service-requests/{id}/documents', [ServiceRequestAdminController::class, 'uploadDocuments'])->name('admin.service-requests.documents');
         });
 
         // --- Customers ---
@@ -318,6 +320,8 @@ Route::middleware('auth')->group(function() {
             Route::get('/admin/orders', [OrderAdminController::class, 'index'])->name('admin.orders');
             Route::get('/admin/orders/{id}', [OrderAdminController::class, 'show'])->name('admin.orders.show');
             Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
+            // 🌟 อัปโหลดใบเสนอราคา/ใบเสร็จ ให้คำสั่งซื้อ
+            Route::post('/admin/orders/{id}/documents', [OrderAdminController::class, 'uploadDocuments'])->name('admin.orders.documents');
         });
 
         // --- Service Categories (RBAC: marketing) ---

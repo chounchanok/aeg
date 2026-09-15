@@ -126,6 +126,8 @@ class EcommerceController extends Controller
             'subtotal' => $order->subtotal,
             'discount' => $order->discount,
             'total_amount' => $order->total_amount,
+            'quotation_url' => $order->quotation_url, // 🌟 ลิงก์ไฟล์ใบเสนอราคา (ดาวน์โหลดได้ตรงจาก URL นี้เลย)
+            'receipt_url' => $order->receipt_url, // 🌟 ลิงก์ไฟล์ใบเสร็จรับเงิน (ดาวน์โหลดได้ตรงจาก URL นี้เลย)
             'items' => $order->items->map(function($item) {
                 return [
                     'id' => $item->id,

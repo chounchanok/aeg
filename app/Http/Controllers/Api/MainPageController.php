@@ -21,17 +21,26 @@ class MainPageController extends Controller
         return $this->successResponse($banners, 'Banners retrieved successfully');
     }
 
-    public function getPopupAds()
+    public function getPopupAds(Request $request)
     {
-        // 🌟 Popup Ads: รูปโฆษณาที่กำหนดจากหลังบ้าน ให้แอปมือถือโชว์เป็น popup ตอนเปิดแอปครั้งแรก (ต่อ session)
-        // ส่งกลับเป็น array เรียงตาม sort_order (แอปจะเลือกโชว์ตัวแรก หรือจะวนโชว์หลายตัวก็ได้ตามที่ออกแบบ)
-        $popupAds = DB::table('popup_ads')
+        // 🌟 Popup Ads: หลังบ้านอัปโหลดได้หลายรูป ต้องการให้แอปสลับแสดงทีละรูปทุกครั้งที่เข้าหน้าแรก (ตามลำดับ sort_order)
+        // และจำกัดไม่ให้รูปเดิมขึ้นซ้ำเกิน 1 ครั้ง/วัน/ผู้ใช้ — เนื่องจาก endpoint นี้เรียกได้แบบไม่ล็อกอิน (public)
+        // จึงให้ฝั่งแอปเป็นคนเก็บสถานะ "แสดงไปแล้วกี่ id ในวันนี้" เอง (เช่น local storage) แล้วส่งมาที่ query param `shown_ids`
+        // แอปต้องเทียบวันที่เองด้วย — ถ้าเปลี่ยนวันแล้วให้เคลียร์ shown_ids ที่เก็บไว้ก่อนเรียก (เริ่มรอบใหม่)
+        //
+        // Request:  GET /main/popup-ads?shown_ids=1,4,7   (shown_ids ไม่บังคับ — ไม่ส่งมา = ยังไม่เคยเห็นรูปไหนเลยวันนี้)
+        // Response: data = popup ad object ตัวถัดไปที่ควรแสดง หรือ null ถ้าแสดงครบทุกรูปที่ Active แล้วในวันนี้
+        $shownIds = array_filter(array_map('intval', explode(',', (string) $request->query('shown_ids', ''))));
+
+        $activeAds = DB::table('popup_ads')
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get(['id', 'title', 'image_url', 'link_url', 'sort_order']);
 
-        return $this->successResponse($popupAds, 'Popup ads retrieved successfully');
+        $nextAd = $activeAds->first(fn ($ad) => !in_array($ad->id, $shownIds, true));
+
+        return $this->successResponse($nextAd, 'Popup ad retrieved successfully');
     }
 
     public function getExpiringServices(Request $request)

@@ -9,10 +9,11 @@ use App\Models\Banner;
 use App\Models\ServiceCategory;
 use Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cookie;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. ดึงข้อมูล Banners (กรองตามที่ API เดิมเขียนไว้ คือ location = main และ is_active = true)
         $banners = Banner::where('location', 'main')
@@ -55,12 +56,37 @@ class HomeController extends Controller
                                  ->limit(4)
                                  ->get();
 
-        // 5. ดึงข้อมูล Popup Ad ที่เปิดใช้งานอยู่ (เอาตัวแรกตามลำดับ sort_order มาแสดงเป็น popup ตอนเปิดหน้าแรกครั้งแรก)
-        $popupAd = DB::table('popup_ads')
-                     ->where('is_active', true)
-                     ->orderBy('sort_order', 'asc')
-                     ->orderBy('created_at', 'desc')
-                     ->first();
+        // 5. ดึงข้อมูล Popup Ad ที่จะแสดง — สลับไปทีละรูปตามลำดับ sort_order ทุกครั้งที่รีเฟรชหน้า
+        // และจำกัดไม่ให้รูปเดิมขึ้นซ้ำเกิน 1 ครั้งต่อวันต่อผู้ชม (เก็บสถานะไว้ใน Cookie ของเบราว์เซอร์)
+        $popupAd = null;
+        $today = Carbon::now()->format('Y-m-d');
+        $shownIds = [];
+
+        if ($request->cookie('popup_ad_shown_date') === $today) {
+            $shownIds = array_filter(
+                array_map('intval', explode(',', (string) $request->cookie('popup_ad_shown_ids')))
+            );
+        }
+
+        $activeAds = DB::table('popup_ads')
+                        ->where('is_active', true)
+                        ->orderBy('sort_order', 'asc')
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+        foreach ($activeAds as $ad) {
+            if (!in_array($ad->id, $shownIds, true)) {
+                $popupAd = $ad;
+                break;
+            }
+        }
+
+        // ถ้ามีรูปที่จะแสดง ให้บันทึกลง Cookie ว่าแสดงไปแล้ว (เก็บไว้ 3 วัน กันข้ามเที่ยงคืนพอดี)
+        if ($popupAd) {
+            $shownIds[] = $popupAd->id;
+            Cookie::queue('popup_ad_shown_ids', implode(',', $shownIds), 60 * 24 * 3);
+            Cookie::queue('popup_ad_shown_date', $today, 60 * 24 * 3);
+        }
 
         return view('frontend.index', compact(
             'banners',

@@ -140,29 +140,37 @@ class CmsAdminController extends Controller
 
     public function storePopupAd(Request $request)
     {
+        // 🌟 รองรับการเลือกอัปโหลดพร้อมกันหลายไฟล์ (input name="images[]") — สร้าง Popup Ad แยกหนึ่งแถวต่อหนึ่งไฟล์
+        // โดยไล่ sort_order ต่อจากค่าที่กรอก เพื่อให้หน้าเว็บ/แอปสลับแสดงตามลำดับไฟล์ที่อัปโหลด
         $request->validate([
             'title' => 'nullable|string',
             'link_url' => 'nullable|url',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'images' => 'required|array|min:1',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
-        $imageUrl = '';
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('popup-ads', 'public');
-            $imageUrl = url('storage/' . $path);
+        $baseSortOrder = (int) ($request->sort_order ?? 0);
+        $isActive = $request->has('is_active');
+        $now = now();
+
+        $rows = [];
+        foreach ($request->file('images') as $index => $file) {
+            $path = $file->store('popup-ads', 'public');
+            $rows[] = [
+                'title' => $request->title,
+                'image_url' => url('storage/' . $path),
+                'link_url' => $request->link_url,
+                'sort_order' => $baseSortOrder + $index,
+                'is_active' => $isActive,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
 
-        DB::table('popup_ads')->insert([
-            'title' => $request->title,
-            'image_url' => $imageUrl,
-            'link_url' => $request->link_url,
-            'sort_order' => $request->sort_order ?? 0,
-            'is_active' => $request->has('is_active'),
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        DB::table('popup_ads')->insert($rows);
 
-        return redirect()->back()->with('success', 'เพิ่ม Popup Ad เรียบร้อยแล้ว');
+        $count = count($rows);
+        return redirect()->back()->with('success', "เพิ่ม Popup Ad เรียบร้อยแล้ว ({$count} ไฟล์)");
     }
 
     public function updatePopupAd(Request $request, $id)

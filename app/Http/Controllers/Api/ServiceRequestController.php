@@ -86,7 +86,7 @@ class ServiceRequestController extends Controller
         $requests = DB::table('service_requests')
             ->join('customer_products', 'service_requests.customer_product_id', '=', 'customer_products.id')
             ->where('service_requests.customer_id', $request->user()->id) // แก้ไขให้ตรงกับเฟส 1
-            ->select('service_requests.id', 'service_requests.ticket_number', 'customer_products.product_name', 'service_requests.preferred_date', 'service_requests.time_slot', 'service_requests.status', 'service_requests.created_at')
+            ->select('service_requests.id', 'service_requests.ticket_number', 'customer_products.product_name', 'service_requests.preferred_date', 'service_requests.time_slot', 'service_requests.status', 'service_requests.created_at', 'service_requests.quotation_url', 'service_requests.receipt_url')
             ->orderBy('service_requests.created_at', 'desc')
             ->get();
         return $this->successResponse($requests, 'ดึงประวัติการแจ้งซ่อมสำเร็จ');

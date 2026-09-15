@@ -71,6 +71,47 @@
                     <button type="submit" class="btn btn-primary w-full">บันทึกสถานะ</button>
                 </form>
             </div>
+
+            <div class="box p-5 intro-y mt-5">
+                <div class="flex items-center border-b border-slate-200/60 pb-5 mb-5">
+                    <div class="font-medium text-base truncate">ใบเสนอราคา / ใบเสร็จรับเงิน</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="text-slate-500 text-xs mb-1">ใบเสนอราคา</div>
+                    @if($order->quotation_url)
+                        <a href="{{ $order->quotation_url }}" target="_blank" class="text-primary underline flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> เปิดดู/ดาวน์โหลด
+                        </a>
+                    @else
+                        <span class="text-slate-400">ยังไม่ได้อัปโหลด</span>
+                    @endif
+                </div>
+                <div class="mb-4">
+                    <div class="text-slate-500 text-xs mb-1">ใบเสร็จรับเงิน</div>
+                    @if($order->receipt_url)
+                        <a href="{{ $order->receipt_url }}" target="_blank" class="text-primary underline flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> เปิดดู/ดาวน์โหลด
+                        </a>
+                    @else
+                        <span class="text-slate-400">ยังไม่ได้อัปโหลด</span>
+                    @endif
+                </div>
+
+                <form action="{{ route('admin.orders.documents', $order->id) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">อัปโหลด/แทนที่ใบเสนอราคา (PDF หรือรูปภาพ)</label>
+                        <input type="file" name="quotation" class="form-control" accept=".pdf,image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อัปโหลด/แทนที่ใบเสร็จรับเงิน (PDF หรือรูปภาพ)</label>
+                        <input type="file" name="receipt" class="form-control" accept=".pdf,image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">บันทึกเอกสาร</button>
+                    <div class="text-slate-400 text-xs mt-2">ลูกค้าจะเห็นการแจ้งเตือนและกดดาวน์โหลดได้จากแอปทันทีที่อัปโหลดสำเร็จ</div>
+                </form>
+            </div>
         </div>
 
         <div class="col-span-12 lg:col-span-8">

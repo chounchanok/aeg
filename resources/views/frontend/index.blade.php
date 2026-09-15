@@ -653,7 +653,8 @@
     </script>
 
     @if($popupAd ?? null)
-    <!-- Popup Ad: แสดงครั้งแรกที่เปิดหน้าแรกในแต่ละ session ของเบราว์เซอร์ (กำหนดรูป/ลิงก์ได้จากหลังบ้าน) -->
+    <!-- Popup Ad: หลังบ้านอัปโหลดได้หลายรูป ระบบจะสลับแสดงทีละรูปทุกครั้งที่รีเฟรชหน้า (ตามลำดับ sort_order)
+         และจำกัดไม่ให้รูปเดิมขึ้นซ้ำเกิน 1 ครั้ง/วัน/ผู้ชม — ตัดสินใจแล้วโดย Controller (HomeController@index) จึงไม่ต้องเช็คซ้ำฝั่ง JS -->
     <div class="modal fade" id="popupAdModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden; background: transparent;">
@@ -671,16 +672,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            try {
-                if (!sessionStorage.getItem('popup_ad_shown')) {
-                    var popupAdModalEl = document.getElementById('popupAdModal');
-                    if (popupAdModalEl && typeof bootstrap !== 'undefined') {
-                        new bootstrap.Modal(popupAdModalEl).show();
-                    }
-                    sessionStorage.setItem('popup_ad_shown', '1');
-                }
-            } catch (e) {
-                // เผื่อกรณีเบราว์เซอร์บล็อก sessionStorage (เช่น private mode บางตัว) ไม่ให้กระทบการทำงานส่วนอื่นของหน้าเว็บ
+            var popupAdModalEl = document.getElementById('popupAdModal');
+            if (popupAdModalEl && typeof bootstrap !== 'undefined') {
+                new bootstrap.Modal(popupAdModalEl).show();
             }
         });
     </script>
