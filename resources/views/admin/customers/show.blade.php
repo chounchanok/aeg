@@ -47,6 +47,30 @@
                     <div class="text-2xl font-medium text-primary">{{ number_format($wallet->current_points ?? 0) }} <span class="text-sm text-slate-500 font-normal">แต้ม</span></div>
                 </div>
             </div>
+
+            @can('invoices.manage')
+            {{-- 🌟 ตั้งค่าลูกค้า "วางบิลรายเดือน" — คำสั่งซื้อที่ยังไม่ชำระของลูกค้าคนนี้จะถูกรวมเป็นใบแจ้งหนี้เดียวตอนสิ้นเดือน
+                 แทนที่จะให้จ่ายทีละออเดอร์ (ดูรายละเอียดที่เมนู "ใบแจ้งหนี้รายเดือน") --}}
+            <div class="box p-5 mt-5">
+                <div class="font-medium text-base border-b border-slate-200/60 pb-3 mb-3">ตั้งค่าใบแจ้งหนี้รายเดือน</div>
+                <form action="{{ route('admin.customers.invoice-settings', $customer->id) }}" method="POST">
+                    @csrf
+                    <div class="flex items-center mb-3">
+                        <input type="hidden" name="is_invoice_customer" value="0">
+                        <input type="checkbox" name="is_invoice_customer" id="is_invoice_customer" class="form-check-input border mr-2" value="1" {{ ($customer->is_invoice_customer ?? false) ? 'checked' : '' }}>
+                        <label for="is_invoice_customer">ลูกค้าวางบิลรายเดือน (สรุปยอดออเดอร์ค้างจ่ายเป็นใบแจ้งหนี้เดียวทุกสิ้นเดือน)</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ช่องทางจ่ายเงินของใบแจ้งหนี้สรุปยอด</label>
+                        <select name="invoice_payment_method" class="form-select">
+                            <option value="bank_transfer" {{ ($customer->invoice_payment_method ?? 'bank_transfer') === 'bank_transfer' ? 'selected' : '' }}>โอนเงิน (ตรวจสลิปเอง)</option>
+                            <option value="gateway" {{ ($customer->invoice_payment_method ?? '') === 'gateway' ? 'selected' : '' }}>ชำระออนไลน์ (บัตร/พร้อมเพย์)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">บันทึก</button>
+                </form>
+            </div>
+            @endcan
         </div>
 
         <div class="intro-y col-span-12 lg:col-span-8">

@@ -84,8 +84,8 @@ class HomeController extends Controller
         // ถ้ามีรูปที่จะแสดง ให้บันทึกลง Cookie ว่าแสดงไปแล้ว (เก็บไว้ 3 วัน กันข้ามเที่ยงคืนพอดี)
         if ($popupAd) {
             $shownIds[] = $popupAd->id;
-            Cookie::queue('popup_ad_shown_ids', implode(',', $shownIds), 60 * 24 * 3);
-            Cookie::queue('popup_ad_shown_date', $today, 60 * 24 * 3);
+            Cookie::queue('popup_ad_shown_ids', implode(',', $shownIds), 60 * 12 * 3);
+            Cookie::queue('popup_ad_shown_date', $today, 60 * 12 * 3);
         }
 
         return view('frontend.index', compact(

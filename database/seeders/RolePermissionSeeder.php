@@ -39,6 +39,9 @@ class RolePermissionSeeder extends Seeder
             // ถ้าอนาคตอยากให้แผนกไหนทำได้ ให้เพิ่ม key นี้ใน 'permissions' ของ role นั้นแล้วรัน seeder ซ้ำ
             ['key' => 'customers.manage', 'name' => 'แก้ไขข้อมูลลูกค้า (เพิ่มสินค้า/ประกัน/ตู้เซฟให้ลูกค้า, ใช้คูปอง, นำเข้าแต้ม)', 'module' => 'customers'],
 
+            // 🌟 ใบแจ้งหนี้รายเดือน & สัญญารายเดือน (billing/invoicing) — ดูแลโดยแผนกบัญชี
+            ['key' => 'invoices.manage', 'name' => 'จัดการใบแจ้งหนี้รายเดือนและสัญญารายเดือน (ยืนยันการชำระ/สร้างสัญญา/สร้างใบแจ้งหนี้ตอนนี้)', 'module' => 'invoices'],
+
             // 🌟 รายการติดต่อจากลูกค้า (ฟอร์มติดต่อหน้าเว็บ/แอป) — แยกสิทธิ์ตามช่องทาง ให้แต่ละแผนกเห็นเฉพาะของตัวเอง
             ['key' => 'contacts.insurance', 'name' => 'รายการติดต่อเรื่องประกันภัย (insurance_contacts)', 'module' => 'contacts'],
             ['key' => 'contacts.safe', 'name' => 'รายการติดต่อเรื่องตู้เซฟนิรภัย (safe_contacts)', 'module' => 'contacts'],
@@ -56,8 +59,8 @@ class RolePermissionSeeder extends Seeder
             ],
             'accounting' => [
                 'name' => 'บัญชี',
-                'description' => 'ดูประวัติการสั่งซื้อสินค้าและบริการทุกประเภท ยอดรวม ส่วนลด',
-                'permissions' => ['orders.manage', 'customers.view'],
+                'description' => 'ดูประวัติการสั่งซื้อสินค้าและบริการทุกประเภท ยอดรวม ส่วนลด และจัดการใบแจ้งหนี้/สัญญารายเดือน',
+                'permissions' => ['orders.manage', 'customers.view', 'invoices.manage'],
             ],
             'marketing' => [
                 'name' => 'Marketing',

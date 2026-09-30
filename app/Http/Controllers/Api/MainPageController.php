@@ -38,7 +38,7 @@ class MainPageController extends Controller
             ->orderBy('id', 'asc')
             ->get(['id', 'title', 'image_url', 'link_url', 'sort_order']);
 
-        $nextAd = $activeAds->first(fn ($ad) => !in_array($ad->id, $shownIds, true));
+        $nextAd = $activeAds;
 
         return $this->successResponse($nextAd, 'Popup ad retrieved successfully');
     }

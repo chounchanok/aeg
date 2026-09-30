@@ -66,6 +66,19 @@ class AppServiceProvider extends ServiceProvider
                 'route_name' => 'admin.products', 'params' => [],
                 'permission' => 'products.manage',
             ],
+            'product-bundles' => [
+                'icon' => 'layers', 'title' => 'สินค้าจับกลุ่ม (Bundle)',
+                'route_name' => 'admin.product-bundles', 'params' => [],
+                'permission' => 'products.manage',
+            ],
+            // 🌟 ใบแจ้งหนี้รายเดือน & สัญญารายเดือน (RBAC: accounting)
+            'invoices' => [
+                'icon' => 'file-text', 'title' => 'ใบแจ้งหนี้รายเดือน',
+                'sub_menu' => [
+                    'invoices' => ['icon' => 'file-text', 'title' => 'ใบแจ้งหนี้', 'route_name' => 'admin.invoices', 'params' => [], 'permission' => 'invoices.manage'],
+                    'service-contracts' => ['icon' => 'repeat', 'title' => 'สัญญารายเดือน', 'route_name' => 'admin.service-contracts', 'params' => [], 'permission' => 'invoices.manage'],
+                ]
+            ],
             'service-categories' => [
                 'icon' => 'grid', 'title' => 'หมวดหมู่บริการ',
                 'route_name' => 'admin.service-categories', 'params' => [],

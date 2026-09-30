@@ -26,7 +26,10 @@ use App\Http\Controllers\Admin\CustomerAdminController;
 use App\Http\Controllers\Admin\CmsAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
 use App\Http\Controllers\Admin\ProductAdminController;
+use App\Http\Controllers\Admin\ProductBundleAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
+use App\Http\Controllers\Admin\ServiceContractAdminController;
+use App\Http\Controllers\Admin\InvoiceAdminController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ServiceCategoryAdminController;
 use App\Http\Controllers\Admin\InsuranceAdminController;
@@ -263,6 +266,12 @@ Route::middleware('auth')->group(function() {
             Route::post('/admin/customers/{id}/reward-codes/{codeId}/redeem', [CustomerAdminController::class, 'markRewardCodeUsed'])->name('admin.customers.reward-codes.redeem');
         });
 
+        // 🌟 ตั้งค่าลูกค้าวางบิลรายเดือน — แยก permission เป็น invoices.manage (แผนกบัญชี) ไม่ใช้ customers.manage
+        // เพราะเป็นงานฝั่งบัญชี ไม่เกี่ยวกับการแก้ไขข้อมูลลูกค้าโดยตรง
+        Route::middleware('permission:invoices.manage')->group(function() {
+            Route::post('/admin/customers/{id}/invoice-settings', [CustomerAdminController::class, 'updateInvoiceSettings'])->name('admin.customers.invoice-settings');
+        });
+
         Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
         Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
 
@@ -287,6 +296,17 @@ Route::middleware('auth')->group(function() {
                 'update'  => 'admin.products.update',
                 'destroy' => 'admin.products.destroy',
             ]);
+
+            // 🌟 สินค้าจับกลุ่ม (Bundle) — ใช้สิทธิ์เดียวกับ products.manage เพราะเป็นงานจัดการสินค้าชุดเดียวกัน
+            // ไม่มีหน้า create/edit/show แยก — จัดการทั้งหมดผ่าน modal บนหน้า index
+            Route::resource('admin/product-bundles', ProductBundleAdminController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->names([
+                    'index'   => 'admin.product-bundles',
+                    'store'   => 'admin.product-bundles.store',
+                    'update'  => 'admin.product-bundles.update',
+                    'destroy' => 'admin.product-bundles.destroy',
+                ]);
         });
 
         // --- Notifications (แจ้งเตือน) (RBAC: marketing) ---
@@ -322,6 +342,21 @@ Route::middleware('auth')->group(function() {
             Route::post('/admin/orders/{id}/status', [OrderAdminController::class, 'updateStatus'])->name('admin.orders.status');
             // 🌟 อัปโหลดใบเสนอราคา/ใบเสร็จ ให้คำสั่งซื้อ
             Route::post('/admin/orders/{id}/documents', [OrderAdminController::class, 'uploadDocuments'])->name('admin.orders.documents');
+        });
+
+        // --- ใบแจ้งหนี้รายเดือน & สัญญารายเดือน (RBAC: accounting) ---
+        Route::middleware('permission:invoices.manage')->group(function() {
+            Route::get('/admin/service-contracts', [ServiceContractAdminController::class, 'index'])->name('admin.service-contracts');
+            Route::post('/admin/service-contracts', [ServiceContractAdminController::class, 'store'])->name('admin.service-contracts.store');
+            Route::put('/admin/service-contracts/{id}/update', [ServiceContractAdminController::class, 'update'])->name('admin.service-contracts.update');
+            Route::delete('/admin/service-contracts/{id}', [ServiceContractAdminController::class, 'destroy'])->name('admin.service-contracts.destroy');
+
+            Route::get('/admin/invoices', [InvoiceAdminController::class, 'index'])->name('admin.invoices');
+            Route::get('/admin/invoices/{id}', [InvoiceAdminController::class, 'show'])->name('admin.invoices.show');
+            Route::post('/admin/invoices/{id}/mark-paid', [InvoiceAdminController::class, 'markPaid'])->name('admin.invoices.mark-paid');
+            Route::post('/admin/invoices/{id}/cancel', [InvoiceAdminController::class, 'cancel'])->name('admin.invoices.cancel');
+            // 🌟 ปุ่ม "สร้างใบแจ้งหนี้ตอนนี้" — ใช้ก่อนตั้ง cron/Task Scheduler เสร็จ หรือ backfill ย้อนหลัง
+            Route::post('/admin/invoices/generate-now', [InvoiceAdminController::class, 'generateNow'])->name('admin.invoices.generate-now');
         });
 
         // --- Service Categories (RBAC: marketing) ---

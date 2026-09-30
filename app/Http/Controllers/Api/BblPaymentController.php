@@ -121,7 +121,7 @@ class BblPaymentController extends Controller
             // 🌟 กรณีเป็นบิลจองตู้เซฟ (ขึ้นต้นด้วย LCK-)
             elseif (str_starts_with($orderNumber, 'LCK-')) {
                 $booking = DB::table('locker_bookings')->where('booking_number', $orderNumber)->first();
-                
+
                 if ($booking && $booking->status === 'pending_payment') {
                     // 1. อัปเดตบิลให้เป็นจ่ายเงินแล้ว
                     DB::table('locker_bookings')->where('id', $booking->id)->update([
@@ -136,6 +136,15 @@ class BblPaymentController extends Controller
                         'status' => 'rented',
                         'updated_at' => now()
                     ]);
+                }
+            }
+
+            // 🌟 กรณีเป็นใบแจ้งหนี้รายเดือน (ขึ้นต้นด้วย INV-) — สัญญารายเดือน หรือใบสรุปยอดลูกค้าวางบิล
+            elseif (str_starts_with($orderNumber, 'INV-')) {
+                $invoice = \App\Models\Invoice::where('invoice_number', $orderNumber)->first();
+
+                if ($invoice && $invoice->status === 'pending') {
+                    (new \App\Services\InvoiceGenerationService())->markPaid($invoice, $transactionId, $data);
                 }
             }
         }
@@ -175,18 +184,21 @@ class BblPaymentController extends Controller
     public function redirect($order_number, $type)
     {
         $amount = 0;
-        
-        // 1. เช็คว่าเป็นบิลสินค้า (ORD-) หรือบิลตู้เซฟ (LCK-)
+
+        // 1. เช็คว่าเป็นบิลสินค้า (ORD-) บิลตู้เซฟ (LCK-) หรือใบแจ้งหนี้รายเดือน (INV-)
         if (str_starts_with($order_number, 'ORD-')) {
             $order = DB::table('orders')->where('order_number', $order_number)->first();
             if ($order) $amount = $order->total_amount;
         } elseif (str_starts_with($order_number, 'LCK-')) {
             $order = DB::table('locker_bookings')->where('booking_number', $order_number)->first();
             if ($order) $amount = $order->total_amount;
+        } elseif (str_starts_with($order_number, 'INV-')) {
+            $order = DB::table('invoices')->where('invoice_number', $order_number)->first();
+            if ($order) $amount = $order->total_amount;
         }
 
         if (!$order) {
-            return abort(404, 'ไม่พบข้อมูลรายการสั่งซื้อ/จองตู้เซฟ');
+            return abort(404, 'ไม่พบข้อมูลรายการสั่งซื้อ/จองตู้เซฟ/ใบแจ้งหนี้');
         }
 
         // 2. ตั้งค่าข้อมูล Merchant (Sandbox)

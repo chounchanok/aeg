@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\SmartLockerController;
 use App\Http\Controllers\Frontend\SupportChatController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\BblPaymentController;
+use App\Http\Controllers\Api\InvoiceController;
 
 // --- Smart Lockers (ตู้เซฟนิรภัยให้เช่า) ---
 // ฝั่งที่ต้องล็อกอิน (จองตู้เซฟ)
@@ -206,6 +207,12 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
 
     // --- ประวัติแต้ม EASE CLUB (เข้า-ออก) ---
     Route::get('/point-history', [ProfileController::class, 'getPointHistory']);
+
+    // --- ใบแจ้งหนี้รายเดือน (สัญญารายเดือน + สรุปยอดลูกค้าวางบิล) ---
+    Route::get('/invoices', [InvoiceController::class, 'index']);
+    Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
+    Route::post('/invoices/{id}/pay', [InvoiceController::class, 'pay']); // ขอลิงก์จ่ายผ่าน gateway
+    Route::post('/invoices/{id}/upload-slip', [InvoiceController::class, 'uploadSlip']); // แนบสลิปโอนเงิน
 
 });
 

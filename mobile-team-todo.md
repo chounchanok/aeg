@@ -110,6 +110,49 @@ Mobile ต้องทำ (ยังไม่เคยมี popup ads ในแ
 - ถ้า `data` ไม่เป็น null → แสดง popup (รูป `image_url`, กดแล้วเปิด `link_url` ถ้ามี) แล้วบันทึก id ลง local storage ตามด้านบน
 - ถ้า `data` เป็น null → ไม่ต้องแสดงอะไร
 
+## 10. สินค้าจับกลุ่ม (Bundle) — ซื้อคู่กันรับราคาชุด (28 ก.ย.)
+**Backend แก้แล้ว (contract เพิ่มใหม่ ไม่กระทบ field เดิม) — mobile ยังไม่เคย integrate เรื่องนี้มาก่อน ต้องทำใหม่ทั้งหมด**
+- แอดมินหลังบ้านสร้าง "ชุดสินค้า" ได้แล้ว (เลือกสินค้าตั้งแต่ 2 ชิ้นขึ้นไป + ตั้ง "ราคาชุด" เอง ไม่ใช่ % ส่วนลด)
+- `GET /ecommerce/cart` (auth) → **เพิ่ม field ใหม่ใน response** โดย field เดิมทั้งหมดยังอยู่เหมือนเดิม:
+  - `summary.bundle_discount_amount` — ส่วนลดจากบันเดิลที่ครบชุดแล้ว (บวกรวมเข้ากับ `discount_amount` เดิมใน `net_total` ให้แล้วอัตโนมัติ ไม่ต้องคำนวณเองฝั่งแอป)
+  - `summary.applied_bundles` — array ของชุดที่ครบแล้ว `[{ bundle_id, name_th, name_en, original_total, bundle_price, savings }]`
+  - `bundle_suggestions` (นอก summary) — array คำแนะนำ "ซื้อเพิ่มอีกนิดรับราคาชุด" สำหรับบันเดิลที่มีสินค้าในตะกร้าอยู่แล้วบางส่วน: `[{ bundle_id, name_th, name_en, bundle_price, savings, missing_products: [{ product_id, name_th, name_en, price, need_qty }] }]`
+- `POST /ecommerce/checkout` (auth) → response เพิ่ม `bundle_discount`, `applied_bundles` (โครงสร้างเดียวกับด้านบน) ส่วนลดบันเดิลถูกคำนวณซ้ำฝั่ง server เสมอ (ไม่เชื่อค่าจาก client) และรวมเข้า `discount`/`total_amount` เดิมให้แล้ว
+- **หมายเหตุสำคัญ**: สินค้าประเภทแพ็กเกจที่คิดราคาตาม `duration_months` (เช่น แพ็กเกจรายเดือน) จะไม่ถูกนับรวมในบันเดิล เพราะราคาต่อชิ้นถูกคูณจำนวนเดือนไปแล้ว เทียบราคาปกติของบันเดิลตรงๆ ไม่ได้ — ยังไม่รองรับในเวอร์ชันนี้
+
+Mobile ต้องทำ (ฟีเจอร์ใหม่ทั้งหมด):
+- หน้าตะกร้า: ถ้า `summary.applied_bundles` ไม่ว่าง ให้โชว์ badge/แถบบอกว่า "ได้รับส่วนลดชุด X" พร้อมยอดที่ประหยัดได้ (ยอดสุทธิ `net_total` คำนวณให้แล้วจาก backend ไม่ต้องคิดเลขเอง)
+- หน้าตะกร้า (หรือหลังเพิ่มสินค้าลงตะกร้า): ถ้า `bundle_suggestions` ไม่ว่าง ให้โชว์การ์ดแนะนำ "ซื้อ {missing_products.name_th} เพิ่มอีก {need_qty} ชิ้น รับราคาชุด {bundle_price} บาท (ประหยัด {savings} บาท)" พร้อมปุ่มเพิ่มสินค้านั้นลงตะกร้าได้เลย (เรียก `POST /ecommerce/cart/add` เดิม)
+- ไม่ต้องคำนวณส่วนลดบันเดิลเองฝั่งแอป ให้เชื่อค่าที่ backend ส่งกลับมาเสมอ (ทั้ง preview ตอนดูตะกร้า และยอดจริงตอน checkout)
+
+## 11. ใบแจ้งหนี้รายเดือนอัตโนมัติ (Invoices) (28 ก.ย.)
+**Backend ใหม่ทั้งหมด (feature ใหม่) — mobile ยังไม่เคย integrate เรื่องนี้มาก่อน**
+- ระบบสร้างใบแจ้งหนี้ให้ลูกค้าโดยอัตโนมัติทุกวัน (cron) แบ่งเป็น 2 ประเภท (แยกด้วย field `type`):
+  1. `contract` — จากสัญญาบริการรายเดือนที่แอดมินสร้างให้ลูกค้า (เช่น ค่าบำรุงรักษารายเดือน)
+  2. `statement` — สรุปยอดคำสั่งซื้อที่ยังไม่ชำระของลูกค้ากลุ่ม "วางบิลรายเดือน" (แอดมินตั้งค่าเฉพาะราย) รวมเป็นใบแจ้งหนี้เดียวตอนสิ้นเดือน แทนที่จะจ่ายทีละออเดอร์
+- ช่องทางจ่ายเงินเลือกได้ต่อลูกค้า/สัญญา: `gateway` (ชำระผ่าน BBL App-to-App เหมือนคำสั่งซื้อ/จองตู้เซฟเดิม) หรือ `bank_transfer` (ลูกค้าแนบสลิปเอง รอแอดมินตรวจสอบและกดยืนยันด้วยมือ)
+
+**Endpoints ใหม่ (auth:sanctum, prefix `/user`):**
+- `GET /user/invoices` → `{ data: [ { id, invoice_number, type, billing_month (YYYY-MM), issue_date, due_date, subtotal, vat_amount, total_amount, payment_method, status, is_overdue, paid_at, payment_slip_url } ] }`
+  - `status`: `pending` (รอชำระ) / `paid` (ชำระแล้ว) / `overdue` (เกินกำหนด — ปัจจุบันระบบยังไม่ auto-flip เป็น overdue ในฐานข้อมูล ให้เช็คจาก `is_overdue` แทนไปก่อน) / `cancelled`
+- `GET /user/invoices/{id}` → เหมือนด้านบน + `items: [{ description, quantity, unit_price, amount }]` (รายการย่อยในใบแจ้งหนี้ เช่น รายชื่อคำสั่งซื้อที่ถูกรวม หรือชื่อสัญญา)
+- `POST /user/invoices/{id}/pay` → ใช้เฉพาะใบแจ้งหนี้ที่ `payment_method = gateway` และ `status = pending` เท่านั้น → คืน `{ payment_url }` (ลิงก์ WebView จ่ายผ่าน BBL เหมือนคำสั่งซื้อ — **แอปต้องต่อ `/{type}` ท้าย URL เอง** เช่น `/qrcode`, `/creditcard`, `/all` แบบเดียวกับที่ทำกับ `payment_url` ของคำสั่งซื้ออยู่แล้ว)
+- `POST /user/invoices/{id}/upload-slip` (multipart) → field `slip` (ไฟล์รูป/PDF ≤10MB) — ใช้แนบสลิปโอนเงิน ใช้ได้กับใบแจ้งหนี้ที่ `status = pending` เท่านั้น (ไม่จำกัดว่าต้อง `payment_method = bank_transfer` ฝั่ง backend แต่ตั้งใจให้ใช้กับช่องทางนี้) → คืน `{ payment_slip_url }` — หลังอัปโหลดสถานะยังเป็น `pending` จนกว่าแอดมินจะตรวจสลิปแล้วกดยืนยันจากหลังบ้าน (ไม่ auto-paid ทันที)
+- `GET /user/profile` → response เดิมของ `profile` object จะมี field ใหม่ `is_invoice_customer` (true/false) และ `invoice_payment_method` (`gateway`/`bank_transfer`) ติดมาด้วยอัตโนมัติ (แอดมินเป็นคนตั้งค่าให้ ลูกค้าแก้เองไม่ได้)
+
+Mobile ต้องทำ (ฟีเจอร์ใหม่ทั้งหมด):
+- เพิ่มเมนู "ใบแจ้งหนี้ของฉัน" ในหน้าโปรไฟล์/บัญชี — แสดงรายการจาก `GET /user/invoices` (แนะนำแยก tab รอชำระ/ชำระแล้ว โดยดูจาก `status`/`is_overdue`)
+- หน้ารายละเอียดใบแจ้งหนี้: แสดงรายการย่อย (`items`), ยอดก่อน VAT/VAT/ยอดรวม, วันครบกำหนด
+  - ถ้า `payment_method = gateway` และ `status = pending` → ปุ่ม "ชำระเงิน" เรียก `POST /user/invoices/{id}/pay` แล้วเปิด `payment_url` ใน WebView
+  - ถ้า `payment_method = bank_transfer` และ `status = pending` → แสดงข้อมูลบัญชีธนาคารสำหรับโอน (ยังไม่มี endpoint ส่งเลขบัญชีจาก backend — ใช้ข้อมูลคงที่ในแอปไปก่อน หรือรอ backend เพิ่ม endpoint นี้) + ปุ่ม "แนบสลิปโอนเงิน" เรียก `POST /user/invoices/{id}/upload-slip`
+  - ถ้า `payment_slip_url` ไม่เป็น null → แสดงว่า "แนบสลิปแล้ว รอตรวจสอบ" พร้อมรูปสลิปที่แนบไป
+- Push notification ชนิดใหม่: `type: "invoice"` (มีใบแจ้งหนี้ใหม่ / ชำระเงินสำเร็จ) — data payload มี `invoice_id`, `invoice_number` ให้กดแล้วพาไปหน้ารายละเอียดใบแจ้งหนี้นั้น
+
+**Gap ที่ยังไม่มี (แจ้งไว้ก่อน กันมือถือรอ):**
+- ยังไม่มี endpoint ส่งข้อมูลบัญชีธนาคารสำหรับให้ลูกค้าโอนเงิน (`bank_transfer`) — ต้องคุยกับฝ่ายบัญชีว่าจะ hardcode ในแอปหรือให้ backend เพิ่ม config
+- ใบแจ้งหนี้ยังไม่มี PDF ให้ดาวน์โหลด (มีแต่ข้อมูลรายการใน JSON) — ถ้าต้องการไฟล์ PDF ทางการ ต้องคุยเพิ่มเป็นเฟสถัดไป
+- field `status = overdue` ในฐานข้อมูลยังไม่ auto-update (ยังเป็น `pending` ค้างไว้แม้เลย due_date) ให้เช็คความล่าช้าจาก `is_overdue` ที่ API คำนวณให้แทน
+
 ---
 
 ## สรุป Gap ฝั่ง Backend ที่ยังไม่ได้ทำ (ไม่ใช่งาน mobile แต่กระทบ feature)
@@ -118,3 +161,24 @@ Mobile ต้องทำ (ยังไม่เคยมี popup ads ในแ
 3. ~~tax_id + สาขา ในฟอร์มติดต่อฝ่ายขายกรณีธุรกิจ (ข้อ 6)~~ — ทำแล้ว 7 ก.ย. (migration `2026_09_07_100000`)
 4. 4 ข้อเพิ่มเติมจาก K.Jai (homepage, quick menu, payment→invoice/receipt, update shopping items) — **payment→invoice/receipt เสร็จแล้ว (ข้อ 8 ด้านบน)**, ที่เหลือ (homepage, quick menu, update shopping items) ยังไม่ได้วิเคราะห์
 5. ใบเสนอราคายังเป็นการอัปโหลดไฟล์โดยแอดมินเอง ไม่ใช่ระบบ auto-generate PDF จากรายการสินค้า/บริการ
+6. **(28 ก.ย.)** สินค้าจับกลุ่ม (ข้อ 10) และ **ระบบใบแจ้งหนี้รายเดือนอัตโนมัติ (ข้อ 11)** — โค้ด/schema เสร็จแล้วทั้งคู่ แต่ **ยังไม่ได้รัน migration บนเครื่อง production** เพราะ `device_bash` ที่ใช้ทำงานเซสชันนี้เข้าถึง PHP/MySQL ของเครื่องจริงไม่ได้ (เป็น sandbox แยกต่างหาก) — **ต้องรัน `php artisan migrate` เองบนเครื่อง production ก่อน** ตาราง `product_bundles`, `product_bundle_items`, `service_contracts`, `invoices`, `invoice_items` และคอลัมน์ใหม่ต่างๆ (`orders.bundle_discount`, `customer_profiles.is_invoice_customer`, `customer_profiles.invoice_payment_method`) ถึงจะถูกสร้างจริง — ก่อนรัน migrate ทั้งสองฟีเจอร์นี้จะ error ทันทีถ้ามีคนเรียกใช้
+7. **(28 ก.ย.)** ระบบใบแจ้งหนี้รายเดือนอัตโนมัติ — เขียนโค้ดเสร็จแล้ว (schema + service + cron command + หน้าแอดมิน + API มือถือ) แต่ **ยังไม่ได้ตั้ง Windows Task Scheduler ให้รัน `php artisan schedule:run` บนเครื่อง production** เพราะ session นี้เข้าไม่ถึง Windows OS จริงๆ — ถ้ายังไม่ตั้ง cron จะไม่มีใบแจ้งหนี้ออกอัตโนมัติเลย (ใช้ปุ่ม "สร้างใบแจ้งหนี้ตอนนี้" ในหลังบ้านแทนไปก่อนได้) ดูคำแนะนำตั้งค่าด้านล่าง
+8. ใบแจ้งหนี้ยังไม่มี endpoint ส่งเลขบัญชีธนาคารสำหรับลูกค้าโอนเงิน และยังไม่มี PDF ให้ดาวน์โหลด (ดู Gap ในข้อ 11 ด้านบน)
+
+---
+
+## วิธีตั้งค่าที่ต้องทำเองบนเครื่อง production (Windows/XAMPP) — สำหรับข้อ 6-7
+
+**1. รัน migration (ครั้งเดียว):**
+```
+cd C:\xampp\htdocs\aeg
+php artisan migrate
+```
+
+**2. ตั้ง Windows Task Scheduler ให้รัน Laravel Scheduler ทุกนาที** (จำเป็นสำหรับใบแจ้งหนี้รายเดือนอัตโนมัติ — ถ้าไม่ตั้งข้อนี้ ระบบจะไม่ออกใบแจ้งหนี้ให้เองเลย ต้องกดปุ่ม "สร้างใบแจ้งหนี้ตอนนี้" ในหลังบ้านแทนไปก่อน):
+เปิด Command Prompt แบบ Administrator แล้วรัน (แก้ path ให้ตรงกับเครื่องจริงถ้าไม่ได้ติดตั้งที่ `C:\xampp`):
+```
+schtasks /create /tn "AEG Laravel Scheduler" /tr "C:\xampp\php\php.exe C:\xampp\htdocs\aeg\artisan schedule:run" /sc minute /mo 1 /ru SYSTEM
+```
+ตรวจสอบว่าตั้งสำเร็จ: `schtasks /query /tn "AEG Laravel Scheduler"`
+งานที่ตั้งไว้ในโค้ด (`bootstrap/app.php` → `withSchedule`) คือ `invoices:generate` รันทุกวันตอนตี 1 — รันรายวันเพราะสัญญาแต่ละอันมีวันออกบิลไม่ตรงกัน และถ้าเครื่องปิด/ล่มในวันที่ควรออกบิล ระบบจะไล่ตามออกบิลย้อนหลังให้เองในวันถัดไปของเดือนเดียวกัน

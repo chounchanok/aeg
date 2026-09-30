@@ -354,6 +354,137 @@ class EcommerceController extends Controller
     // ==========================================
     // 2. ตะกร้าสินค้า (Cart)
     // ==========================================
+    // ==========================================
+    // 🌟 สินค้าจับกลุ่ม (Bundle) — ใช้ร่วมกันทั้ง getCart() (แสดง preview + คำแนะนำ)
+    // และ checkout() (คำนวณส่วนลดจริงฝั่ง server ก่อนตัดเงิน ห้ามเชื่อราคาจาก client)
+    // ==========================================
+
+    /**
+     * ดึงบันเดิลที่ยัง is_active พร้อมรายการสินค้าในแต่ละชุด + คำนวณราคาปกติรวม/ส่วนที่ประหยัดได้
+     */
+    private function getActiveBundlesWithItems()
+    {
+        $bundles = DB::table('product_bundles')->where('is_active', true)->get();
+
+        foreach ($bundles as $bundle) {
+            $bundle->items = DB::table('product_bundle_items')
+                ->join('products', 'product_bundle_items.product_id', '=', 'products.id')
+                ->where('product_bundle_items.product_bundle_id', $bundle->id)
+                ->select('products.id as product_id', 'products.name_th', 'products.name_en', 'products.price', 'product_bundle_items.quantity as required_qty')
+                ->get();
+
+            $bundle->original_total = $bundle->items->sum(fn ($i) => $i->price * $i->required_qty);
+            $bundle->savings = max(0, $bundle->original_total - $bundle->bundle_price);
+        }
+
+        return $bundles->sortByDesc('savings')->values();
+    }
+
+    /**
+     * เช็คว่าตะกร้า (product_id => quantity) ตรงกับบันเดิลไหนครบชุดบ้าง แล้วหักสต็อกที่ใช้ไปแล้วออก
+     * (กันไม่ให้สินค้าชุดเดียวกันถูกนับซ้ำ 2 บันเดิลพร้อมกัน) เลือกบันเดิลที่ประหยัดมากสุดก่อนเสมอ
+     *
+     * @param array<int,int> $cartQtyByProduct [product_id => quantity]
+     * @return array{applied: array, total_discount: float, remaining_qty: array<int,int>, all_bundles: \Illuminate\Support\Collection}
+     */
+    private function calculateBundleMatches(array $cartQtyByProduct): array
+    {
+        $bundles = $this->getActiveBundlesWithItems();
+        $remaining = $cartQtyByProduct;
+        $applied = [];
+        $totalDiscount = 0.0;
+
+        foreach ($bundles as $bundle) {
+            if ($bundle->savings <= 0) continue; // ตั้งราคาชุดสูงกว่า/เท่าราคาปกติ ไม่มีประโยชน์ที่จะ apply ให้
+
+            $canApply = true;
+            foreach ($bundle->items as $item) {
+                if (($remaining[$item->product_id] ?? 0) < $item->required_qty) {
+                    $canApply = false;
+                    break;
+                }
+            }
+
+            if ($canApply) {
+                foreach ($bundle->items as $item) {
+                    $remaining[$item->product_id] -= $item->required_qty;
+                }
+                $applied[] = [
+                    'bundle_id' => $bundle->id,
+                    'name_th' => $bundle->name_th,
+                    'name_en' => $bundle->name_en,
+                    'original_total' => (float) $bundle->original_total,
+                    'bundle_price' => (float) $bundle->bundle_price,
+                    'savings' => (float) $bundle->savings,
+                ];
+                $totalDiscount += $bundle->savings;
+            }
+        }
+
+        return [
+            'applied' => $applied,
+            'total_discount' => $totalDiscount,
+            'remaining_qty' => $remaining,
+            'all_bundles' => $bundles,
+        ];
+    }
+
+    /**
+     * หาบันเดิลที่ลูกค้ามีสินค้าในตะกร้าอยู่แล้วบางส่วน (แต่ยังไม่ครบชุด) เพื่อแนะนำ "ซื้อเพิ่มอีกนิดรับราคาชุด"
+     */
+    private function calculateBundleSuggestions(array $cartQtyByProduct, array $bundleMatch): array
+    {
+        $appliedIds = collect($bundleMatch['applied'])->pluck('bundle_id')->all();
+        $suggestions = [];
+
+        foreach ($bundleMatch['all_bundles'] as $bundle) {
+            if (in_array($bundle->id, $appliedIds, true) || $bundle->savings <= 0) continue;
+
+            $haveAny = false;
+            $missing = [];
+            foreach ($bundle->items as $item) {
+                $have = $cartQtyByProduct[$item->product_id] ?? 0;
+                if ($have > 0) $haveAny = true;
+                if ($have < $item->required_qty) {
+                    $missing[] = [
+                        'product_id' => $item->product_id,
+                        'name_th' => $item->name_th,
+                        'name_en' => $item->name_en,
+                        'price' => (float) $item->price,
+                        'need_qty' => $item->required_qty - $have,
+                    ];
+                }
+            }
+
+            if ($haveAny && !empty($missing)) {
+                $suggestions[] = [
+                    'bundle_id' => $bundle->id,
+                    'name_th' => $bundle->name_th,
+                    'name_en' => $bundle->name_en,
+                    'bundle_price' => (float) $bundle->bundle_price,
+                    'savings' => (float) $bundle->savings,
+                    'missing_products' => $missing,
+                ];
+            }
+        }
+
+        return $suggestions;
+    }
+
+    /**
+     * รวม quantity ต่อ product_id จากรายการในตะกร้า/ที่กำลังจะสั่งซื้อ — ข้ามรายการที่เป็นแพ็กเกจคิดราคาตามเดือน
+     * (duration_months) เพราะราคาที่เก็บไว้ถูกคูณจำนวนเดือนไปแล้ว เทียบราคาต่อชิ้นปกติของบันเดิลไม่ได้ตรงๆ
+     */
+    private function buildBundleQtyMap($items): array
+    {
+        $qtyMap = [];
+        foreach ($items as $item) {
+            if (!empty($item->duration_months)) continue;
+            $qtyMap[$item->product_id] = ($qtyMap[$item->product_id] ?? 0) + $item->quantity;
+        }
+        return $qtyMap;
+    }
+
     public function getCart(Request $request)
     {
         $user = $request->user();
@@ -405,8 +536,15 @@ class EcommerceController extends Controller
             }
         }
 
-        // 3. คำนวณยอดสุทธิ (Net Total) ป้องกันยอดติดลบ
-        $netTotal = max(0, $subtotal - $discountAmount);
+        // 🌟 4. เช็คสินค้าจับกลุ่ม (Bundle) — ถ้าสินค้าในตะกร้าครบชุดไหนแล้ว หักส่วนลดให้อัตโนมัติ
+        // ถ้ามีแค่บางส่วน ส่งเป็นคำแนะนำให้ซื้อเพิ่มแทน (bundle_suggestions)
+        $bundleQtyMap = $this->buildBundleQtyMap($items);
+        $bundleMatch = $this->calculateBundleMatches($bundleQtyMap);
+        $bundleDiscount = $bundleMatch['total_discount'];
+        $bundleSuggestions = $this->calculateBundleSuggestions($bundleQtyMap, $bundleMatch);
+
+        // 3. คำนวณยอดสุทธิ (Net Total) ป้องกันยอดติดลบ — รวมส่วนลด reward + bundle เข้าด้วยกัน
+        $netTotal = max(0, $subtotal - $discountAmount - $bundleDiscount);
 
         return $this->successResponse([
             'items' => $items,
@@ -414,8 +552,11 @@ class EcommerceController extends Controller
                 'subtotal' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'reward_title' => $rewardTitle,
+                'bundle_discount_amount' => $bundleDiscount, // 🌟 ส่วนลดจากสินค้าจับกลุ่มที่ครบชุดแล้ว
+                'applied_bundles' => $bundleMatch['applied'], // 🌟 รายชื่อชุด/ส่วนลดที่ apply ให้อัตโนมัติ
                 'net_total' => $netTotal
-            ]
+            ],
+            'bundle_suggestions' => $bundleSuggestions // 🌟 "ซื้อ X เพิ่มอีก รับราคาชุด Y ประหยัด Z" (แสดงในตะกร้า)
         ], 'Cart retrieved');
     }
 
@@ -639,6 +780,14 @@ class EcommerceController extends Controller
         }
         // ==========================================
 
+        // 🌟 คำนวณส่วนลดจากสินค้าจับกลุ่ม (Bundle) ซ้ำอีกครั้งฝั่ง server จากรายการที่เลือก checkout จริง
+        // (ห้ามเชื่อส่วนลดที่ client ส่งมา เพราะกระทบเงินจริงที่จะตัดผ่าน payment gateway)
+        $bundleQtyMap = $this->buildBundleQtyMap($cartItems);
+        $bundleMatch = $this->calculateBundleMatches($bundleQtyMap);
+        $bundleDiscount = $bundleMatch['total_discount'];
+
+        $discount = $discount + $bundleDiscount; // รวมส่วนลด reward + bundle เป็นยอดเดียว (เหมือนเดิม)
+
         // คำนวณยอดสุทธิ (ป้องกันยอดติดลบ)
         $totalAmount = max(0, $subtotal - $discount);
         // ==========================================
@@ -663,7 +812,8 @@ class EcommerceController extends Controller
                 'user_id' => $user->id,
                 'address_id' => $request->address_id,
                 'subtotal' => $subtotal,
-                'discount' => $discount, // 🌟 บันทึกส่วนลดลงบิล
+                'discount' => $discount, // 🌟 บันทึกส่วนลดรวม (reward + bundle) ลงบิล
+                'bundle_discount' => $bundleDiscount, // 🌟 แยกยอดส่วนลดจากบันเดิลไว้ต่างหากเพื่อตรวจสอบย้อนหลัง
                 'total_amount' => $totalAmount, // 🌟 บันทึกยอดที่หักส่วนลดแล้ว
                 'status' => 'pending_payment',
                 'payment_gateway' => $request->payment_gateway,
@@ -718,6 +868,8 @@ class EcommerceController extends Controller
                 'order_number' => $order->order_number,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'bundle_discount' => $bundleDiscount, // 🌟 ส่วนลดจากสินค้าจับกลุ่มที่ apply ให้ตอน checkout
+                'applied_bundles' => $bundleMatch['applied'], // 🌟 ชื่อชุด/รายละเอียดที่ได้ส่วนลดไป
                 'total_amount' => $totalAmount,
                 'payment_url' => $paymentUrl // 🌟 ส่งลิงก์ WebView กลับไปให้แอป
             ], 'Order created successfully. Please proceed to payment.');

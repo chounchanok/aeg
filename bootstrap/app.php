@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,6 +13,18 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        // 🌟 ระบบสร้างใบแจ้งหนี้รายเดือนอัตโนมัติ — รันทุกวันตอนตี 1 (รันรายวันเพราะสัญญาแต่ละอันมี
+        // billing_day ไม่ตรงกัน และช่วยไล่ตามออกบิลย้อนหลังในเดือนเดียวกันได้เองถ้าวันก่อนหน้า cron ไม่ทำงาน)
+        // ⚠️ ต้องตั้ง Windows Task Scheduler ให้รัน `php artisan schedule:run` ทุกนาทีบนเครื่อง production
+        // ด้วย (ดูคำแนะนำ schtasks ที่แนบมาพร้อมงานนี้) มิฉะนั้นคำสั่งนี้จะไม่ถูกเรียกเลย
+        // หมายเหตุ: ไม่ใส่ ->onOneServer() เพราะ production รันเครื่องเดียว (Windows/XAMPP) ไม่ต้องกันชนข้าม
+        // เซิร์ฟเวอร์ — ถ้าในอนาคตขยายเป็นหลายเครื่อง ค่อยเพิ่ม (ต้องใช้ cache driver ที่รองรับ atomic lock เช่น database/redis)
+        $schedule->command('invoices:generate')
+            ->dailyAt('01:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/invoices-generate.log'));
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         // ใช้เมธอด alias เพื่อลงทะเบียนชื่อย่อให้ Middleware
         $middleware->alias([

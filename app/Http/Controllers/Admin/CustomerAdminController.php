@@ -31,7 +31,7 @@ class CustomerAdminController extends Controller
     // 2. หน้าดูรายละเอียดลูกค้าและสินค้าที่ลูกค้ามี
     public function show($id)
     {
-        $customer = DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')->where('users.id', $id)->select('users.*', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.address', 'customer_profiles.profile_image_url', 'customer_profiles.tax_id', 'customer_profiles.branch')->first();
+        $customer = DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')->where('users.id', $id)->select('users.*', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.address', 'customer_profiles.profile_image_url', 'customer_profiles.tax_id', 'customer_profiles.branch', 'customer_profiles.is_invoice_customer', 'customer_profiles.invoice_payment_method')->first();
         if (!$customer) abort(404);
 
         $customerProducts = DB::table('customer_products')->where('customer_id', $id)->orderBy('created_at', 'desc')->get();
@@ -104,6 +104,27 @@ class CustomerAdminController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'ใช้คูปองแทนลูกค้าเรียบร้อยแล้ว');
+    }
+
+    // 🌟 ตั้งค่าลูกค้า "วางบิลรายเดือน" (ดู resources/views/admin/customers/show.blade.php) — ควบคุมว่าคำสั่งซื้อ
+    // ที่ยังไม่ชำระของลูกค้าคนนี้จะถูกรวบเป็นใบแจ้งหนี้เดียวตอนสิ้นเดือนหรือไม่ (ดู InvoiceGenerationService)
+    public function updateInvoiceSettings(Request $request, $id)
+    {
+        $request->validate([
+            'is_invoice_customer' => 'required|boolean',
+            'invoice_payment_method' => 'required|in:gateway,bank_transfer',
+        ]);
+
+        DB::table('customer_profiles')->updateOrInsert(
+            ['user_id' => $id],
+            [
+                'is_invoice_customer' => $request->boolean('is_invoice_customer'),
+                'invoice_payment_method' => $request->invoice_payment_method,
+                'updated_at' => now(),
+            ]
+        );
+
+        return redirect()->back()->with('success', 'บันทึกการตั้งค่าใบแจ้งหนี้รายเดือนเรียบร้อยแล้ว');
     }
 
     // ==========================================
