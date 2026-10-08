@@ -177,7 +177,7 @@ class CmsAdminController extends Controller
     {
         $request->validate([
             'title' => 'nullable|string',
-            'link_url' => 'nullable|url',
+            'link_url' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
