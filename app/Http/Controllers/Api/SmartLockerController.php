@@ -136,6 +136,167 @@ class SmartLockerController extends Controller
         ], 'Locker availability retrieved');
     }
 
+    /**
+     * 🌟 ค้นหาตู้ว่างตามช่วงเวลา (ลูกค้าเลือกช่วงวันก่อน แล้วระบบหาตู้ให้)
+     * GET /smart-lockers/search-available?from=2026-11-01&duration_months=3[&type=PRIME][&category_id=1]
+     *   หรือ ?from=2026-11-01&to=2026-12-31 (to = วันสุดท้ายที่ใช้ตู้ นับรวม)
+     *
+     * - มีตู้ว่างทั้งช่วง → status = "success" + smart_locker_id (ตู้ที่แนะนำ) + available_lockers ทั้งหมด → ใช้ POST /smart-lockers/book ต่อ
+     * - ไม่มีตู้ว่าง     → status = "unavailable" + ข้อความให้เลือกใหม่ + ช่วงที่ว่าง (free_ranges) และวันเริ่มที่ใกล้ที่สุดที่ว่างครบช่วง (suggestions)
+     *
+     * ช่วงวันใช้หลักเดียวกับการจอง: start_date นับรวม, end_date = วันถัดจากวันสุดท้าย (half-open)
+     */
+    public function searchAvailable(Request $request)
+    {
+        $request->validate([
+            'from' => 'required|date|after_or_equal:today',
+            'to' => 'nullable|date|after_or_equal:from|required_without:duration_months',
+            'duration_months' => 'nullable|integer|min:1|max:60|required_without:to',
+            'type' => 'nullable|string',
+            'category_id' => 'nullable|integer',
+        ]);
+
+        $lang = $request->header('Accept-Language', 'th');
+        $from = Carbon::parse($request->query('from'))->startOfDay();
+        $durationMonths = $request->filled('duration_months') ? (int) $request->query('duration_months') : null;
+        $endExclusive = $durationMonths
+            ? $from->copy()->addMonths($durationMonths)
+            : Carbon::parse($request->query('to'))->startOfDay()->addDay();
+        $durationDays = (int) $from->diffInDays($endExclusive);
+        if ($durationDays > 1830) {
+            return $this->errorResponse('เลือกช่วงเวลาได้ไม่เกิน 60 เดือน', 422);
+        }
+
+        $lockers = DB::table('smart_lockers')
+            ->where('is_active', true)
+            ->where('status', '!=', 'maintenance')
+            ->when($request->filled('type'), fn ($q) => $q->where('type', strtoupper($request->query('type'))))
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->query('category_id')))
+            ->orderBy('type')->orderBy('locker_number')
+            ->get();
+
+        // ช่วงที่ต้องโหลดข้อมูลการจอง = ช่วงที่เลือก + 180 วันถัดไป (ใช้หาวันเริ่มใหม่ที่ใกล้ที่สุด)
+        $searchDays = 180;
+        $totalDays = $searchDays + $durationDays;
+        $windowEnd = $from->copy()->addDays($totalDays);
+        $lockerIds = $lockers->pluck('id');
+
+        $bookings = DB::table('locker_bookings')
+            ->whereIn('smart_locker_id', $lockerIds)
+            ->whereIn('status', ['pending_payment', 'paid', 'active', 'completed'])
+            ->where('start_date', '<', $windowEnd->toDateString())
+            ->where('end_date', '>', $from->toDateString())
+            ->get(['smart_locker_id', 'start_date', 'end_date'])
+            ->groupBy('smart_locker_id');
+        $blocks = DB::table('smart_locker_unavailable_dates')
+            ->whereIn('smart_locker_id', $lockerIds)
+            ->where('date', '>=', $from->toDateString())
+            ->where('date', '<', $windowEnd->toDateString())
+            ->get(['smart_locker_id', 'date'])
+            ->groupBy('smart_locker_id');
+
+        $present = function ($locker) use ($lang) {
+            return [
+                'id' => $locker->id,
+                'smart_locker_id' => $locker->id,
+                'locker_number' => $locker->locker_number,
+                'type' => $locker->type,
+                'category_id' => $locker->category_id ?? null,
+                'title' => ($lang == 'en' && !empty($locker->title_en)) ? $locker->title_en : $locker->title_th,
+                'price' => (float) $locker->price,
+                'image_url' => $locker->image_url,
+            ];
+        };
+
+        $available = [];
+        $freeRanges = [];
+        $suggestions = [];
+        foreach ($lockers as $locker) {
+            // busy[i] = วันที่ from+i ไม่ว่าง
+            $busy = array_fill(0, $totalDays, 0);
+            foreach ($bookings->get($locker->id, collect()) as $b) {
+                $startIdx = max(0, (int) $from->diffInDays(Carbon::parse($b->start_date)->startOfDay(), false));
+                $endIdx = min($totalDays, (int) $from->diffInDays(Carbon::parse($b->end_date)->startOfDay(), false));
+                for ($i = $startIdx; $i < $endIdx; $i++) $busy[$i] = 1;
+            }
+            foreach ($blocks->get($locker->id, collect()) as $blk) {
+                $i = (int) $from->diffInDays(Carbon::parse($blk->date)->startOfDay(), false);
+                if ($i >= 0 && $i < $totalDays) $busy[$i] = 1;
+            }
+
+            // prefix sum เพื่อเช็คว่าช่วง [s, s+durationDays) ว่างทั้งหมดไหมแบบ O(1)
+            $prefix = [0];
+            foreach ($busy as $i => $v) $prefix[$i + 1] = $prefix[$i] + $v;
+
+            if ($prefix[$durationDays] === 0) {
+                $available[] = $present($locker);
+                continue;
+            }
+
+            // ช่วงที่ว่างภายในช่วงที่ลูกค้าเลือก (แสดงให้ลูกค้าเห็นว่าว่างวันไหนบ้าง)
+            $ranges = [];
+            $runStart = null;
+            for ($i = 0; $i <= $durationDays; $i++) {
+                $isFree = $i < $durationDays && $busy[$i] === 0;
+                if ($isFree && $runStart === null) $runStart = $i;
+                if (!$isFree && $runStart !== null) {
+                    $ranges[] = [
+                        'from' => $from->copy()->addDays($runStart)->toDateString(),
+                        'to' => $from->copy()->addDays($i - 1)->toDateString(),
+                        'days' => $i - $runStart,
+                    ];
+                    $runStart = null;
+                }
+            }
+            if (!empty($ranges)) {
+                $freeRanges[] = $present($locker) + ['free_ranges' => $ranges];
+            }
+
+            // วันเริ่มที่ใกล้ที่สุด (ภายใน 180 วัน) ที่ตู้นี้ว่างครบตามระยะเวลาเดิม
+            for ($sIdx = 1; $sIdx <= $searchDays; $sIdx++) {
+                if ($prefix[$sIdx + $durationDays] - $prefix[$sIdx] === 0) {
+                    $start = $from->copy()->addDays($sIdx);
+                    $end = $durationMonths ? $start->copy()->addMonths($durationMonths) : $start->copy()->addDays($durationDays);
+                    $suggestions[] = $present($locker) + [
+                        'start_date' => $start->toDateString(),
+                        'end_date' => $end->copy()->subDay()->toDateString(),
+                    ];
+                    break;
+                }
+            }
+        }
+
+        $requested = [
+            'from' => $from->toDateString(),
+            'to' => $endExclusive->copy()->subDay()->toDateString(),
+            'duration_months' => $durationMonths,
+            'duration_days' => $durationDays,
+        ];
+
+        if (!empty($available)) {
+            return $this->successResponse([
+                'is_available' => true,
+                'smart_locker_id' => $available[0]['id'], // ตู้ที่แนะนำ → ส่งต่อให้ POST /smart-lockers/book
+                'requested' => $requested,
+                'available_lockers' => $available,
+            ], 'มีตู้เซฟว่างในช่วงเวลาที่เลือก');
+        }
+
+        usort($suggestions, fn ($a, $b) => strcmp($a['start_date'], $b['start_date']) ?: ($a['id'] <=> $b['id']));
+
+        return response()->json([
+            'status' => 'unavailable',
+            'message' => 'ช่วงเวลาที่คุณเลือกไม่มี locker ว่าง โปรดเลือกใหม่อีกครั้ง',
+            'data' => [
+                'is_available' => false,
+                'smart_locker_id' => null,
+                'requested' => $requested,
+                'free_ranges' => $freeRanges, // ตู้ที่ว่างบางช่วงภายในช่วงที่เลือก
+                'suggestions' => array_slice($suggestions, 0, 5), // วันเริ่มที่ใกล้ที่สุดที่ว่างครบตามระยะเวลาเดิม
+            ],
+        ], 200);
+    }
+
     private function isDateAvailable(object $locker, Carbon $date): bool
     {
         if ($locker->status === 'maintenance') return false;

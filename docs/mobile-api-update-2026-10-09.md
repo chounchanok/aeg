@@ -7,8 +7,8 @@
 
 | # | เรื่อง | Endpoint | สถานะสำหรับ Mobile |
 |---|--------|----------|-----------------|
-| 1 | ตู้เซฟ: วันว่าง + ต่ออายุ | `GET /smart-lockers/{id}/availability`, `GET /main/expiring-services`, `POST /smart-lockers/bookings/{id}/renew` | มีอยู่แล้ว (ดู `docs/smart-locker-mobile-api.md`) |
-| 2 | คูปอง/ของรางวัลที่แลก | `GET /rewards/my-codes-all`, `GET /rewards/my-codes/{id}`, **ใหม่** `POST /rewards/my-codes/{id}/use` | **ต้อง integrate ใหม่** |
+| 1 | ตู้เซฟ: วันว่าง + ต่ออายุ | **ใหม่** `GET /smart-lockers/search-available`, `GET /smart-lockers/{id}/availability`, `GET /main/expiring-services`, `POST /smart-lockers/bookings/{id}/renew` | มีอยู่แล้ว (ดู `docs/smart-locker-mobile-api.md`) |
+| 2 | คูปอง/ของรางวัลที่แลก | `GET /rewards/my-codes-all`, **ใหม่** `GET /rewards/my-coupons`, `GET /rewards/my-codes/{id}`, **ใหม่** `POST /rewards/my-codes/{id}/use` | **ต้อง integrate ใหม่** |
 | 3 | สิทธิพิเศษตาม Tier | `/ease-club/*`, `/main/recommended-privileges`, `/search` | response เดิม แต่ซ่อนรางวัลที่ Tier ไม่ถึง |
 | 5 | url ในแจ้งเตือน | `GET /user/notifications` + push data | **ต้อง integrate ใหม่** (กดแล้วไปต่อ) |
 | 6 | จำนวนแจ้งเตือนที่ยังไม่อ่าน | **ใหม่** `GET /user/notifications/unread-count`, `POST /user/notifications/read-all` | **ใหม่** |
@@ -22,6 +22,52 @@
 ---
 
 ## 1. ตู้เซฟนิรภัย — วันว่าง/ไม่ว่าง และต่ออายุ
+
+### ใหม่: `GET /smart-lockers/search-available` — เลือกช่วงวันก่อน แล้วระบบหาตู้ว่างให้ (public)
+Query:
+- `from` (บังคับ, YYYY-MM-DD, ตั้งแต่วันนี้)
+- ระยะเวลา ส่งอย่างใดอย่างหนึ่ง: `duration_months` (แนะนำ เพราะตรงกับการจอง) หรือ `to` (วันสุดท้ายที่ใช้ตู้ นับรวม)
+- `type` = PRIME | PRIVILEGE, `category_id` (ไม่บังคับ)
+
+**มีตู้ว่าง** (HTTP 200)
+```json
+{
+  "status": "success",
+  "message": "มีตู้เซฟว่างในช่วงเวลาที่เลือก",
+  "data": {
+    "is_available": true,
+    "smart_locker_id": 12,
+    "requested": { "from": "2026-11-01", "to": "2027-01-31", "duration_months": 3, "duration_days": 92 },
+    "available_lockers": [ { "id": 12, "smart_locker_id": 12, "locker_number": "PR-001", "type": "PRIME", "category_id": 1, "title": "...", "price": 1500, "image_url": "..." } ]
+  }
+}
+```
+นำ `smart_locker_id` + `from` (เป็น `start_date`) + `duration_months` ไปเรียก `POST /smart-lockers/book` ต่อ (ถ้าค้นด้วย `to` ต้องแปลงเป็นจำนวนเดือนก่อนจอง เพราะ API จองรับเป็นเดือน)
+
+**ไม่มีตู้ว่าง** (HTTP 200 แต่ `status` = `"unavailable"`)
+```json
+{
+  "status": "unavailable",
+  "message": "ช่วงเวลาที่คุณเลือกไม่มี locker ว่าง โปรดเลือกใหม่อีกครั้ง",
+  "data": {
+    "is_available": false,
+    "smart_locker_id": null,
+    "requested": { "from": "2026-11-01", "to": "2027-01-31", "duration_months": 3, "duration_days": 92 },
+    "free_ranges": [
+      { "id": 12, "locker_number": "PR-001", "...": "...", "free_ranges": [ { "from": "2026-11-01", "to": "2026-11-20", "days": 20 } ] }
+    ],
+    "suggestions": [
+      { "id": 12, "locker_number": "PR-001", "...": "...", "start_date": "2026-12-15", "end_date": "2027-03-14" }
+    ]
+  }
+}
+```
+- `free_ranges` = ตู้ที่ว่างบางช่วงในช่วงที่ลูกค้าเลือก (บอกว่าว่างวันไหนบ้าง)
+- `suggestions` = วันเริ่มที่ใกล้ที่สุด (ภายใน 180 วัน) ที่ตู้ว่างครบตามระยะเวลาเดิม สูงสุด 5 ตู้ เรียงจากวันที่เร็วสุด กดเลือกแล้วจองต่อได้เลย
+- ต้องเช็ค `status` / `is_available` ไม่ใช่ดูแค่ HTTP code
+
+เส้นเดิม `GET /smart-lockers/{id}/availability` ยังใช้ได้เหมือนเดิม (สำหรับปฏิทินรายตู้)
+
 
 API ไม่เปลี่ยนจากเอกสาร `docs/smart-locker-mobile-api.md` สรุปสั้นๆ:
 
@@ -103,6 +149,12 @@ Query (ไม่บังคับ): `status=active,shipping` (คั่นด�
 
 ### `GET /rewards/my-codes` (auth)
 เหมือนเดิม คือคูปองส่วนลดที่ยังใช้ได้สำหรับหน้า checkout แต่ตอนนี้แต่ละรายการมีรูปแบบเดียวกับด้านบน ให้ส่ง `display_code` เป็น `reward_code` ตอน checkout/buy-now (ระบบรับได้ทั้ง `RWD-...` และรหัสจากแอดมิน)
+
+### `GET /rewards/my-coupons` (auth) — คูปองที่ยังไม่ได้ใช้ ไม่รวมสินค้า (ใหม่)
+คืนเฉพาะวอยเชอร์และส่วนลดในแอปที่ `status = active` ใช้ทำหน้า "คูปองของฉัน"
+Query (ไม่บังคับ): `reward_type=voucher` หรือ `reward_type=discount`
+แต่ละรายการรูปแบบเดียวกับ `my-codes-all` (`shipping` เป็น `null`) รวมวอยเชอร์ที่ยังรอรหัสจากแอดมินด้วย (`is_waiting_code = true`, `can_use = false`, `display_code = null`) แอปควรแสดงว่า "รอเจ้าหน้าที่ส่งรหัส"
+ต่างจาก `GET /rewards/my-codes` ที่คืนเฉพาะคูปองที่มีมูลค่าส่วนลด (สำหรับเลือกตอน checkout)
 
 ### `GET /rewards/my-codes/{id}` (auth) — รายละเอียด + timeline (ใหม่)
 รูปแบบเดียวกับด้านบน และเพิ่ม `timeline: [{ status, status_label, note, actor: customer|admin|system, created_at }]` ใช้ทำหน้าติดตามสถานะการจัดส่ง

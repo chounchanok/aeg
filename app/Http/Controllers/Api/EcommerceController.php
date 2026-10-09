@@ -1297,6 +1297,27 @@ class EcommerceController extends Controller
         return $this->successResponse($codes, 'ดึงรายการของรางวัลที่เคยแลกสำเร็จ');
     }
 
+    // 🌟 คูปองที่ยังไม่ได้ใช้ (ไม่รวมของรางวัลประเภทสินค้า) — วอยเชอร์ + ส่วนลดในแอป ที่ status = active
+    // GET /rewards/my-coupons[?reward_type=voucher|discount]
+    // รวมวอยเชอร์ที่ยังรอแอดมินส่งรหัส (is_waiting_code = true, can_use = false) เพื่อให้ลูกค้าเห็นว่ามีคูปองรออยู่
+    public function getMyUnusedCoupons(Request $request)
+    {
+        $types = [\App\Services\RewardService::TYPE_VOUCHER, \App\Services\RewardService::TYPE_DISCOUNT];
+        if ($request->filled('reward_type') && in_array($request->query('reward_type'), $types, true)) {
+            $types = [$request->query('reward_type')];
+        }
+
+        $coupons = \App\Services\RewardService::codesQuery()
+            ->where('customer_reward_codes.user_id', $request->user()->id)
+            ->where('customer_reward_codes.status', 'active')
+            ->whereIn('rewards.reward_type', $types)
+            ->orderBy('customer_reward_codes.created_at', 'desc')
+            ->get()
+            ->map(fn ($row) => \App\Services\RewardService::presentCode($row));
+
+        return $this->successResponse($coupons, 'ดึงรายการคูปองที่ยังไม่ได้ใช้สำเร็จ');
+    }
+
     // 4. รายละเอียดคูปอง/ของรางวัล 1 รายการ + timeline สถานะการจัดส่ง
     public function getMyRewardCodeDetail(Request $request, $id)
     {

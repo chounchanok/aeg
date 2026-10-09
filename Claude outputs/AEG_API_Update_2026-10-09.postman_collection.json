@@ -420,37 +420,6 @@
           "response": []
         },
         {
-          "name": "คูปองที่ยังไม่ได้ใช้ (ไม่รวมสินค้า)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/rewards/my-coupons",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "rewards",
-                "my-coupons"
-              ],
-              "query": [
-                {
-                  "key": "reward_type",
-                  "value": "voucher",
-                  "disabled": true
-                }
-              ]
-            },
-            "description": "วอยเชอร์ + ส่วนลดในแอป ที่ status=active (รวมวอยเชอร์ที่รอรหัส is_waiting_code=true) — filter: reward_type=voucher|discount"
-          },
-          "response": []
-        },
-        {
           "name": "คูปองส่วนลดที่ใช้ได้ (หน้า checkout)",
           "request": {
             "method": "GET",

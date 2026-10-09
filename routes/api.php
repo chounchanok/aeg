@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\InvoiceController;
 
 Route::get('/smart-lockers/categorys', [SmartLockerController::class, 'getSmartLockers']);
 Route::get('/smart-lockers', [SmartLockerController::class, 'index']);
+Route::get('/smart-lockers/search-available', [SmartLockerController::class, 'searchAvailable']); // 🌟 เลือกช่วงวันก่อน แล้วหาตู้ว่าง (ต้องอยู่ก่อน /{id})
 Route::get('/smart-lockers/{id}', [SmartLockerController::class, 'show']);
 Route::get('/smart-lockers/{id}/availability', [SmartLockerController::class, 'availability']);
 
@@ -158,6 +159,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/rewards/redeem', [EcommerceController::class, 'redeemReward']);
     Route::get('/rewards/my-codes', [EcommerceController::class, 'getMyRewardCodes']);
     Route::get('/rewards/my-codes-all', [EcommerceController::class, 'getMyRewardCodesAll']);
+    Route::get('/rewards/my-coupons', [EcommerceController::class, 'getMyUnusedCoupons']); // 🌟 คูปองที่ยังไม่ได้ใช้ (ไม่รวมสินค้า)
     Route::get('/rewards/my-codes/{id}', [EcommerceController::class, 'getMyRewardCodeDetail'])->whereNumber('id'); // 🌟 รายละเอียด + timeline
     Route::post('/rewards/my-codes/{id}/use', [EcommerceController::class, 'useRewardCode'])->whereNumber('id'); // 🌟 ลูกค้ากดใช้คูปอง
 
