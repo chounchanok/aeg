@@ -11,12 +11,14 @@ class MainPageController extends Controller
 {
     use ApiResponseTrait;
 
-    public function getBanners()
+    public function getBanners(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'th');
         $banners = DB::table('banners')
             ->where('location', 'main')
             ->where('is_active', true)
-            ->get();
+            ->get()
+            ->map(fn ($b) => \App\Support\LocalizedImage::banner($b, $lang)); // 🌟 รูปภาษาอังกฤษ (fallback รูปไทย)
             
         return $this->successResponse($banners, 'Banners retrieved successfully');
     }
@@ -36,7 +38,8 @@ class MainPageController extends Controller
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->orderBy('id', 'asc')
-            ->get(['id', 'title', 'image_url', 'link_url', 'sort_order']);
+            ->get(['id', 'title', 'image_url', 'image_url_en', 'link_url', 'sort_order'])
+            ->map(fn ($ad) => \App\Support\LocalizedImage::popup($ad, $request->header('Accept-Language', 'th'))); // 🌟 รูปภาษาอังกฤษ
 
         $nextAd = $activeAds;
 
@@ -45,25 +48,69 @@ class MainPageController extends Controller
 
     public function getExpiringServices(Request $request)
     {
-        // ดึงบริการที่ใกล้หมดอายุโดยตรง (ไม่ Join ตาราง products)
-        $expiring = DB::table('customer_products')
+        $products = DB::table('customer_products')
             ->where('customer_id', $request->user()->id)
             ->where('status', 'active')
             ->whereBetween('warranty_expire_date', [now(), now()->addDays(30)])
             ->get()
             ->map(function ($item) {
-                // จัด Format ป้องกันตัวแปรหาย
-                $item->image_url = $item->image_url ?? null; 
+                $item->image_url = $item->image_url ?? null;
+                $item->service_type = 'product';
+                $item->can_renew = false;
                 return $item;
             });
+
+        $lockers = DB::table('locker_bookings as b')
+            ->join('smart_lockers as l', 'b.smart_locker_id', '=', 'l.id')
+            ->where('b.user_id', $request->user()->id)
+            ->whereNull('b.renewal_of_booking_id')
+            ->whereIn('b.status', ['active', 'paid', 'completed'])
+            ->whereBetween('b.end_date', [today()->toDateString(), today()->addDays(30)->toDateString()])
+            ->orderBy('b.end_date')
+            ->get([
+                'b.id', 'b.booking_number', 'b.smart_locker_id', 'b.start_date', 'b.end_date', 'b.status',
+                'l.locker_number', 'l.title_th', 'l.title_en', 'l.image_url', 'l.price as monthly_price',
+            ])
+            ->map(function ($booking) {
+                return [
+                    'id' => $booking->id,
+                    'service_type' => 'smart_locker',
+                    'booking_id' => $booking->id,
+                    'booking_number' => $booking->booking_number,
+                    'smart_locker_id' => $booking->smart_locker_id,
+                    'locker_number' => $booking->locker_number,
+                    'product_name' => 'ตู้เซฟนิรภัย ' . $booking->locker_number . ' · ' . $booking->title_th,
+                    'serial_number' => $booking->locker_number,
+                    'image_url' => $booking->image_url,
+                    'start_date' => $booking->start_date,
+                    'end_date' => $booking->end_date,
+                    'warranty_expire_date' => $booking->end_date,
+                    'status' => $booking->status,
+                    'monthly_price' => (float) $booking->monthly_price,
+                    'can_renew' => true,
+                    'renewal' => [
+                        'method' => 'POST',
+                        'endpoint' => url('/api/smart-lockers/bookings/' . $booking->id . '/renew'),
+                        'required_fields' => ['duration_months', 'payment_gateway'],
+                        'payment_gateway_options' => ['bbl'],
+                    ],
+                ];
+            });
+
+        $expiring = $products->concat($lockers)->sortBy(function ($item) {
+            return data_get($item, 'warranty_expire_date');
+        })->values();
 
         return $this->successResponse($expiring, 'Expiring services retrieved successfully');
     }
 
-    public function getRecommendedPrivileges()
+    public function getRecommendedPrivileges(Request $request)
     {
         // ดึงของรางวัลที่ใช้คะแนนน้อย หรือเป็นที่นิยม
-        $privileges = DB::table('rewards')->inRandomOrder()->limit(5)->get();
+        // 🌟 ผูกกับ Tier ของลูกค้า (customer_wallets.current_tier_id) — ไม่แสดงรางวัลที่ Tier ยังไม่ถึง
+        $query = DB::table('rewards')->where('is_active', true);
+        \App\Services\RewardService::applyTierFilter($query, $request->user()->id);
+        $privileges = $query->inRandomOrder()->limit(5)->get();
         return $this->successResponse($privileges, 'Recommended privileges retrieved');
     }
 

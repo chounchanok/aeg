@@ -64,6 +64,7 @@
                         <div>
                             <label class="form-label font-medium">รูปภาพสินค้า (สามารถเลือกได้มากกว่า 1 รูป)</label>
                             <input name="images[]" type="file" class="form-control" accept="image/*" multiple>
+                            @include('admin.partials.image-hint', ['key' => 'product'])
                         </div>
                     </div>
 

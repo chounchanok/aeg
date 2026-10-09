@@ -350,12 +350,41 @@ class ProfileController extends Controller
             $query->where('type', $type);
         }
 
-        $notifications = $query->get();
+        // 🌟 แต่ละรายการมี url / target_type / target_id ให้แอปกดแล้วไปต่อได้ (คอมเมนต์ข้อ 5)
+        // action: 'in_app' = เปิดหน้าภายในแอปตาม target_type+target_id, 'url' = เปิดลิงก์ภายนอก, 'none' = กดไม่ได้
+        $notifications = $query->get()->map(function ($n) {
+            $n->is_read = (bool) $n->is_read;
+            $n->url = $n->url ?? null;
+            $n->target_type = $n->target_type ?? null;
+            $n->target_id = isset($n->target_id) ? (int) $n->target_id : null;
+            $n->action = $n->target_type ? 'in_app' : ($n->url ? 'url' : 'none');
+            $n->is_clickable = $n->action !== 'none';
+            return $n;
+        });
 
         return response()->json([
             'status' => 'success',
-            'data' => $notifications
+            'data' => $notifications,
+            'unread_count' => DB::table('notifications')->where('user_id', $userId)->where('is_read', false)->count(),
         ]);
+    }
+
+    // 🌟 จำนวนแจ้งเตือนที่ยังไม่อ่าน (คอมเมนต์ข้อ 6) — ใช้แสดง badge บนไอคอนกระดิ่ง
+    // GET /user/notifications/unread-count  → { unread_count, by_type: { promotion: 2, order: 1, ... } }
+    public function getUnreadNotificationCount(Request $request)
+    {
+        $byType = DB::table('notifications')
+            ->where('user_id', $request->user()->id)
+            ->where('is_read', false)
+            ->selectRaw("COALESCE(type, 'general') as type, COUNT(*) as total")
+            ->groupBy(DB::raw("COALESCE(type, 'general')"))
+            ->pluck('total', 'type')
+            ->map(fn ($v) => (int) $v);
+
+        return $this->successResponse([
+            'unread_count' => (int) $byType->sum(),
+            'by_type' => $byType,
+        ], 'Unread notification count retrieved');
     }
 
     public function readNotification(Request $request, $id)
@@ -365,7 +394,21 @@ class ProfileController extends Controller
             ->where('user_id', $request->user()->id)
             ->update(['is_read' => true, 'updated_at' => now()]);
 
-        return $this->successResponse(null, 'Notification marked as read');
+        return $this->successResponse([
+            'unread_count' => DB::table('notifications')->where('user_id', $request->user()->id)->where('is_read', false)->count(),
+        ], 'Notification marked as read');
+    }
+
+    // 🌟 อ่านทั้งหมด (ปุ่ม "อ่านทั้งหมด") — ส่ง ?type=promotion เพื่ออ่านเฉพาะแท็บนั้นได้
+    public function readAllNotifications(Request $request)
+    {
+        $query = DB::table('notifications')->where('user_id', $request->user()->id)->where('is_read', false);
+        if ($request->filled('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+        $updated = $query->update(['is_read' => true, 'updated_at' => now()]);
+
+        return $this->successResponse(['updated' => $updated, 'unread_count' => DB::table('notifications')->where('user_id', $request->user()->id)->where('is_read', false)->count()], 'All notifications marked as read');
     }
 
     // ดึงประวัติแต้มเข้า-ออก

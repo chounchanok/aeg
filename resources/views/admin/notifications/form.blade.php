@@ -17,6 +17,9 @@
                 @if(session('error'))
                     <div class="alert alert-danger show mb-4" role="alert">{{ session('error') }}</div>
                 @endif
+                @if($errors->any())
+                    <div class="alert alert-danger show mb-4" role="alert">{{ $errors->first() }}</div>
+                @endif
 
                 <div class="intro-y box p-5">
                     <div class="mb-4">
@@ -58,6 +61,28 @@
                     <div class="mb-5">
                         <label class="form-label font-medium">รายละเอียด (Message Body) <span class="text-danger">*</span></label>
                         <textarea name="body" class="form-control" rows="4" placeholder="เช่น: ส่วนลดค่าติดตั้งบริการสูงสุด 30%..." required></textarea>
+                    </div>
+
+                    {{-- 🌟 ลิงก์เมื่อลูกค้ากดแจ้งเตือน (ไม่บังคับ) --}}
+                    <div class="mb-4 border-t border-slate-200/60 pt-4">
+                        <label class="form-label font-medium">เมื่อกดแจ้งเตือนให้ไปที่ (ไม่บังคับ)</label>
+                        <div class="grid grid-cols-12 gap-3">
+                            <div class="col-span-12 sm:col-span-6">
+                                <select name="target_type" class="form-select">
+                                    <option value="">— ไม่เปิดหน้าในแอป —</option>
+                                    @foreach(\App\Services\CustomerNotificationService::TARGET_TYPES as $key => $label)
+                                        <option value="{{ $key }}" @selected(old('target_type') === $key)>{{ $label }} ({{ $key }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-span-12 sm:col-span-6">
+                                <input name="target_id" type="number" min="1" class="form-control" value="{{ old('target_id') }}" placeholder="ID ของรายการ เช่น id สินค้า / id ของรางวัล">
+                            </div>
+                            <div class="col-span-12">
+                                <input name="url" type="url" class="form-control" value="{{ old('url') }}" placeholder="หรือ URL ภายนอก เช่น https://www.aeg.co.th/promotion">
+                            </div>
+                        </div>
+                        <div class="text-slate-500 text-xs mt-1">ถ้าเลือกหน้าในแอป แอปจะเปิดหน้านั้นก่อน · ถ้าใส่แค่ URL แอปจะเปิดลิงก์ในเบราว์เซอร์</div>
                     </div>
 
                     <div class="text-right border-t border-slate-200/60 pt-5 mt-5">

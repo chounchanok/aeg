@@ -11,6 +11,9 @@
             <button class="btn btn-primary shadow-md mr-2" data-tw-toggle="modal" data-tw-target="#add-modal">
                 <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มตู้เซฟใหม่
             </button>
+            <a href="{{ route('admin.smart-lockers.calendar') }}" class="btn btn-outline-primary shadow-md mr-2">
+                <i data-lucide="calendar-range" class="w-4 h-4 mr-1"></i> ปฏิทินการจอง (ทุกตู้)
+            </a>
         </div>
         
         <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
@@ -22,6 +25,7 @@
                         <th>ประเภท</th>
                         <th>ราคา/เดือน</th>
                         <th class="text-center">สถานะการเช่า</th>
+                        <th class="text-center">วันว่าง/ไม่ว่าง</th>
                         <th class="text-center">แสดงผล</th>
                         <th class="text-center">จัดการ</th>
                     </tr>
@@ -49,6 +53,11 @@
                                 @else
                                     <span class="text-danger"><i data-lucide="tool" class="w-4 h-4 inline mr-1"></i> ซ่อมบำรุง</span>
                                 @endif
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('admin.smart-lockers.availability', $locker->id) }}" class="btn btn-sm btn-outline-primary whitespace-nowrap">
+                                    <i data-lucide="calendar-days" class="w-4 h-4 mr-1"></i> จัดการวัน
+                                </a>
                             </td>
                             <td class="text-center">
                                 <div class="flex items-center justify-center {{ $locker->is_active ? 'text-success' : 'text-danger' }}">
@@ -98,7 +107,6 @@
                         <label class="form-label">สถานะการเช่า</label>
                         <select name="status" class="form-select">
                             <option value="available">ว่าง (Available)</option>
-                            <option value="pending">รอชำระเงิน (Pending)</option>
                             <option value="rented">ถูกเช่าแล้ว (Rented)</option>
                             <option value="maintenance">ซ่อมบำรุง (Maintenance)</option>
                         </select>
@@ -106,6 +114,7 @@
                     <div class="col-span-12">
                         <label class="form-label">รูปภาพตู้เซฟ</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'smart_locker'])
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
                         <input name="is_active" type="checkbox" class="form-check-input border mr-2" checked value="1">
@@ -149,7 +158,6 @@
                         <label class="form-label">สถานะการเช่า</label>
                         <select name="status" id="edit_status" class="form-select">
                             <option value="available">ว่าง (Available)</option>
-                            <option value="pending">รอชำระเงิน (Pending)</option>
                             <option value="rented">ถูกเช่าแล้ว (Rented)</option>
                             <option value="maintenance">ซ่อมบำรุง (Maintenance)</option>
                         </select>
@@ -157,6 +165,7 @@
                     <div class="col-span-12">
                         <label class="form-label">เปลี่ยนรูปภาพ (เว้นว่างถ้าไม่เปลี่ยน)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'smart_locker'])
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
                         <input name="is_active" id="edit_is_active" type="checkbox" class="form-check-input border mr-2" value="1">

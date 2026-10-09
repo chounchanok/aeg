@@ -55,6 +55,7 @@
                                 <span class="{{ $rw->stock_quantity <= 5 ? 'text-danger font-medium' : '' }}">{{ $rw->stock_quantity }}</span>
                             </td>
                             <td class="text-center">
+                                <div class="text-xs text-slate-500 mb-1">{{ \App\Services\RewardService::TYPE_LABELS[$rw->reward_type ?? 'product'] ?? '-' }}</div>
                                 @if($rw->minimum_tier_required)
                                     <span class="text-warning font-medium">{{ $rw->minimum_tier_required }} ขึ้นไป</span>
                                 @else
@@ -106,6 +107,7 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ไฟล์รูปภาพ (ถ้ามี)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'reward'])
                     </div>
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">แต้มที่ใช้แลก (Points) <span class="text-danger">*</span></label>
@@ -114,6 +116,19 @@
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">จำนวนสต๊อก (ชิ้น)</label>
                         <input name="stock_quantity" type="number" class="form-control" value="0" min="0">
+                    </div>
+                    {{-- 🌟 ประเภทของรางวัล: กำหนดว่าหลังลูกค้าแลกแล้วจะจัดการแบบไหน (หน้า "คูปอง/ของรางวัลที่ลูกค้าแลก") --}}
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ประเภทของรางวัล <span class="text-danger">*</span></label>
+                        <select name="reward_type" class="form-select" required>
+                            <option value="product">สินค้า — ต้องจัดส่ง (ตรวจที่อยู่ → ดำเนินการ → จัดส่ง → สำเร็จ)</option>
+                            <option value="voucher">วอยเชอร์ — แอดมินกรอกรหัสส่งให้ลูกค้า</option>
+                            <option value="discount">ส่วนลดในแอป — ใช้ตอนชำระเงิน (โค้ด RWD อัตโนมัติ)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">มูลค่าส่วนลด (บาท) — เฉพาะส่วนลดในแอป</label>
+                        <input name="discount_amount" type="number" class="form-control" value="0" min="0" step="0.01">
                     </div>
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
@@ -183,6 +198,7 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">เปลี่ยนไฟล์รูปภาพ (เว้นว่างได้)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'reward'])
                     </div>
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">แต้มที่ใช้แลก (Points) <span class="text-danger">*</span></label>
@@ -191,6 +207,18 @@
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">จำนวนสต๊อก (ชิ้น)</label>
                         <input name="stock_quantity" id="edit_stock_quantity" type="number" class="form-control" min="0">
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ประเภทของรางวัล <span class="text-danger">*</span></label>
+                        <select name="reward_type" id="edit_reward_type" class="form-select" required>
+                            <option value="product">สินค้า — ต้องจัดส่ง</option>
+                            <option value="voucher">วอยเชอร์ — แอดมินกรอกรหัสส่งให้ลูกค้า</option>
+                            <option value="discount">ส่วนลดในแอป — ใช้ตอนชำระเงิน</option>
+                        </select>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">มูลค่าส่วนลด (บาท) — เฉพาะส่วนลดในแอป</label>
+                        <input name="discount_amount" id="edit_discount_amount" type="number" class="form-control" min="0" step="0.01">
                     </div>
                     <div class="col-span-12 sm:col-span-4">
                         <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
@@ -257,6 +285,8 @@
             $('#edit_points_required').val(reward.points_required);
             $('#edit_stock_quantity').val(reward.stock_quantity);
             $('#edit_minimum_tier_required').val(reward.minimum_tier_required || '');
+            $('#edit_reward_type').val(reward.reward_type || 'product');
+            $('#edit_discount_amount').val(reward.discount_amount ?? 0);
             $('#edit_description_th').val(reward.description_th);
             $('#edit_description_en').val(reward.description_en);
 

@@ -17,8 +17,7 @@ class ProfileController extends Controller
         $profile = DB::table('customer_profiles')->where('user_id', $user->id)->first() ?? $user; // ดึงโปรไฟล์ (ปรับตามตารางจริงของพี่)
 
         // ดึงรายการที่อยู่
-        $addresses = DB::table('customer_addresses')
-            ->where('user_id', $user->id)
+        $addresses = \App\Services\AddressService::activeQuery($user->id) // 🌟 ไม่แสดงที่อยู่ที่ลบแล้ว (soft delete)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -162,7 +161,8 @@ class ProfileController extends Controller
     // 4. ฟังก์ชันลบที่อยู่
     public function deleteAddress($id)
     {
-        DB::table('customer_addresses')->where('id', $id)->where('user_id', Auth::id())->delete();
+        // 🌟 ใช้ AddressService: ที่อยู่ที่เคยใช้ในออเดอร์จะ soft delete (ลบจริงจะติด foreign key ของ orders)
+        \App\Services\AddressService::delete(Auth::id(), (int) $id);
         return back()->with('success', 'ลบที่อยู่เรียบร้อยแล้ว');
     }
 

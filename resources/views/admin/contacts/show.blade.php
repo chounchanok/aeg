@@ -16,7 +16,7 @@
                 ติดต่อเมื่อ {{ \Carbon\Carbon::parse($contact->created_at)->format('d/m/Y H:i') }} น. · ที่มา: {{ $config['source'] }}
             </div>
         </div>
-        <a href="{{ route('admin.contacts.index', ['type' => $type]) }}" class="btn btn-outline-secondary mt-3 sm:mt-0">
+        <a href="{{ route('admin.contacts.index', ['type' => ($contact->contact_source ?? null) === 'safe_app' ? 'safe' : $type]) }}" class="btn btn-outline-secondary mt-3 sm:mt-0">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> กลับหน้ารายการ
         </a>
     </div>

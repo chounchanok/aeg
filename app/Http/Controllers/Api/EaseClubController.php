@@ -5,20 +5,23 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
+use App\Services\RewardService;
 
 class EaseClubController extends Controller
 {
     use ApiResponseTrait;
 
-    public function getBanners()
+    public function getBanners(Request $request)
     {
-        $banners = DB::table('banners')->where('location', 'ease_club')->where('is_active', true)->get();
+        $banners = DB::table('banners')->where('location', 'ease_club')->where('is_active', true)->get()
+            ->map(fn ($b) => \App\Support\LocalizedImage::banner($b, $request->header('Accept-Language', 'th')));
         return $this->successResponse($banners, 'Ease Club banners retrieved');
     }
 
-    public function getBannersCategory()
+    public function getBannersCategory(Request $request)
     {
-        $banners = DB::table('banners')->where('location', 'category')->where('is_active', true)->get();
+        $banners = DB::table('banners')->where('location', 'category')->where('is_active', true)->get()
+            ->map(fn ($b) => \App\Support\LocalizedImage::banner($b, $request->header('Accept-Language', 'th')));
         return $this->successResponse($banners, 'Category Ease Club banners retrieved');
     }
 
@@ -86,23 +89,39 @@ class EaseClubController extends Controller
         return $this->successResponse($data, 'User info retrieved successfully');
     }
 
-    public function getOverview()
+    public function getOverview(Request $request)
     {
+        $user = $request->user('sanctum');
+        $tier = RewardService::userTier($user?->id);
+
         $categories = DB::table('reward_categories')->get();
-        $advanceRewards = DB::table('rewards')->where('minimum_tier_required', 'Advance')->limit(4)->get();
+
+        // 🌟 สิทธิพิเศษ: แสดงเฉพาะรางวัลที่กำหนด Tier ไว้ และ Tier ของลูกค้า (customer_wallets) ถึงแล้ว
+        // (เดิม hardcode เป็น 'Advance' — ตอนนี้ผูกกับ Tier จริงของลูกค้า; guest เห็นเฉพาะ Tier ต่ำสุด)
+        $exclusiveQuery = DB::table('rewards')
+            ->where('is_active', true)
+            ->whereNotNull('minimum_tier_required')
+            ->where('minimum_tier_required', '!=', '');
+        RewardService::applyTierFilter($exclusiveQuery, $user?->id);
+        $exclusive = $exclusiveQuery->orderByDesc('id')->limit(4)->get();
 
         return $this->successResponse([
             'categories' => $categories,
-            'advance_exclusive' => $advanceRewards
+            'tier' => $tier?->name,
+            'advance_exclusive' => $exclusive, // คงชื่อ key เดิมไว้ให้แอปเวอร์ชันเก่า
+            'tier_exclusive' => $exclusive,
         ], 'Overview retrieved');
     }
 
     public function getRewardsByCategory(Request $request, $categoryId)
     {
-        $query = DB::table('rewards')->where('category_id', $categoryId);
-
         // 🌟 1. ดึงข้อมูล User ก่อน (รองรับทั้งตอนล็อกอินและเป็น Guest)
         $user = $request->user('sanctum');
+
+        $query = DB::table('rewards')->where('category_id', $categoryId)->where('is_active', true);
+
+        // 🌟 ซ่อนรางวัลที่ Tier ของลูกค้ายังไม่ถึง (Tier อ่านจาก customer_wallets.current_tier_id)
+        RewardService::applyTierFilter($query, $user?->id);
 
         // 🌟 2. แทรกเงื่อนไขการเรียงลำดับ (Order By)
         if ($user) {
@@ -139,10 +158,14 @@ class EaseClubController extends Controller
     public function getRewardDetail(Request $request, $rewardId)
     {
         $reward = DB::table('rewards')->where('id', $rewardId)->first();
+        $viewer = $request->user('sanctum');
 
-        if (!$reward) {
+        // 🌟 รางวัลที่ Tier ไม่ถึงถูกซ่อน → ตอบเหมือนไม่พบ
+        if (!$reward || !RewardService::canAccessReward($reward, $viewer?->id)) {
             return $this->errorResponse('Reward not found', 404);
         }
+
+        $reward->reward_type = RewardService::rewardType($reward);
 
         // 🌟 ข้อมูลเงื่อนไข/การจัดส่งของรางวัล (แอดมินกรอกจากหลังบ้าน /admin/cms/ease-club)
         // set ค่าให้ชัดเจนเสมอ เพื่อให้ mobile ได้ key ครบทุกครั้งแม้แอดมินยังไม่ได้กรอก
@@ -151,7 +174,7 @@ class EaseClubController extends Controller
         $reward->delivery_estimate = $reward->delivery_estimate ?? null;  // ระยะเวลาจัดส่ง เช่น "3-5 วันทำการ"
 
         // ตรวจสอบสถานะ Favorite สำหรับหน้า Detail
-        $userId = $request->user() ? $request->user()->id : null;
+        $userId = $viewer ? $viewer->id : null;
 
         if ($userId) {
             $isFavorited = DB::table('favorites')
@@ -176,7 +199,7 @@ class EaseClubController extends Controller
             $reward->current_points = null;
             $reward->points_missing = $reward->points_required;
             $reward->can_redeem = false;
-            $reward->user_id = $request->user();
+            $reward->user_id = null;
         }
 
         return $this->successResponse($reward, 'Reward detail retrieved');
@@ -184,107 +207,19 @@ class EaseClubController extends Controller
 
     public function redeemReward(Request $request, $rewardId)
     {
-        // 🌟 เพิ่ม Validation สำหรับรับค่าที่อยู่จัดส่งและชื่อผู้รับ
-        $request->validate([
+        $data = $request->validate([
             'customer_name' => 'nullable|string',
             'customer_phone' => 'nullable|string',
             'address_id' => 'nullable|integer',
             'address_text' => 'nullable|string',
         ]);
 
-        $user = $request->user();
-        $reward = DB::table('rewards')->where('id', $rewardId)->where('is_active', true)->first();
+        // 🌟 logic การแลกรวมไว้ที่ RewardService (ใช้ร่วมกับ POST /rewards/redeem) — เช็ค Tier + ล็อก wallet กันกดซ้ำ
+        // สินค้า: ที่อยู่ส่งมาตอนนี้หรือตอนกด "ใช้คูปอง" (POST /rewards/my-codes/{id}/use) ก็ได้
+        $result = RewardService::redeem($request->user()->id, (int) $rewardId, $data);
 
-        if (!$reward) return $this->errorResponse('ไม่พบของรางวัลนี้', 404);
-
-        // 🌟 เช็คคะแนนแบบคร่าวๆ ก่อน (นอก transaction) เพื่อตอบ error กลับเร็วๆ ถ้าคะแนนไม่พอตั้งแต่แรก
-        // อยู่แล้ว โดยไม่ต้องเปิด transaction เปล่าๆ — การเช็ค "ตัวจริง" ที่ป้องกันคะแนนติดลบ/แลกซ้ำ
-        // จากการกดยืนยันซ้ำเร็วๆ (double-tap) หรือยิง request พร้อมกัน จะอยู่หลัง lockForUpdate()
-        // ด้านล่างอีกที ตามที่ QA เตือนไว้ (ข้อ 2 ของเมล: "ป้องกันการกดยืนยันซ้ำ")
-        $walletPreCheck = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-        if (!$walletPreCheck || $walletPreCheck->current_points < $reward->points_required) {
-            return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
-        }
-
-        // 🌟 เช็คว่าเป็น "คูปอง" หรือ "สินค้า" (สมมติว่าหมวด 1 คือคูปอง)
-        $isCoupon = ($reward->category_id == 1 && $reward->discount_amount > 0);
-
-        // 🌟 ถ้าเป็น "สินค้า" ต้องตรวจสอบว่าส่งข้อมูลผู้รับมาครบหรือไม่
-        if (!$isCoupon) {
-            if (empty($request->address_id) && empty($request->address_text)) {
-                return $this->errorResponse('กรุณาระบุที่อยู่สำหรับจัดส่งของรางวัล', 400);
-            }
-            if (empty($request->customer_name) || empty($request->customer_phone)) {
-                return $this->errorResponse('กรุณาระบุชื่อและเบอร์โทรศัพท์ผู้รับ', 400);
-            }
-        }
-
-        DB::beginTransaction();
-        try {
-            // 🌟 ล็อกแถว wallet ของ user คนนี้ไว้ก่อน (SELECT ... FOR UPDATE) กันไม่ให้ request ที่ยิง
-            // เข้ามาพร้อมกัน (เช่น กดยืนยันซ้ำเร็วๆ) อ่านคะแนนเดิมพร้อมกันแล้วผ่านเงื่อนไขทั้งคู่
-            // จนคะแนนติดลบหรือแลกของรางวัลซ้ำได้ — แล้วเช็คคะแนน "รอบสุดท้าย" อีกครั้งหลัง lock
-            $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->lockForUpdate()->first();
-
-            if (!$wallet || $wallet->current_points < $reward->points_required) {
-                DB::rollBack();
-                return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
-            }
-
-            // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
-            DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
-
-            // 2. บันทึกประวัติการใช้แต้มลง point_transactions
-            DB::table('point_transactions')->insert([
-                'user_id' => $user->id,
-                'amount' => ($reward->points_required * -1),
-                'type' => 'redeem',
-                'description' => 'แลกรับของรางวัล: ' . $reward->title_th,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // 3. บันทึกประวัติการแลกใน reward_redemptions (บันทึกทั้งคูปองและสินค้า)
-            DB::table('reward_redemptions')->insert([
-                'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'points_used' => $reward->points_required,
-                'status' => 'success',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // 4. สุ่มโค้ด RWD-
-            $code = 'RWD-' . strtoupper(\Illuminate\Support\Str::random(8));
-
-            // 5. บันทึกข้อมูลของรางวัลเข้ากระเป๋าลูกค้า
-            DB::table('customer_reward_codes')->insert([
-                'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'code' => $code,
-                'discount_amount' => $isCoupon ? $reward->discount_amount : 0, // คูปองเก็บค่าส่วนลด สินค้าเก็บ 0
-                'status' => 'active',
-                'customer_name' => $isCoupon ? null : $request->customer_name,
-                'customer_phone' => $isCoupon ? null : $request->customer_phone,
-                'address_id' => $isCoupon ? null : $request->address_id,
-                'address_text' => $isCoupon ? null : $request->address_text,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            DB::commit();
-
-            return $this->successResponse([
-                'code' => $code,
-                'discount_amount' => $isCoupon ? $reward->discount_amount : 0,
-                'reward_title' => $reward->title_th,
-                'reward_point' => $wallet->current_points - $reward->points_required,
-                'is_coupon' => $isCoupon
-            ], 'แลกของรางวัลสำเร็จ');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล: ' . $e->getMessage(), 500);
-        }
+        return $result['ok']
+            ? $this->successResponse($result['data'], $result['message'])
+            : $this->errorResponse($result['message'], $result['status']);
     }
 }

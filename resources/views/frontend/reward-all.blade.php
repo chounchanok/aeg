@@ -130,12 +130,14 @@
 
         .nav-icon-wrapper img {
             width: 100%;
-            height: 145%;
+            height: 116%;
             object-fit: cover;
         }
 
         .icon-active {
             display: none;
+            padding-top: 3px;
+            height: 140% !important;
         }
 
         .nav-link.active .nav-icon-wrapper {
@@ -296,11 +298,12 @@
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <a href="{{ $banner->link_url ?? '#' }}" target="_blank" rel="noopener">
                             <!-- 🌟 1. รูปสำหรับจอคอมพิวเตอร์ (ซ่อนในมือถือ) -->
-                            <img src="{{ $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            @php $isEnBanner = str_starts_with(app()->getLocale(), 'en'); @endphp
+                            <img src="{{ ($isEnBanner && $banner->image_url_en) ? $banner->image_url_en : $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
                             
                             <!-- 🌟 2. รูปสำหรับจอมือถือ (ซ่อนในจอคอม) -->
                             <!-- ใส่ ?? $banner->image_url เผื่อไว้ในกรณีที่บางแบนเนอร์ลืมอัปโหลดรูปมือถือ ระบบจะดึงรูปคอมมาโชว์แทนเพื่อไม่ให้ภาพพังครับ -->
-                            <img src="{{ $banner->image_url_m ?? $banner->image_url }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            <img src="{{ ($isEnBanner && ($banner->image_url_m_en ?: $banner->image_url_en)) ? ($banner->image_url_m_en ?: $banner->image_url_en) : ($banner->image_url_m ?? $banner->image_url) }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
                             </a>
                         </div>
                     @endforeach

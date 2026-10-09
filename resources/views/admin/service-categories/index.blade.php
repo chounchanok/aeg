@@ -95,6 +95,7 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ไอคอนหมวดหมู่</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'service_category'])
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
                         <input name="is_active" type="checkbox" class="form-check-input border mr-2" id="is_active" checked value="1">
@@ -141,6 +142,7 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">เปลี่ยนไอคอน (ถ้าไม่เปลี่ยนให้เว้นว่าง)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'service_category'])
                         <div class="mt-2 text-xs text-slate-500">
                             ไอคอนปัจจุบัน: <a id="current_icon_img" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
                         </div>

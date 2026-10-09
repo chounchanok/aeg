@@ -125,17 +125,19 @@ class BblPaymentController extends Controller
                 if ($booking && $booking->status === 'pending_payment') {
                     // 1. อัปเดตบิลให้เป็นจ่ายเงินแล้ว
                     DB::table('locker_bookings')->where('id', $booking->id)->update([
-                        'status' => 'completed',
+                        'status' => 'active',
                         'gateway_transaction_id' => $transactionId,
                         'gateway_response' => json_encode($data),
                         'updated_at' => now()
                     ]);
 
-                    // 2. 🌟 เปลี่ยนสถานะตู้เซฟเป็น "เช่าแล้ว (rented)"
-                    DB::table('smart_lockers')->where('id', $booking->smart_locker_id)->update([
-                        'status' => 'rented',
-                        'updated_at' => now()
-                    ]);
+                    if (!empty($booking->renewal_of_booking_id)) {
+                        DB::table('locker_bookings')->where('id', $booking->renewal_of_booking_id)->update([
+                            'end_date' => $booking->end_date,
+                            'status' => 'active',
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
 

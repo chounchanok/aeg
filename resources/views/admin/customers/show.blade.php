@@ -183,17 +183,13 @@
                                 @endif
                             </div>
                             <div class="text-right flex-shrink-0">
-                                @if($rw->status === 'active')
-                                    <span class="bg-success text-white text-xs px-2 py-1 rounded d-inline-block mb-2">ใช้งานได้</span><br>
-                                    @can('customers.manage')
-                                    <form action="{{ route('admin.customers.reward-codes.redeem', [$customer->id, $rw->id]) }}" method="POST" onsubmit="return confirm('ยืนยันใช้คูปองนี้แทนลูกค้า? เมื่อกดแล้วโค้ดนี้จะไม่สามารถใช้ซ้ำได้อีก');">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">ใช้คูปองแทนลูกค้า</button>
-                                    </form>
-                                    @endcan
-                                @else
-                                    <span class="bg-slate-200 text-slate-500 text-xs px-2 py-1 rounded">ใช้ไปแล้ว</span>
-                                @endif
+                                {{-- 🌟 เปลี่ยนจาก "ใช้คูปองแทนลูกค้า" เป็น ส่งคูปอง/ส่งสินค้า → ไปจัดการที่เมนู "คูปอง/ของรางวัลที่ลูกค้าแลก" --}}
+                                <span class="{{ in_array($rw->status, ['used', 'delivered', 'cancelled']) ? 'bg-slate-200 text-slate-500' : 'bg-success text-white' }} text-xs px-2 py-1 rounded d-inline-block mb-2">
+                                    {{ \App\Services\RewardService::STATUS_LABELS[$rw->status] ?? $rw->status }}
+                                </span><br>
+                                <a href="{{ route('admin.reward-redemptions.show', $rw->id) }}" class="btn btn-sm btn-outline-primary whitespace-nowrap">
+                                    {{ ($rw->reward_type ?? 'product') === 'product' ? 'ส่งสินค้า' : 'ส่งคูปอง' }}
+                                </a>
                             </div>
                         </div>
                     @empty

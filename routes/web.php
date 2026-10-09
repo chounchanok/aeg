@@ -272,6 +272,16 @@ Route::middleware('auth')->group(function() {
             Route::post('/admin/customers/{id}/invoice-settings', [CustomerAdminController::class, 'updateInvoiceSettings'])->name('admin.customers.invoice-settings');
         });
 
+        // --- 🌟 คูปอง/ของรางวัลที่ลูกค้าแลก (แยกเมนูจาก "ลูกค้าและแพ็กเกจ") ---
+        // ดู: ทุก role staff (เหมือนหน้าลูกค้า) / ส่งคูปอง-ส่งสินค้า-เปลี่ยนสถานะ: ต้องมี customers.manage
+        Route::get('/admin/reward-redemptions', [\App\Http\Controllers\Admin\RewardRedemptionAdminController::class, 'index'])->name('admin.reward-redemptions.index');
+        Route::get('/admin/reward-redemptions/{id}', [\App\Http\Controllers\Admin\RewardRedemptionAdminController::class, 'show'])->whereNumber('id')->name('admin.reward-redemptions.show');
+        Route::middleware('permission:customers.manage')->group(function() {
+            Route::post('/admin/reward-redemptions/{id}/status', [\App\Http\Controllers\Admin\RewardRedemptionAdminController::class, 'updateStatus'])->whereNumber('id')->name('admin.reward-redemptions.status');
+            Route::post('/admin/reward-redemptions/{id}/send-code', [\App\Http\Controllers\Admin\RewardRedemptionAdminController::class, 'sendCode'])->whereNumber('id')->name('admin.reward-redemptions.send-code');
+            Route::post('/admin/reward-redemptions/{id}/address', [\App\Http\Controllers\Admin\RewardRedemptionAdminController::class, 'updateAddress'])->whereNumber('id')->name('admin.reward-redemptions.address');
+        });
+
         Route::get('/admin/customers', [CustomerAdminController::class, 'index'])->name('admin.customers');
         Route::get('/admin/customers/{id}', [CustomerAdminController::class, 'show'])->name('admin.customers.show');
 
@@ -393,6 +403,9 @@ Route::middleware('auth')->group(function() {
         // จัดการตู้เซฟ (Smart Lockers) (RBAC: smart_locker)
         Route::middleware('permission:smart_lockers.manage')->group(function() {
             Route::get('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'index'])->name('admin.smart-lockers.index');
+            Route::get('/admin/smart-lockers/calendar', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'calendar'])->name('admin.smart-lockers.calendar'); // 🌟 ปฏิทินรวมทุกตู้
+            Route::get('/admin/smart-lockers/{id}/availability', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'availability'])->name('admin.smart-lockers.availability');
+            Route::post('/admin/smart-lockers/{id}/availability', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'updateAvailability'])->name('admin.smart-lockers.availability.update');
             Route::post('/admin/smart-lockers', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'store'])->name('admin.smart-lockers.store');
             Route::post('/admin/smart-lockers/{id}/update', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'update'])->name('admin.smart-lockers.update');
             Route::post('/admin/smart-lockers/{id}/delete', [App\Http\Controllers\Admin\SmartLockerAdminController::class, 'destroy'])->name('admin.smart-lockers.delete');

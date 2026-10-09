@@ -286,6 +286,8 @@ class InvoiceGenerationService
                 'title' => 'ชำระใบแจ้งหนี้เรียบร้อยแล้ว',
                 'body' => 'ใบแจ้งหนี้ #' . $invoice->invoice_number . ' ยอด ' . number_format((float) $invoice->total_amount, 2) . ' บาท ชำระเงินเรียบร้อยแล้ว ขอบคุณค่ะ',
                 'type' => 'invoice',
+                'target_type' => 'invoice', // 🌟 กดแล้วเปิดหน้าใบแจ้งหนี้ในแอป
+                'target_id' => $invoice->id,
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -354,6 +356,8 @@ class InvoiceGenerationService
                 'title' => $title,
                 'body' => $body,
                 'type' => 'invoice',
+                'target_type' => 'invoice', // 🌟 กดแล้วเปิดหน้าใบแจ้งหนี้ในแอป
+                'target_id' => $invoice->id,
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now(),

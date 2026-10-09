@@ -23,6 +23,8 @@
                         <th class="whitespace-nowrap">รหัสอ้างอิง</th>
                         <th class="whitespace-nowrap">ชื่อ-นามสกุล / Username</th>
                         <th class="text-center whitespace-nowrap">เบอร์โทรศัพท์</th>
+                        <th class="text-center whitespace-nowrap">Tier</th>
+                        <th class="text-right whitespace-nowrap">แต้มสมาชิก</th>
                         <th class="text-center whitespace-nowrap">วันที่สมัคร</th>
                         <th class="text-center whitespace-nowrap">จัดการ</th>
                     </tr>
@@ -36,6 +38,13 @@
                                 <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $c->email }}</div>
                             </td>
                             <td class="text-center">{{ $c->phone ?? '-' }}</td>
+                            <td class="text-center">
+                                @php
+                                    $tierClass = ['advance' => 'bg-slate-100 text-slate-600', 'platinum' => 'bg-blue-100 text-blue-700', 'beyond' => 'bg-amber-100 text-amber-700'][strtolower($c->tier_name ?? '')] ?? 'bg-slate-100 text-slate-500';
+                                @endphp
+                                <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap {{ $tierClass }}">{{ $c->tier_name ?? '-' }}</span>
+                            </td>
+                            <td class="text-right" data-order="{{ (int) ($c->current_points ?? 0) }}">{{ number_format((int) ($c->current_points ?? 0)) }}</td>
                             <td class="text-center">{{ \Carbon\Carbon::parse($c->created_at)->format('d/m/Y') }}</td>
                             <td class="table-report__action w-56 text-center">
                                 <a class="btn btn-sm btn-primary" href="{{ route('admin.customers.show', $c->id) }}">

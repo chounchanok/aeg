@@ -31,6 +31,7 @@
                                 <span class="bg-white/20 px-2 py-1 rounded text-xs">{{ strtoupper($b->location) }} | ลำดับ: {{ $b->sort_order }}</span>
                                 <div class="block font-medium text-base mt-2">{{ $b->title_th }}</div>
                                 <div class="text-slate-500 text-xs mt-0.5">{{ $b->title_en }}</div>
+                                <span class="bg-white/20 px-2 py-0.5 rounded text-xs mt-1 inline-block">รูป EN: {{ !empty($b->image_url_en) || !empty($b->image_url_m_en) ? 'มี' : 'ใช้รูปไทย' }}</span>
                             </div>
                         </div>
                         <div class="text-slate-600 dark:text-slate-500 mt-5 flex justify-between items-center">
@@ -90,11 +91,23 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ไฟล์รูปภาพ (Desktop) <span class="text-danger">*</span></label>
                         <input name="image" type="file" class="form-control" accept="image/*" required>
+                        @include('admin.partials.image-hint', ['key' => 'banner_desktop'])
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ไฟล์รูปภาพ (Mobile)</label>
                         <input name="image_m" type="file" class="form-control" accept="image/*">
-                        <div class="text-xs text-slate-500 mt-1">แนะนำรูปแนวตั้ง (อัปโหลดหรือไม่ก็ได้)</div>
+                        @include('admin.partials.image-hint', ['key' => 'banner_mobile', 'extra' => 'ไม่อัปโหลดจะใช้รูป Desktop แทน'])
+                    </div>
+                    {{-- 🌟 รูปภาษาอังกฤษ (แสดงเมื่อผู้ใช้เลือกภาษา EN — ไม่อัปโหลดจะใช้รูปภาษาไทยแทน) --}}
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ไฟล์รูปภาพภาษาอังกฤษ (Desktop / EN)</label>
+                        <input name="image_en" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_desktop'])
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">ไฟล์รูปภาพภาษาอังกฤษ (Mobile / EN)</label>
+                        <input name="image_m_en" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_mobile'])
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
                         <input name="is_active" type="checkbox" class="form-check-input border mr-2" id="is_active" checked value="1">
@@ -141,6 +154,7 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">เปลี่ยนไฟล์รูปภาพ (Desktop)</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_desktop'])
                         <div class="mt-2 text-xs text-slate-500">
                             รูปปัจจุบัน: <a id="current_banner_img" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
                         </div>
@@ -148,8 +162,27 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">เปลี่ยนไฟล์รูปภาพ (Mobile)</label>
                         <input name="image_m" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_mobile'])
                         <div class="mt-2 text-xs text-slate-500" id="current_banner_img_m_wrapper">
                             รูปปัจจุบัน: <a id="current_banner_img_m" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                        </div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">เปลี่ยนรูปภาษาอังกฤษ (Desktop / EN)</label>
+                        <input name="image_en" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_desktop'])
+                        <div class="mt-2 text-xs text-slate-500" id="current_banner_img_en_wrapper">
+                            รูปปัจจุบัน: <a id="current_banner_img_en" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                            <label class="ml-2"><input type="checkbox" name="remove_image_en" value="1" class="form-check-input"> ลบรูป EN</label>
+                        </div>
+                    </div>
+                    <div class="col-span-12 sm:col-span-6">
+                        <label class="form-label">เปลี่ยนรูปภาษาอังกฤษ (Mobile / EN)</label>
+                        <input name="image_m_en" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'banner_mobile'])
+                        <div class="mt-2 text-xs text-slate-500" id="current_banner_img_m_en_wrapper">
+                            รูปปัจจุบัน: <a id="current_banner_img_m_en" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                            <label class="ml-2"><input type="checkbox" name="remove_image_m_en" value="1" class="form-check-input"> ลบรูป EN</label>
                         </div>
                     </div>
                     <div class="col-span-12 flex items-center mt-3">
@@ -191,6 +224,21 @@
                 $('#current_banner_img_m').attr('href', banner.image_url_m);
             } else {
                 $('#current_banner_img_m_wrapper').hide();
+            }
+
+            // 🌟 รูปภาษาอังกฤษ
+            $('input[name="remove_image_en"], input[name="remove_image_m_en"]').prop('checked', false);
+            if (banner.image_url_en) {
+                $('#current_banner_img_en_wrapper').show();
+                $('#current_banner_img_en').attr('href', banner.image_url_en);
+            } else {
+                $('#current_banner_img_en_wrapper').hide();
+            }
+            if (banner.image_url_m_en) {
+                $('#current_banner_img_m_en_wrapper').show();
+                $('#current_banner_img_m_en').attr('href', banner.image_url_m_en);
+            } else {
+                $('#current_banner_img_m_en_wrapper').hide();
             }
         });
 

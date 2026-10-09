@@ -15,8 +15,12 @@ class CustomerAdminController extends Controller
     {
         $customers = DB::table('users')
             ->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')
+            // 🌟 Tier / แต้มสมาชิก (คอมเมนต์ข้อ 4) — Tier อยู่ที่ customer_wallets.current_tier_id
+            ->leftJoin('customer_wallets', 'users.id', '=', 'customer_wallets.user_id')
+            ->leftJoin('loyalty_tiers', 'customer_wallets.current_tier_id', '=', 'loyalty_tiers.id')
             ->where('users.role', 'customer')
-            ->select('users.id', 'users.username', 'users.email', 'users.phone', 'customer_profiles.first_name', 'customer_profiles.last_name', 'users.created_at')
+            ->select('users.id', 'users.username', 'users.email', 'users.phone', 'customer_profiles.first_name', 'customer_profiles.last_name', 'users.created_at',
+                'loyalty_tiers.name as tier_name', 'customer_wallets.current_points', 'customer_wallets.member_id')
             ->orderBy('users.created_at', 'desc')
             ->get();
 
@@ -67,7 +71,8 @@ class CustomerAdminController extends Controller
                 'customer_reward_codes.used_at',
                 'customer_reward_codes.created_at as redeemed_at',
                 'rewards.title_th as reward_title',
-                'rewards.image_url'
+                'rewards.image_url',
+                'rewards.reward_type'
             )
             ->orderBy('customer_reward_codes.created_at', 'desc')
             ->get();

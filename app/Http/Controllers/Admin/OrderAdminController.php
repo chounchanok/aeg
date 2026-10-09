@@ -96,6 +96,8 @@ class OrderAdminController extends Controller
                 'title' => $notifyTitle,
                 'body' => $notifyBody,
                 'type' => 'order',
+                'target_type' => 'order', // 🌟 กดแล้วเปิดหน้ารายละเอียดออเดอร์ในแอป
+                'target_id' => $id,
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -170,6 +172,8 @@ class OrderAdminController extends Controller
             'title' => $notifyTitle,
             'body' => $notifyBody,
             'type' => 'order',
+            'target_type' => 'order',
+            'target_id' => $id,
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now()

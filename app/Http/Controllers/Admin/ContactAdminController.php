@@ -11,10 +11,10 @@ use Illuminate\Support\Facades\Gate;
 /**
  * รายการติดต่อจากลูกค้า (ฟอร์มติดต่อหน้าเว็บ/แอป) — /admin/contacts/{type}
  *
- * รวมทุกช่องทางไว้เมนูเดียว แต่แยกสิทธิ์ตาม {type} ให้แต่ละแผนกเห็นเฉพาะของตัวเอง (RBAC):
- *   insurance → insurance_contacts      → Insurance     (contacts.insurance)
- *   safe      → safe_contacts           → Smart Locker  (contacts.safe)
- *   product   → product_contacts        → Sales Admin   (contacts.product)
+ * รวม insurance/product เข้าคิว sales และคำขอตู้เซฟจากแอปเข้าคิว safe:
+ *   insurance → insurance_contacts      → Insurance     (contacts.insurance หรือ contacts.sales ในคิวรวม)
+ *   safe      → safe_contacts           → Smart Locker  (contacts.safe) + คำขอตู้เซฟจากแอป
+ *   product   → product_contacts        → Sales Admin   (contacts.product หรือ contacts.sales ในคิวรวม)
  *   sales     → contact_admin_requests  → Sales Admin   (contacts.sales)   ← ฟอร์ม "ติดต่อฝ่ายขาย" จากแอป
  *
  * ทุกการดำเนินการ (เปลี่ยนสถานะ / มอบหมาย / โทร / อีเมล / นัดหมาย / บันทึก) ถูกเก็บลง contact_activities
@@ -86,15 +86,39 @@ class ContactAdminController extends Controller
     /**
      * คืน config ของ type นี้ พร้อมเช็คสิทธิ์ (403 ถ้าแผนกนี้ไม่มีสิทธิ์ดูช่องทางนี้)
      */
-    protected function resolveType(string $type): array
+    protected function resolveType(string $type, $contactId = null): array
     {
         $config = self::TYPES[$type] ?? abort(404);
 
-        if (!Gate::allows($config['permission'])) {
+        // Sales Admin handles the unified sales queue, which includes insurance and web product inquiries.
+        $allowed = Gate::allows($config['permission'])
+            || (in_array($type, ['insurance', 'product'], true) && Gate::allows('contacts.sales'));
+        if ($type === 'sales' && $contactId !== null) {
+            $appContact = DB::table('contact_admin_requests')->where('id', $contactId)->first();
+            $isSafeAppContact = $appContact && $this->isSafeAppContact($appContact);
+            $allowed = (Gate::allows('contacts.sales') && $appContact && !$isSafeAppContact)
+                || (Gate::allows('contacts.safe') && $isSafeAppContact);
+        }
+        if (!$allowed) {
             abort(403, 'คุณไม่มีสิทธิ์เข้าถึงรายการติดต่อช่องทางนี้ กรุณาติดต่อฝ่าย IT เพื่อขอสิทธิ์การใช้งาน');
         }
 
         return $config;
+    }
+
+    protected function isSafeAppContact(object $contact): bool
+    {
+        $text = mb_strtolower(($contact->topic ?? '') . ' ' . ($contact->product_name ?? ''));
+        return str_contains($text, 'เซฟ') || str_contains($text, 'safe') || str_contains($text, 'locker');
+    }
+
+    protected function applySafeAppContactFilter($query, bool $exclude = false)
+    {
+        $operator = $exclude ? 'NOT ' : '';
+        return $query->whereRaw(
+            $operator . "(LOWER(COALESCE(c.topic, '')) LIKE ? OR LOWER(COALESCE(c.product_name, '')) LIKE ? OR LOWER(COALESCE(c.topic, '')) LIKE ? OR LOWER(COALESCE(c.product_name, '')) LIKE ? OR LOWER(COALESCE(c.topic, '')) LIKE ? OR LOWER(COALESCE(c.product_name, '')) LIKE ?)",
+            ['%เซฟ%', '%เซฟ%', '%safe%', '%safe%', '%locker%', '%locker%']
+        );
     }
 
     /**
@@ -144,6 +168,105 @@ class ContactAdminController extends Controller
         $config = $this->resolveType($type);
         $statusFilter = $request->query('status', 'pending');
 
+        if ($type === 'sales') {
+            $statuses = self::STATUSES;
+            $counts = collect();
+            $contacts = collect();
+
+            foreach (['sales', 'insurance', 'product'] as $contactType) {
+                $typeConfig = self::TYPES[$contactType];
+                $query = $this->baseQuery($typeConfig);
+                if ($contactType === 'sales') {
+                    $this->applySafeAppContactFilter($query, true);
+                }
+                if ($statusFilter !== 'all' && isset($statuses[$statusFilter])) {
+                    $query->where('c.status', $statusFilter);
+                }
+                $rows = $query->orderBy('c.created_at', 'desc')->get()->map(function ($row) use ($contactType) {
+                    $row = $this->normalize($contactType, $row);
+                    $row->contact_type = $contactType;
+                    return $row;
+                });
+                $contacts = $contacts->concat($rows);
+
+                $countQuery = DB::table($typeConfig['table'] . ' as c');
+                if ($contactType === 'sales') {
+                    $this->applySafeAppContactFilter($countQuery, true);
+                }
+                $typeCounts = $countQuery->select('c.status', DB::raw('COUNT(*) as total'))
+                    ->groupBy('status')->pluck('total', 'status');
+                foreach ($typeCounts as $status => $total) {
+                    $counts[$status] = ($counts[$status] ?? 0) + $total;
+                }
+            }
+
+            $contacts = $contacts->sortByDesc('created_at')->values();
+            $config['title'] = 'รายการติดต่อฝ่ายขาย สินค้า/บริการ และประกันภัย';
+            $config['ref']['caption'] = 'หัวข้อ / รายการที่สนใจ';
+
+            return view('admin.contacts.index', [
+                'type' => $type,
+                'config' => $config,
+                'contacts' => $contacts,
+                'counts' => $counts,
+                'statusFilter' => $statusFilter,
+                'statuses' => $statuses,
+                'first_level_active_index' => 'contacts',
+                'second_level_active_index' => $type,
+                'third_level_active_index' => '',
+            ]);
+        }
+
+        if ($type === 'safe') {
+            $statuses = self::STATUSES;
+            $counts = collect();
+            $contacts = collect();
+
+            foreach (['safe', 'sales'] as $contactType) {
+                $typeConfig = self::TYPES[$contactType];
+                $query = $this->baseQuery($typeConfig);
+                if ($contactType === 'sales') {
+                    $this->applySafeAppContactFilter($query);
+                }
+                if ($statusFilter !== 'all' && isset($statuses[$statusFilter])) {
+                    $query->where('c.status', $statusFilter);
+                }
+                $rows = $query->orderBy('c.created_at', 'desc')->get()->map(function ($row) use ($contactType) {
+                    $row = $this->normalize($contactType, $row);
+                    $row->contact_type = $contactType;
+                    $row->contact_source = $contactType === 'sales' ? 'safe_app' : 'safe_web';
+                    return $row;
+                });
+                $contacts = $contacts->concat($rows);
+
+                $countQuery = DB::table($typeConfig['table'] . ' as c');
+                if ($contactType === 'sales') {
+                    $this->applySafeAppContactFilter($countQuery);
+                }
+                $typeCounts = $countQuery->select('c.status', DB::raw('COUNT(*) as total'))
+                    ->groupBy('status')->pluck('total', 'status');
+                foreach ($typeCounts as $status => $total) {
+                    $counts[$status] = ($counts[$status] ?? 0) + $total;
+                }
+            }
+
+            $contacts = $contacts->sortByDesc('created_at')->values();
+            $config['title'] = 'รายการติดต่อเรื่องตู้เซฟนิรภัย';
+            $config['ref']['caption'] = 'ตู้เซฟ / หัวข้อที่สนใจ';
+
+            return view('admin.contacts.index', [
+                'type' => $type,
+                'config' => $config,
+                'contacts' => $contacts,
+                'counts' => $counts,
+                'statusFilter' => $statusFilter,
+                'statuses' => $statuses,
+                'first_level_active_index' => 'contacts',
+                'second_level_active_index' => $type,
+                'third_level_active_index' => '',
+            ]);
+        }
+
         $query = $this->baseQuery($config);
         if ($statusFilter !== 'all' && isset(self::STATUSES[$statusFilter])) {
             $query->where('c.status', $statusFilter);
@@ -173,13 +296,20 @@ class ContactAdminController extends Controller
 
     public function show(string $type, $id)
     {
-        $config = $this->resolveType($type);
+        $config = $this->resolveType($type, $id);
 
         $contact = $this->baseQuery($config)->where('c.id', $id)->first();
         if (!$contact) {
             abort(404, 'ไม่พบรายการติดต่อนี้');
         }
         $contact = $this->normalize($type, $contact);
+        $isSafeAppContact = $type === 'sales' && $this->isSafeAppContact($contact);
+        if ($isSafeAppContact) {
+            $contact->contact_source = 'safe_app';
+            $config['short'] = 'ตู้เซฟนิรภัย';
+            $config['source'] = 'แอปมือถือ — คำขอติดต่อเรื่องตู้เซฟนิรภัย';
+            $config['ref']['caption'] = 'หัวข้อ / ตู้เซฟที่สนใจ';
+        }
 
         $activities = DB::table('contact_activities as ca')
             ->leftJoin('users as u', 'ca.staff_id', '=', 'u.id')
@@ -195,7 +325,7 @@ class ContactAdminController extends Controller
             'config' => $config,
             'contact' => $contact,
             'activities' => $activities,
-            'assignableStaff' => $this->assignableStaff($config['role']),
+            'assignableStaff' => $this->assignableStaff($isSafeAppContact ? 'smart_locker' : $config['role']),
             'statuses' => self::STATUSES,
             'actions' => self::ACTIONS,
             'actionLabels' => array_map(fn ($a) => $a['label'], self::ACTIONS + self::SYSTEM_ACTIONS),
@@ -211,7 +341,7 @@ class ContactAdminController extends Controller
      */
     public function update(Request $request, string $type, $id)
     {
-        $config = $this->resolveType($type);
+        $config = $this->resolveType($type, $id);
 
         $contact = DB::table($config['table'])->where('id', $id)->first();
         if (!$contact) {

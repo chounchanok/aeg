@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class SmartLockerController extends Controller
 {
@@ -24,6 +25,7 @@ class SmartLockerController extends Controller
         }
 
         $lockers = $query->orderBy('type')->orderBy('locker_number')->get()->map(function ($locker) use ($lang) {
+            $isAvailable = $this->isDateAvailable($locker, Carbon::today());
             return [
                 'id' => $locker->id,
                 'locker_number' => $locker->locker_number,
@@ -32,8 +34,8 @@ class SmartLockerController extends Controller
                 'description' => ($lang == 'en' && !empty($locker->description_en)) ? $locker->description_en : $locker->description_th,
                 'price' => $locker->price,
                 'image_url' => $locker->image_url,
-                'status' => $locker->status, // available, rented, maintenance
-                'is_available' => $locker->status === 'available' // boolean สำหรับให้แอปโชว์ปุ่มสีเขียวง่ายๆ
+                'status' => $locker->status === 'maintenance' ? 'maintenance' : ($isAvailable ? 'available' : 'rented'),
+                'is_available' => $isAvailable
             ];
         });
 
@@ -69,6 +71,7 @@ class SmartLockerController extends Controller
 
         if (!$locker) return $this->errorResponse('ไม่พบข้อมูลตู้เซฟนี้', 404);
 
+        $isAvailable = $this->isDateAvailable($locker, Carbon::today());
         $data = [
             'id' => $locker->id,
             'locker_number' => $locker->locker_number,
@@ -77,11 +80,75 @@ class SmartLockerController extends Controller
             'description' => ($lang == 'en' && !empty($locker->description_en)) ? $locker->description_en : $locker->description_th,
             'price' => $locker->price,
             'image_url' => $locker->image_url,
-            'status' => $locker->status,
-            'is_available' => $locker->status === 'available'
+            'status' => $locker->status === 'maintenance' ? 'maintenance' : ($isAvailable ? 'available' : 'rented'),
+            'is_available' => $isAvailable
         ];
 
         return $this->successResponse($data, 'Locker detail retrieved');
+    }
+
+    /** Public API for mobile date pickers: GET /smart-lockers/{id}/availability?from=YYYY-MM-DD&to=YYYY-MM-DD */
+    public function availability(Request $request, $id)
+    {
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $locker = DB::table('smart_lockers')->where('id', $id)->where('is_active', true)->first();
+        if (!$locker) return $this->errorResponse('ไม่พบข้อมูลตู้เซฟนี้', 404);
+
+        $from = Carbon::parse($request->query('from', today()->toDateString()))->startOfDay();
+        $to = Carbon::parse($request->query('to', $from->copy()->addDays(89)->toDateString()))->startOfDay();
+        if ($from->diffInDays($to) > 365) {
+            return $this->errorResponse('เลือกช่วงวันที่ได้ไม่เกิน 366 วัน', 422);
+        }
+
+        $bookings = DB::table('locker_bookings')
+            ->where('smart_locker_id', $id)
+            ->whereIn('status', ['pending_payment', 'paid', 'active', 'completed'])
+            ->where('start_date', '<', $to->copy()->addDay()->toDateString())
+            ->where('end_date', '>', $from->toDateString())
+            ->get(['start_date', 'end_date']);
+        $manualBlocks = DB::table('smart_locker_unavailable_dates')
+            ->where('smart_locker_id', $id)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->get()->keyBy('date');
+
+        $dates = collect();
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $date = $day->toDateString();
+            $reserved = $bookings->contains(fn ($booking) => $booking->start_date <= $date && $booking->end_date > $date);
+            $block = $manualBlocks->get($date);
+            $unavailable = $locker->status === 'maintenance' || $reserved || $block;
+            $dates->push([
+                'date' => $date,
+                'is_available' => !$unavailable,
+                'reason' => $locker->status === 'maintenance' ? 'maintenance' : ($reserved ? 'booked' : ($block ? 'admin_block' : null)),
+            ]);
+        }
+
+        return $this->successResponse([
+            'smart_locker_id' => (int) $locker->id,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'dates' => $dates,
+        ], 'Locker availability retrieved');
+    }
+
+    private function isDateAvailable(object $locker, Carbon $date): bool
+    {
+        if ($locker->status === 'maintenance') return false;
+
+        $dateString = $date->toDateString();
+        $blocked = DB::table('smart_locker_unavailable_dates')
+            ->where('smart_locker_id', $locker->id)->where('date', $dateString)->exists();
+        $booked = DB::table('locker_bookings')
+            ->where('smart_locker_id', $locker->id)
+            ->whereIn('status', ['pending_payment', 'paid', 'active', 'completed'])
+            ->where('start_date', '<=', $dateString)->where('end_date', '>', $dateString)->exists();
+
+        return !$blocked && !$booked;
     }
 
     // ==========================================
@@ -129,8 +196,8 @@ class SmartLockerController extends Controller
     {
         $request->validate([
             'smart_locker_id' => 'required|integer',
-            'payment_gateway' => 'required|string',
-            'duration_months' => 'required|integer|min:1',
+            'payment_gateway' => 'required|in:bbl',
+            'duration_months' => 'required|integer|min:1|max:60',
             'start_date' => 'required|date|after_or_equal:today',
             'address_id' => 'required|integer',
             'custom_address_text' => 'nullable|string|required_without:address_id'
@@ -138,58 +205,50 @@ class SmartLockerController extends Controller
 
         $user = $request->user();
         
-        $locker = DB::table('smart_lockers')->where('id', $request->smart_locker_id)->first();
-        
-        // 🌟 ดักสถานะตู้ ต้องเป็น available เท่านั้นถึงจะจองได้
-        if (!$locker || $locker->status !== 'available') {
-            return $this->errorResponse('ขออภัย ตู้เซฟนี้ถูกจองหรือยังไม่พร้อมให้บริการ', 400);
-        }
-
-        $serviceFee = $locker->price * $request->duration_months;
-        $deposit = 0; 
-        $subtotal = $serviceFee + $deposit;
-        $vatAmount = $serviceFee * 0.07;
-        $grandTotal = $subtotal + $vatAmount;
-
-        // 🌟 แปลงวันที่และบังคับ Type เป็น Integer เพื่อไม่ให้ Carbon Error
-        $startDate = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : now();
+        $startDate = Carbon::parse($request->start_date)->startOfDay();
         $durationMonths = (int) $request->duration_months;
         $endDate = $startDate->copy()->addMonths($durationMonths);
 
-        DB::beginTransaction();
         try {
-            $bookingId = DB::table('locker_bookings')->insertGetId([
-                'booking_number' => 'LCK-' . date('Ym') . '-' . strtoupper(\Illuminate\Support\Str::random(5)),
-                'user_id' => $user->id,
-                'smart_locker_id' => $locker->id,
-                'total_amount' => $grandTotal,
-                'payment_gateway' => $request->payment_gateway,
-                'start_date' => $startDate, // ใช้ตัวแปรที่แปลงแล้ว
-                'end_date' => $endDate,     // ใช้ตัวแปรที่คำนวณแล้ว
-                'address_id' => $request->address_id,
-                'custom_address_text' => $request->custom_address_text ?? null,
-                'status' => 'pending_payment',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            $bookingId = DB::transaction(function () use ($request, $user, $startDate, $endDate, $durationMonths) {
+                $locker = DB::table('smart_lockers')->where('id', $request->smart_locker_id)->lockForUpdate()->first();
+                if (!$locker || $locker->status === 'maintenance') {
+                    throw new \DomainException('ขออภัย ตู้เซฟนี้ยังไม่พร้อมให้บริการ');
+                }
 
-            // 🌟 ล็อกสถานะตู้ไว้ชั่วคราวเป็น pending (รอชำระเงิน)
-            DB::table('smart_lockers')->where('id', $locker->id)->update([
-                'status' => 'pending_payment', 
-                'updated_at' => now()
-            ]);
+                $start = $startDate->toDateString();
+                $end = $endDate->toDateString();
+                $hasBooking = DB::table('locker_bookings')
+                    ->where('smart_locker_id', $locker->id)
+                    ->whereIn('status', ['pending_payment', 'paid', 'active', 'completed'])
+                    ->where('start_date', '<', $end)->where('end_date', '>', $start)->exists();
+                $hasAdminBlock = DB::table('smart_locker_unavailable_dates')
+                    ->where('smart_locker_id', $locker->id)->where('date', '>=', $start)->where('date', '<', $end)->exists();
+                if ($hasBooking || $hasAdminBlock) {
+                    throw new \DomainException('วันที่เลือกมีการจองหรือถูกปิดไว้แล้ว กรุณาเลือกวันอื่น');
+                }
 
-            DB::commit();
+                $serviceFee = $locker->price * $durationMonths;
+                $grandTotal = $serviceFee + ($serviceFee * 0.07);
+
+                return DB::table('locker_bookings')->insertGetId([
+                    'booking_number' => 'LCK-' . date('Ym') . '-' . strtoupper(Str::random(5)),
+                    'user_id' => $user->id,
+                    'smart_locker_id' => $locker->id,
+                    'total_amount' => $grandTotal,
+                    'payment_gateway' => $request->payment_gateway,
+                    'start_date' => $start,
+                    'end_date' => $end,
+                    'address_id' => $request->address_id,
+                    'custom_address_text' => $request->custom_address_text ?? null,
+                    'status' => 'pending_payment',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            });
 
             $booking = DB::table('locker_bookings')->where('id', $bookingId)->first();
-            $paymentUrl = null;
-
-            // if ($request->payment_gateway === 'bbl') {
-                // 🌟 คืนค่าเป็นลิงก์ WebView ของระบบเรา ให้น้องโอมเอาไปเปิด
-                $paymentUrl = url('/payment/bbl/redirect/' . $booking->booking_number);
-            // } else {
-            //     $paymentUrl = "https://placeholder-gateway.com/pay/" . $booking->booking_number;
-            // }
+            $paymentUrl = url('/payment/bbl/redirect/' . $booking->booking_number . '/all');
 
             return $this->successResponse([
                 'booking_id' => $bookingId,
@@ -197,9 +256,10 @@ class SmartLockerController extends Controller
                 'payment_url' => $paymentUrl
             ], 'สร้างรายการจองสำเร็จ กรุณาชำระเงิน');
 
+        } catch (\DomainException $e) {
+            return $this->errorResponse($e->getMessage(), 409);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse('เกิดข้อผิดพลาดในการจอง: ' . $e->getMessage(), 500);
+            return $this->errorResponse('เกิดข้อผิดพลาดในการจองตู้เซฟ', 500);
         }
     }
 
@@ -232,18 +292,81 @@ class SmartLockerController extends Controller
                 'updated_at' => now()
             ]);
 
-            // 2. 🌟 ปลดล็อกตู้ ให้กลับมาว่างเหมือนเดิม
-            DB::table('smart_lockers')->where('id', $booking->smart_locker_id)->update([
-                'status' => 'available',
-                'updated_at' => now()
-            ]);
-
             DB::commit();
 
-            return $this->successResponse(null, 'ยกเลิกการจองและคืนสถานะตู้เซฟเรียบร้อยแล้ว');
+            return $this->successResponse(null, 'ยกเลิกการจองตู้เซฟเรียบร้อยแล้ว');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('เกิดข้อผิดพลาดในการยกเลิก: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /** Create a payable renewal booking linked to the current locker contract. */
+    public function renew(Request $request, $id)
+    {
+        $request->validate([
+            'duration_months' => 'required|integer|min:1|max:60',
+            'payment_gateway' => 'required|in:bbl',
+        ]);
+
+        $user = $request->user();
+        try {
+            $renewalId = DB::transaction(function () use ($request, $user, $id) {
+                $booking = DB::table('locker_bookings')->where('id', $id)->where('user_id', $user->id)->lockForUpdate()->first();
+                if (!$booking) throw new \DomainException('ไม่พบสัญญาเช่าตู้เซฟนี้');
+                if (!in_array($booking->status, ['active', 'paid', 'completed'], true) || !$booking->end_date) {
+                    throw new \DomainException('สัญญานี้ยังไม่สามารถต่ออายุได้');
+                }
+                if (DB::table('locker_bookings')->where('renewal_of_booking_id', $booking->id)->where('status', 'pending_payment')->exists()) {
+                    throw new \DomainException('มีรายการต่ออายุที่รอชำระเงินอยู่แล้ว');
+                }
+                $endOfCurrent = Carbon::parse($booking->end_date)->startOfDay();
+                if ($endOfCurrent->lt(Carbon::today()) || $endOfCurrent->gt(Carbon::today()->addDays(90))) {
+                    throw new \DomainException('ต่ออายุได้เมื่อสัญญาเหลืออายุไม่เกิน 90 วัน');
+                }
+
+                $locker = DB::table('smart_lockers')->where('id', $booking->smart_locker_id)->lockForUpdate()->first();
+                if (!$locker || $locker->status === 'maintenance') {
+                    throw new \DomainException('ตู้เซฟอยู่ระหว่างปิดปรับปรุง ไม่สามารถต่ออายุได้');
+                }
+
+                $startDate = $endOfCurrent;
+                $endDate = $startDate->copy()->addMonths((int) $request->duration_months);
+                $serviceFee = (float) $locker->price * (int) $request->duration_months;
+                $totalAmount = $serviceFee + ($serviceFee * 0.07);
+
+                return DB::table('locker_bookings')->insertGetId([
+                    'booking_number' => 'LCK-' . date('Ym') . '-' . strtoupper(Str::random(5)),
+                    'user_id' => $user->id,
+                    'smart_locker_id' => $locker->id,
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate->toDateString(),
+                    'total_amount' => $totalAmount,
+                    'payment_gateway' => $request->payment_gateway,
+                    'status' => 'pending_payment',
+                    'address_id' => $booking->address_id ?? null,
+                    'custom_address_text' => $booking->custom_address_text ?? null,
+                    'renewal_of_booking_id' => $booking->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            });
+
+            $renewal = DB::table('locker_bookings')->where('id', $renewalId)->first();
+            return $this->successResponse([
+                'renewal_booking_id' => $renewal->id,
+                'booking_number' => $renewal->booking_number,
+                'smart_locker_id' => (int) $renewal->smart_locker_id,
+                'start_date' => $renewal->start_date,
+                'end_date' => $renewal->end_date,
+                'duration_months' => (int) $request->duration_months,
+                'total_amount' => (float) $renewal->total_amount,
+                'payment_url' => url('/payment/bbl/redirect/' . $renewal->booking_number . '/all'),
+            ], 'สร้างรายการต่ออายุตู้เซฟสำเร็จ กรุณาชำระเงิน');
+        } catch (\DomainException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\Exception $e) {
+            return $this->errorResponse('เกิดข้อผิดพลาดในการสร้างรายการต่ออายุตู้เซฟ', 500);
         }
     }
 }

@@ -40,7 +40,9 @@ class CmsAdminController extends Controller
             'link_url' => 'nullable|url',
             'location' => 'required|in:main,ease_club,service',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile (ไม่บังคับ)
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รับรูป Mobile (ไม่บังคับ)
+            'image_en' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รูปภาษาอังกฤษ (Desktop)
+            'image_m_en' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รูปภาษาอังกฤษ (Mobile)
         ]);
 
         $imageUrl = '';
@@ -56,11 +58,17 @@ class CmsAdminController extends Controller
             $imageUrlM = url('storage/' . $pathM);
         }
 
+        // 🌟 รูปภาษาอังกฤษ (ไม่บังคับ — ถ้าไม่อัปโหลด แอป/เว็บจะใช้รูปภาษาไทยแทน)
+        $imageUrlEn = $request->hasFile('image_en') ? url('storage/' . $request->file('image_en')->store('banners/en', 'public')) : null;
+        $imageUrlMEn = $request->hasFile('image_m_en') ? url('storage/' . $request->file('image_m_en')->store('banners/mobile/en', 'public')) : null;
+
         DB::table('banners')->insert([
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
             'image_url_m' => $imageUrlM, // 🌟 บันทึกรูป Mobile ลง Database
+            'image_url_en' => $imageUrlEn,
+            'image_url_m_en' => $imageUrlMEn,
             'link_url' => $request->link_url ?? '',
             'location' => $request->location,
             'sort_order' => $request->sort_order ?? 0,
@@ -80,7 +88,9 @@ class CmsAdminController extends Controller
             'link_url' => 'nullable|url',
             'location' => 'required|in:main,ease_club,service',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240' // 🌟 รับรูป Mobile
+            'image_m' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รับรูป Mobile
+            'image_en' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รูปภาษาอังกฤษ (Desktop)
+            'image_m_en' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รูปภาษาอังกฤษ (Mobile)
         ]);
 
         $banner = DB::table('banners')->where('id', $id)->first();
@@ -99,11 +109,23 @@ class CmsAdminController extends Controller
             $imageUrlM = url('storage/' . $pathM);
         }
 
+        // 🌟 รูปภาษาอังกฤษ — อัปโหลดใหม่ทับ หรือติ๊ก "ลบรูปอังกฤษ" เพื่อกลับไปใช้รูปภาษาไทย
+        $imageUrlEn = $request->boolean('remove_image_en') ? null : ($banner->image_url_en ?? null);
+        $imageUrlMEn = $request->boolean('remove_image_m_en') ? null : ($banner->image_url_m_en ?? null);
+        if ($request->hasFile('image_en')) {
+            $imageUrlEn = url('storage/' . $request->file('image_en')->store('banners/en', 'public'));
+        }
+        if ($request->hasFile('image_m_en')) {
+            $imageUrlMEn = url('storage/' . $request->file('image_m_en')->store('banners/mobile/en', 'public'));
+        }
+
         DB::table('banners')->where('id', $id)->update([
             'title_th' => $request->title_th,
             'title_en' => $request->title_en,
             'image_url' => $imageUrl,
             'image_url_m' => $imageUrlM, // 🌟 อัปเดตรูป Mobile
+            'image_url_en' => $imageUrlEn,
+            'image_url_m_en' => $imageUrlMEn,
             'link_url' => $request->link_url ?? '',
             'location' => $request->location,
             'sort_order' => $request->sort_order ?? 0,
@@ -147,18 +169,23 @@ class CmsAdminController extends Controller
             'link_url' => 'nullable|url',
             'images' => 'required|array|min:1',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            // 🌟 รูปภาษาอังกฤษ (ไม่บังคับ) — จับคู่กับ images[] ตามลำดับไฟล์ที่เลือก
+            'images_en' => 'nullable|array',
+            'images_en.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
+        $englishFiles = array_values($request->file('images_en') ?? []);
 
         $baseSortOrder = (int) ($request->sort_order ?? 0);
         $isActive = $request->has('is_active');
         $now = now();
 
         $rows = [];
-        foreach ($request->file('images') as $index => $file) {
+        foreach (array_values($request->file('images')) as $index => $file) {
             $path = $file->store('popup-ads', 'public');
             $rows[] = [
                 'title' => $request->title,
                 'image_url' => url('storage/' . $path),
+                'image_url_en' => isset($englishFiles[$index]) ? url('storage/' . $englishFiles[$index]->store('popup-ads/en', 'public')) : null,
                 'link_url' => $request->link_url,
                 'sort_order' => $baseSortOrder + $index,
                 'is_active' => $isActive,
@@ -179,10 +206,15 @@ class CmsAdminController extends Controller
             'title' => 'nullable|string',
             'link_url' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image_en' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 🌟 รูปภาษาอังกฤษ
         ]);
 
         $popupAd = DB::table('popup_ads')->where('id', $id)->first();
         $imageUrl = $popupAd->image_url;
+        $imageUrlEn = $request->boolean('remove_image_en') ? null : ($popupAd->image_url_en ?? null);
+        if ($request->hasFile('image_en')) {
+            $imageUrlEn = url('storage/' . $request->file('image_en')->store('popup-ads/en', 'public'));
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('popup-ads', 'public');
@@ -192,6 +224,7 @@ class CmsAdminController extends Controller
         DB::table('popup_ads')->where('id', $id)->update([
             'title' => $request->title,
             'image_url' => $imageUrl,
+            'image_url_en' => $imageUrlEn,
             'link_url' => $request->link_url,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
@@ -322,6 +355,8 @@ class CmsAdminController extends Controller
             'return_policy' => 'nullable|string|max:5000',
             'shipping_fee' => 'nullable|numeric|min:0',
             'delivery_estimate' => 'nullable|string|max:100',
+            'reward_type' => 'nullable|in:product,voucher,discount', // 🌟 ประเภทของรางวัล
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         $imageUrl = null;
@@ -339,6 +374,8 @@ class CmsAdminController extends Controller
             'points_required' => $request->points_required,
             'stock_quantity' => $request->stock_quantity ?? 0,
             'minimum_tier_required' => $request->minimum_tier_required, // เช่น Advance, Platinum หรือ null
+            'reward_type' => $request->reward_type ?? 'product',
+            'discount_amount' => $request->reward_type === 'discount' ? (float) $request->discount_amount : 0,
             'image_url' => $imageUrl,
             // 🌟 เงื่อนไข/การจัดส่ง — ส่งไปแสดงบนแอปผ่าน GET /ease-club/rewards/{id}
             'return_policy' => $request->return_policy,              // เงื่อนไขการยกเลิกหรือคืนคะแนน
@@ -360,6 +397,8 @@ class CmsAdminController extends Controller
             'return_policy' => 'nullable|string|max:5000',
             'shipping_fee' => 'nullable|numeric|min:0',
             'delivery_estimate' => 'nullable|string|max:100',
+            'reward_type' => 'nullable|in:product,voucher,discount', // 🌟 ประเภทของรางวัล
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         $reward = DB::table('rewards')->where('id', $id)->first();
@@ -379,6 +418,9 @@ class CmsAdminController extends Controller
             'points_required' => $request->points_required,
             'stock_quantity' => $request->stock_quantity ?? 0,
             'minimum_tier_required' => $request->minimum_tier_required,
+            'reward_type' => $request->reward_type ?? ($reward->reward_type ?? 'product'),
+            'discount_amount' => ($request->reward_type ?? ($reward->reward_type ?? 'product')) === 'discount'
+                ? (float) ($request->discount_amount ?? $reward->discount_amount ?? 0) : 0,
             'image_url' => $imageUrl,
             // 🌟 เงื่อนไข/การจัดส่ง — ส่งไปแสดงบนแอปผ่าน GET /ease-club/rewards/{id}
             'return_policy' => $request->return_policy,

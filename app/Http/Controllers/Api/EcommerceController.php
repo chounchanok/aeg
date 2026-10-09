@@ -370,7 +370,7 @@ class EcommerceController extends Controller
             $bundle->items = DB::table('product_bundle_items')
                 ->join('products', 'product_bundle_items.product_id', '=', 'products.id')
                 ->where('product_bundle_items.product_bundle_id', $bundle->id)
-                ->select('products.id as product_id', 'products.name_th', 'products.name_en', 'products.price', 'product_bundle_items.quantity as required_qty')
+                ->select('products.id as product_id', 'products.name_th', 'products.name_en', 'products.price', 'products.image_url', 'product_bundle_items.quantity as required_qty')
                 ->get();
 
             $bundle->original_total = $bundle->items->sum(fn ($i) => $i->price * $i->required_qty);
@@ -451,6 +451,7 @@ class EcommerceController extends Controller
                         'name_th' => $item->name_th,
                         'name_en' => $item->name_en,
                         'price' => (float) $item->price,
+                        'image_url' => $item->image_url ?? null, // 🌟 ใช้แสดงการ์ดสินค้าที่แนะนำให้ซื้อเพิ่ม
                         'need_qty' => $item->required_qty - $have,
                     ];
                 }
@@ -617,7 +618,18 @@ class EcommerceController extends Controller
             ]);
         }
 
-        return $this->successResponse(null, 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
+        // 🌟 ส่งข้อมูลสินค้าจับกลุ่มกลับไปทันทีหลังเพิ่มลงตะกร้า — แอปแสดง "ซื้อคู่กันรับราคาชุด" ได้เลยโดยไม่ต้องยิง GET /cart ซ้ำ
+        // (โครงสร้างเดียวกับ GET /ecommerce/cart → bundle_suggestions / summary.applied_bundles)
+        $cartItems = DB::table('cart_items')->where('cart_id', $cartId)->get(['product_id', 'quantity', 'duration_months']);
+        $bundleQtyMap = $this->buildBundleQtyMap($cartItems);
+        $bundleMatch = $this->calculateBundleMatches($bundleQtyMap);
+
+        return $this->successResponse([
+            'cart_count' => (int) $cartItems->sum('quantity'),
+            'applied_bundles' => $bundleMatch['applied'],
+            'bundle_discount_amount' => $bundleMatch['total_discount'],
+            'bundle_suggestions' => $this->calculateBundleSuggestions($bundleQtyMap, $bundleMatch),
+        ], 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
     }
 
     public function removeFromCart($cartItemId)
@@ -631,8 +643,7 @@ class EcommerceController extends Controller
     // ==========================================
     public function getAddresses(Request $request)
     {
-        $addresses = DB::table('customer_addresses')
-            ->where('user_id', $request->user()->id)
+        $addresses = \App\Services\AddressService::activeQuery($request->user()->id) // 🌟 ไม่แสดงที่อยู่ที่ลบแล้ว
             ->orderBy('created_at', 'desc')
             ->get();
         return $this->successResponse($addresses, 'Addresses retrieved');
@@ -641,9 +652,8 @@ class EcommerceController extends Controller
     // 🌟 1. ดึงรายละเอียดที่อยู่แบบเจาะจง (เพื่อเอาไปโชว์ในหน้าแก้ไข)
     public function getAddressDetail(Request $request, $id)
     {
-        $address = DB::table('customer_addresses')
+        $address = \App\Services\AddressService::activeQuery($request->user()->id)
             ->where('id', $id)
-            ->where('user_id', $request->user()->id)
             ->first();
 
         if (!$address) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
@@ -699,9 +709,8 @@ class EcommerceController extends Controller
             'longitude' => 'nullable|numeric'
         ]);
 
-        $address = DB::table('customer_addresses')
+        $address = \App\Services\AddressService::activeQuery($request->user()->id) // ที่อยู่ที่ลบแล้วแก้ไขไม่ได้
             ->where('id', $id)
-            ->where('user_id', $request->user()->id)
             ->first();
 
         if (!$address) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
@@ -717,6 +726,17 @@ class EcommerceController extends Controller
         $updatedAddress = DB::table('customer_addresses')->where('id', $id)->first();
 
         return $this->successResponse($updatedAddress, 'อัปเดตข้อมูลที่อยู่สำเร็จ');
+    }
+
+    // 🌟 4. ลบที่อยู่ (คอมเมนต์ข้อ 8) — DELETE /ecommerce/addresses/{id} หรือ POST /ecommerce/addresses/{id}/delete
+    // ที่อยู่ที่เคยใช้ในออเดอร์/แจ้งซ่อม/จองตู้เซฟ/ของรางวัล จะถูก soft delete (ซ่อนจากรายการ แต่เก็บไว้เป็นประวัติ)
+    public function deleteAddress(Request $request, $id)
+    {
+        $mode = \App\Services\AddressService::delete($request->user()->id, (int) $id);
+
+        if ($mode === null) return $this->errorResponse('ไม่พบข้อมูลที่อยู่นี้', 404);
+
+        return $this->successResponse(['id' => (int) $id, 'mode' => $mode], 'ลบที่อยู่เรียบร้อยแล้ว');
     }
 
     // ==========================================
@@ -765,10 +785,14 @@ class EcommerceController extends Controller
 
         if ($request->reward_code) {
             // เช็คว่าโค้ดนี้เป็นของลูกค้าคนนี้จริง และยังไม่ถูกใช้งาน
+            // 🌟 รับได้ทั้งโค้ด RWD-xxxx และรหัสที่แอดมินกรอกส่งให้ (voucher_code) — ใช้ได้เฉพาะคูปองที่มีมูลค่าส่วนลด
             $usedRewardCode = DB::table('customer_reward_codes')
-                ->where('code', $request->reward_code)
+                ->where(function ($q) use ($request) {
+                    $q->where('code', $request->reward_code)->orWhere('voucher_code', $request->reward_code);
+                })
                 ->where('user_id', $user->id)
                 ->where('status', 'active')
+                ->where('discount_amount', '>', 0)
                 ->first();
 
             if (!$usedRewardCode) {
@@ -847,6 +871,7 @@ class EcommerceController extends Controller
                     'used_at' => now(),
                     'updated_at' => now()
                 ]);
+                \App\Services\RewardService::log($usedRewardCode->id, 'used', 'ใช้ส่วนลดกับคำสั่งซื้อ', 'customer', $user->id);
             }
 
             DB::commit();
@@ -917,10 +942,14 @@ class EcommerceController extends Controller
 
         if ($request->reward_code) {
             // เช็คว่าโค้ดนี้เป็นของลูกค้าคนนี้จริง และยังไม่ถูกใช้งาน
+            // 🌟 รับได้ทั้งโค้ด RWD-xxxx และรหัสที่แอดมินกรอกส่งให้ (voucher_code) — ใช้ได้เฉพาะคูปองที่มีมูลค่าส่วนลด
             $usedRewardCode = DB::table('customer_reward_codes')
-                ->where('code', $request->reward_code)
+                ->where(function ($q) use ($request) {
+                    $q->where('code', $request->reward_code)->orWhere('voucher_code', $request->reward_code);
+                })
                 ->where('user_id', $user->id)
                 ->where('status', 'active')
+                ->where('discount_amount', '>', 0)
                 ->first();
 
             if (!$usedRewardCode) {
@@ -986,6 +1015,7 @@ class EcommerceController extends Controller
                     'used_at' => now(),
                     'updated_at' => now()
                 ]);
+                \App\Services\RewardService::log($usedRewardCode->id, 'used', 'ใช้ส่วนลดกับคำสั่งซื้อ', 'customer', $user->id);
             }
 
             DB::commit();
@@ -1215,8 +1245,7 @@ class EcommerceController extends Controller
     // 1. ฟังก์ชันกดแลกของรางวัล (หักแต้มแล้วได้โค้ด / แลกสินค้า)
     public function redeemReward(Request $request)
     {
-        // 🌟 เพิ่ม Validation สำหรับรับค่าที่อยู่จัดส่งและชื่อผู้รับ
-        $request->validate([
+        $data = $request->validate([
             'reward_id' => 'required|integer',
             'customer_name' => 'nullable|string',
             'customer_phone' => 'nullable|string',
@@ -1224,144 +1253,82 @@ class EcommerceController extends Controller
             'address_text' => 'nullable|string',
         ]);
 
-        $user = $request->user();
-        $reward = DB::table('rewards')->where('id', $request->reward_id)->where('is_active', true)->first();
+        // 🌟 logic รวมอยู่ที่ RewardService (เช็ค Tier ลูกค้า + ล็อก wallet กันกดซ้ำ + บันทึก timeline)
+        // สินค้า: ส่งที่อยู่มาตอนนี้ หรือตอนกด "ใช้คูปอง" (POST /rewards/my-codes/{id}/use) ก็ได้
+        $result = \App\Services\RewardService::redeem($request->user()->id, (int) $data['reward_id'], $data);
 
-        if (!$reward) return $this->errorResponse('ไม่พบของรางวัลนี้', 404);
-
-        $wallet = DB::table('customer_wallets')->where('user_id', $user->id)->first();
-        if (!$wallet || $wallet->current_points < $reward->points_required) {
-            return $this->errorResponse('คะแนน EASE Coins ของคุณไม่เพียงพอ', 400);
-        }
-
-        // 🌟 เช็คว่าเป็น "คูปอง" หรือ "สินค้า" (สมมติว่าหมวด 1 คือคูปอง)
-        $isCoupon = ($reward->category_id == 1 && $reward->discount_amount > 0);
-
-        // 🌟 ถ้าเป็น "สินค้า" ต้องตรวจสอบว่าส่งข้อมูลผู้รับมาครบหรือไม่
-        if (!$isCoupon) {
-            if (empty($request->address_id) && empty($request->address_text)) {
-                return $this->errorResponse('กรุณาระบุที่อยู่สำหรับจัดส่งของรางวัล', 400);
-            }
-            if (empty($request->customer_name) || empty($request->customer_phone)) {
-                return $this->errorResponse('กรุณาระบุชื่อและเบอร์โทรศัพท์ผู้รับ', 400);
-            }
-        }
-
-        DB::beginTransaction();
-        try {
-            // 1. หักแต้มลูกค้าออกจากกระเป๋าหลัก
-            DB::table('customer_wallets')->where('user_id', $user->id)->decrement('current_points', $reward->points_required);
-
-            // 2. บันทึกประวัติการใช้แต้มลง point_transactions
-            DB::table('point_transactions')->insert([
-                'user_id' => $user->id,
-                'amount' => ($reward->points_required * -1),
-                'type' => 'redeem',
-                'description' => 'แลกรับของรางวัล: ' . $reward->title_th,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // 3. บันทึกประวัติการแลกใน reward_redemptions (บันทึกทั้งคูปองและสินค้า)
-            DB::table('reward_redemptions')->insert([
-                'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'points_used' => $reward->points_required,
-                'status' => 'success',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // 4. สุ่มโค้ด RWD-
-            $code = 'RWD-' . strtoupper(\Illuminate\Support\Str::random(8));
-
-            // 5. บันทึกข้อมูลของรางวัลเข้ากระเป๋าลูกค้า
-            DB::table('customer_reward_codes')->insert([
-                'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'code' => $code,
-                'discount_amount' => $isCoupon ? $reward->discount_amount : 0, // คูปองเก็บค่าส่วนลด สินค้าเก็บ 0
-                'status' => 'active',
-                'customer_name' => $isCoupon ? null : $request->customer_name,
-                'customer_phone' => $isCoupon ? null : $request->customer_phone,
-                'address_id' => $isCoupon ? null : $request->address_id,
-                'address_text' => $isCoupon ? null : $request->address_text,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            DB::commit();
-
-            return $this->successResponse([
-                'code' => $code,
-                'discount_amount' => $isCoupon ? $reward->discount_amount : 0,
-                'reward_title' => $reward->title_th,
-                'reward_point' => $wallet->current_points - $reward->points_required,
-                'is_coupon' => $isCoupon
-            ], 'แลกของรางวัลสำเร็จ');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse('เกิดข้อผิดพลาดในการแลกของรางวัล: ' . $e->getMessage(), 500);
-        }
+        return $result['ok']
+            ? $this->successResponse($result['data'], $result['message'])
+            : $this->errorResponse($result['message'], $result['status']);
     }
 
-    // 2. ฟังก์ชันดูโค้ดที่ยังไม่ได้ใช้งาน
+    // 2. คูปองส่วนลดที่ยังใช้ได้ (ใช้แสดงในหน้า checkout ให้เลือกโค้ด)
     public function getMyRewardCodes(Request $request)
     {
-        $user = $request->user();
-        
-        $codes = DB::table('customer_reward_codes')
-            ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
-            ->where('customer_reward_codes.user_id', $user->id)
+        $codes = \App\Services\RewardService::codesQuery()
+            ->where('customer_reward_codes.user_id', $request->user()->id)
             ->where('customer_reward_codes.discount_amount', '>', 0)
             ->where('customer_reward_codes.status', 'active')
-            ->select(
-                'customer_reward_codes.id',
-                'customer_reward_codes.code',
-                'customer_reward_codes.status', // 🌟 ส่งสถานะกลับไป (เช่น active, used)
-                'customer_reward_codes.discount_amount',
-                'customer_reward_codes.customer_name',
-                'customer_reward_codes.customer_phone',
-                'customer_reward_codes.address_id',
-                'customer_reward_codes.address_text',
-                'customer_reward_codes.created_at as redeemed_date',
-                'rewards.category_id', // 🌟 ส่งไปเพื่อให้แอปแยกว่าอันไหนคูปอง อันไหนสินค้า
-                'rewards.title_th as reward_title',
-                'rewards.image_url'
-            )
             ->orderBy('customer_reward_codes.created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(fn ($row) => \App\Services\RewardService::presentCode($row));
 
         return $this->successResponse($codes, 'ดึงรายการโค้ดส่วนลดที่ใช้งานได้สำเร็จ');
     }
 
+    // 3. ของรางวัล/คูปองที่เคยแลกทั้งหมด — filter ได้ด้วย ?status=active,shipping ?reward_type=product|voucher|discount
     public function getMyRewardCodesAll(Request $request)
     {
-        $user = $request->user();
-        
-        $codes = DB::table('customer_reward_codes')
-            ->join('rewards', 'customer_reward_codes.reward_id', '=', 'rewards.id')
-            ->where('customer_reward_codes.user_id', $user->id)
-            // 🌟 ดึงข้อมูลทั้งหมดที่เคยแลก (เอาบรรทัดเช็ค 'active' ออกแล้ว)
-            ->select(
-                'customer_reward_codes.id',
-                'customer_reward_codes.code',
-                'customer_reward_codes.status', // 🌟 ส่งสถานะกลับไป (เช่น active, used)
-                'customer_reward_codes.discount_amount',
-                'customer_reward_codes.customer_name',
-                'customer_reward_codes.customer_phone',
-                'customer_reward_codes.address_id',
-                'customer_reward_codes.address_text',
-                'customer_reward_codes.created_at as redeemed_date',
-                'rewards.category_id', // 🌟 ส่งไปเพื่อให้แอปแยกว่าอันไหนคูปอง อันไหนสินค้า
-                'rewards.title_th as reward_title',
-                'rewards.image_url'
-            )
-            ->orderBy('customer_reward_codes.created_at', 'desc')
-            ->get();
+        $query = \App\Services\RewardService::codesQuery()
+            ->where('customer_reward_codes.user_id', $request->user()->id);
+
+        if ($request->filled('status')) {
+            $statuses = $request->query('status');
+            $query->whereIn('customer_reward_codes.status', is_array($statuses) ? $statuses : explode(',', (string) $statuses));
+        }
+        if ($request->filled('reward_type')) {
+            $query->where('rewards.reward_type', $request->query('reward_type'));
+        }
+
+        $codes = $query->orderBy('customer_reward_codes.created_at', 'desc')
+            ->get()
+            ->map(fn ($row) => \App\Services\RewardService::presentCode($row));
 
         return $this->successResponse($codes, 'ดึงรายการของรางวัลที่เคยแลกสำเร็จ');
+    }
+
+    // 4. รายละเอียดคูปอง/ของรางวัล 1 รายการ + timeline สถานะการจัดส่ง
+    public function getMyRewardCodeDetail(Request $request, $id)
+    {
+        $row = \App\Services\RewardService::codesQuery()
+            ->where('customer_reward_codes.user_id', $request->user()->id)
+            ->where('customer_reward_codes.id', $id)
+            ->first();
+
+        if (!$row) return $this->errorResponse('ไม่พบคูปองนี้', 404);
+
+        return $this->successResponse(\App\Services\RewardService::presentCode($row, true), 'ดึงรายละเอียดคูปองสำเร็จ');
+    }
+
+    // 5. ลูกค้ากด "ใช้คูปอง"
+    //    - สินค้า: ส่งที่อยู่จัดส่ง (address_id หรือ address_text + customer_name + customer_phone) → สถานะ "ยืนยันการจัดส่ง"
+    //      หลังจากนั้นสถานะ กำลังดำเนินการ / กำลังจัดส่ง / จัดส่งสำเร็จ เปลี่ยนได้จากหลังบ้านเท่านั้น
+    //    - วอยเชอร์/ส่วนลด: เปลี่ยนเป็น "ใช้แล้ว" (วอยเชอร์ต้องได้รับรหัสจากแอดมินก่อน)
+    public function useRewardCode(Request $request, $id)
+    {
+        $data = $request->validate([
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:30',
+            'address_id' => 'nullable|integer',
+            'address_text' => 'nullable|string',
+        ]);
+
+        $result = \App\Services\RewardService::customerUse($request->user()->id, (int) $id, array_filter($data, fn ($v) => $v !== null));
+        if (!$result['ok']) return $this->errorResponse($result['message'], $result['status']);
+
+        $row = \App\Services\RewardService::codesQuery()->where('customer_reward_codes.id', $id)->first();
+
+        return $this->successResponse(\App\Services\RewardService::presentCode($row, true), $result['message']);
     }
 
     // ==========================================
@@ -1387,9 +1354,9 @@ class EcommerceController extends Controller
         $products = DB::table('products')
             ->where('is_active', true)
             ->where(function($q) use ($keyword) {
+                // 🌟 ค้นหาจากชื่อสินค้าเท่านั้น (ไม่ค้นใน description/detail แล้ว ตามคอมเมนต์ข้อ 7)
                 $q->where('name_th', 'like', '%' . $keyword . '%')
-                  ->orWhere('name_en', 'like', '%' . $keyword . '%')
-                  ->orWhere('description_th', 'like', '%' . $keyword . '%');
+                  ->orWhere('name_en', 'like', '%' . $keyword . '%');
             })
             ->select('id', 'name_th', 'name_en', 'price', 'image_url', 'type')
             ->limit(10)
@@ -1411,7 +1378,6 @@ class EcommerceController extends Controller
             ->where(function($q) use ($keyword) {
                 $q->where('title_th', 'like', '%' . $keyword . '%')
                   ->orWhere('title_en', 'like', '%' . $keyword . '%')
-                  ->orWhere('description_th', 'like', '%' . $keyword . '%')
                   ->orWhere('locker_number', 'like', '%' . $keyword . '%');
             })
             ->select('id', 'title_th', 'title_en', 'price', 'image_url')
@@ -1428,14 +1394,16 @@ class EcommerceController extends Controller
             });
 
         // 3. ค้นหา ของรางวัล (Rewards)
-        $rewards = DB::table('rewards')
+        $rewardQuery = DB::table('rewards')
             ->where('is_active', true)
             ->where(function($q) use ($keyword) {
-                // อิงจากโครงสร้างที่มี title_th, title_en
+                // อิงจากโครงสร้างที่มี title_th, title_en (ค้นจากชื่ออย่างเดียว)
                 $q->where('title_th', 'like', '%' . $keyword . '%')
-                  ->orWhere('title_en', 'like', '%' . $keyword . '%')
-                  ->orWhere('description_th', 'like', '%' . $keyword . '%');
-            })
+                  ->orWhere('title_en', 'like', '%' . $keyword . '%');
+            });
+        // 🌟 ไม่แสดงรางวัลที่ Tier ของลูกค้ายังไม่ถึง
+        \App\Services\RewardService::applyTierFilter($rewardQuery, optional($request->user('sanctum'))->id);
+        $rewards = $rewardQuery
             ->select('id', 'title_th', 'title_en', 'points_required', 'image_url')
             ->limit(10)
             ->get()
@@ -1457,8 +1425,7 @@ class EcommerceController extends Controller
                 ->where('is_active', true)
                 ->where(function($q) use ($keyword) {
                     $q->where('title_th', 'like', '%' . $keyword . '%')
-                      ->orWhere('title_en', 'like', '%' . $keyword . '%')
-                      ->orWhere('description_th', 'like', '%' . $keyword . '%');
+                      ->orWhere('title_en', 'like', '%' . $keyword . '%');
                 })
                 // 🌟 แก้ไขตรงนี้: ลบ 'price' ออกจากการ select แล้วครับ
                 ->select('id', 'title_th', 'title_en', 'image_url') 

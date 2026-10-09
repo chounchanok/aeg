@@ -77,6 +77,7 @@
                         <div>
                             <label class="form-label font-medium">รูปภาพหน้าปก (Cover Image)</label>
                             <input name="image" type="file" class="form-control" accept="image/*">
+                            @include('admin.partials.image-hint', ['key' => 'insurance'])
                             @if(isset($insurance) && $insurance->image_url)
                                 <div class="mt-2 flex items-center">
                                     <div class="w-12 h-12 image-fit zoom-in mr-2">
@@ -90,6 +91,7 @@
                         <div>
                             <label class="form-label font-medium">รูปภาพด้านใน (Inner Image)</label>
                             <input name="image_inside" type="file" class="form-control" accept="image/*">
+                            @include('admin.partials.image-hint', ['key' => 'insurance_inside'])
                             @if(isset($insurance) && $insurance->image_inside_url)
                                 <div class="mt-2 flex items-center">
                                     <div class="w-12 h-12 image-fit zoom-in mr-2">

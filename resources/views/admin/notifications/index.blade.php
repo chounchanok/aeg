@@ -44,6 +44,11 @@
                             <td>
                                 <div class="font-medium whitespace-nowrap">{{ $item->title }}</div>
                                 <div class="text-slate-500 text-xs mt-0.5 truncate w-48" title="{{ $item->body }}">{{ $item->body }}</div>
+                                @if(!empty($item->target_type))
+                                    <div class="text-primary text-xs mt-0.5"><i data-lucide="link" class="w-3 h-3 inline"></i> {{ $item->target_type }} #{{ $item->target_id }}</div>
+                                @elseif(!empty($item->url))
+                                    <a href="{{ $item->url }}" target="_blank" class="text-primary text-xs mt-0.5 truncate w-48 block"><i data-lucide="link" class="w-3 h-3 inline"></i> {{ $item->url }}</a>
+                                @endif
                             </td>
                             <td class="text-center">
                                 {!! $item->is_read ? '<span class="text-success"><i data-lucide="check-check" class="w-4 h-4 inline"></i> อ่านแล้ว</span>' : '<span class="text-slate-400">ยังไม่อ่าน</span>' !!}

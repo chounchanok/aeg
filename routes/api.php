@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\InvoiceController;
 Route::get('/smart-lockers/categorys', [SmartLockerController::class, 'getSmartLockers']);
 Route::get('/smart-lockers', [SmartLockerController::class, 'index']);
 Route::get('/smart-lockers/{id}', [SmartLockerController::class, 'show']);
+Route::get('/smart-lockers/{id}/availability', [SmartLockerController::class, 'availability']);
 
 // เส้นทางสำหรับรับข้อความ Webhook จาก Meta WhatsApp
 Route::match(['get', 'post'], 'webhook/whatsapp', [App\Http\Controllers\AuthController::class, 'whatsappWebhook']);
@@ -33,6 +34,7 @@ Route::middleware('auth:sanctum')->prefix('smart-lockers')->group(function () {
     Route::post('/calculate', [SmartLockerController::class, 'calculatePrice']); // 🌟 เส้นคำนวณราคา
     Route::post('/book', [SmartLockerController::class, 'book']);                // เส้นสร้างใบจอง
     Route::post('/cancel/{id}', [SmartLockerController::class, 'cancelBooking']); // 🌟 เส้นยกเลิกจอง
+    Route::post('/bookings/{id}/renew', [SmartLockerController::class, 'renew']);
 });
 
 // API สำหรับให้แอปมือถือเช็คสถานะการเข้าสู่ระบบ WhatsApp
@@ -111,6 +113,8 @@ Route::middleware('auth:sanctum')->prefix('ecommerce')->group(function () {
     // 🌟 เพิ่ม 2 เส้นนี้สำหรับการแสดงข้อมูลและการแก้ไข
     Route::get('/addresses/{id}', [EcommerceController::class, 'getAddressDetail']);
     Route::post('/addresses/{id}/update', [EcommerceController::class, 'updateAddress']);
+    Route::delete('/addresses/{id}', [EcommerceController::class, 'deleteAddress']); // 🌟 ลบที่อยู่
+    Route::post('/addresses/{id}/delete', [EcommerceController::class, 'deleteAddress']); // 🌟 ลบที่อยู่ (สำหรับ client ที่ส่ง DELETE ไม่ได้)
     Route::get('/orders/{id}', [EcommerceController::class, 'getOrderDetail']);
 
     // 🌟 ระบบขอใบเสนอราคา (RFQ) — สำหรับสินค้าที่ต้องสำรวจหน้างานก่อน (is_contact_only = true)
@@ -154,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/rewards/redeem', [EcommerceController::class, 'redeemReward']);
     Route::get('/rewards/my-codes', [EcommerceController::class, 'getMyRewardCodes']);
     Route::get('/rewards/my-codes-all', [EcommerceController::class, 'getMyRewardCodesAll']);
+    Route::get('/rewards/my-codes/{id}', [EcommerceController::class, 'getMyRewardCodeDetail'])->whereNumber('id'); // 🌟 รายละเอียด + timeline
+    Route::post('/rewards/my-codes/{id}/use', [EcommerceController::class, 'useRewardCode'])->whereNumber('id'); // 🌟 ลูกค้ากดใช้คูปอง
 
     // Main Page (ส่วนบุคคล)
     Route::prefix('main')->group(function () {
@@ -199,6 +205,8 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
     // การแจ้งเตือนและ Device Token
     Route::post('/device-token', [ProfileController::class, 'saveDeviceToken']);
     Route::get('/notifications', [ProfileController::class, 'getNotifications']);
+    Route::get('/notifications/unread-count', [ProfileController::class, 'getUnreadNotificationCount']); // 🌟 จำนวนที่ยังไม่อ่าน
+    Route::post('/notifications/read-all', [ProfileController::class, 'readAllNotifications']); // 🌟 อ่านทั้งหมด
     Route::post('/notifications/{id}/read', [ProfileController::class, 'readNotification']);
 
     // --- ติดต่อเรา (Contact Admin Email) ---

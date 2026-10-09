@@ -56,6 +56,11 @@ class AppServiceProvider extends ServiceProvider
                 'route_name' => 'admin.customers', 'params' => []
                 // 🌟 ไม่ผูก permission — ตามที่กำหนดไว้ว่า "ดูได้ทุก Role แต่ไม่สามารถแก้ไขได้"
             ],
+            // 🌟 คูปอง/ของรางวัลที่ลูกค้าแลก — แยกจากเมนูลูกค้า (ดูได้ทุก role เหมือนหน้าลูกค้า, ปุ่มดำเนินการต้องมี customers.manage)
+            'reward-redemptions' => [
+                'icon' => 'ticket', 'title' => 'คูปอง/ของรางวัลที่ลูกค้าแลก',
+                'route_name' => 'admin.reward-redemptions.index', 'params' => []
+            ],
             'orders' => [
                 'icon' => 'shopping-cart', 'title' => 'ประวัติคำสั่งซื้อ',
                 'route_name' => 'admin.orders', 'params' => [],
@@ -109,10 +114,8 @@ class AppServiceProvider extends ServiceProvider
             'contacts' => [
                 'icon' => 'inbox', 'title' => 'รายการติดต่อจากลูกค้า',
                 'sub_menu' => [
-                    'insurance' => ['icon' => 'shield', 'title' => 'ประกันภัย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'insurance'], 'permission' => 'contacts.insurance'],
                     'safe' => ['icon' => 'lock', 'title' => 'ตู้เซฟนิรภัย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'safe'], 'permission' => 'contacts.safe'],
-                    'product' => ['icon' => 'box', 'title' => 'สินค้า/บริการ (เว็บ)', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'product'], 'permission' => 'contacts.product'],
-                    'sales' => ['icon' => 'phone-call', 'title' => 'ติดต่อฝ่ายขาย (แอป)', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'sales'], 'permission' => 'contacts.sales'],
+                    'sales' => ['icon' => 'phone-call', 'title' => 'ติดต่อฝ่ายขาย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'sales'], 'permission' => 'contacts.sales'],
                 ]
             ],
             'devider',

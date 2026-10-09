@@ -159,6 +159,8 @@ class ServiceRequestAdminController extends Controller
                     'title' => $notifyTitle,
                     'body' => $notifyBody,
                     'type' => 'service',
+                    'target_type' => 'service_request', // 🌟 กดแล้วเปิดหน้ารายละเอียดงานซ่อมในแอป
+                    'target_id' => $id,
                     'is_read' => false,
                     'created_at' => now(),
                     'updated_at' => now()
@@ -271,6 +273,8 @@ class ServiceRequestAdminController extends Controller
                 'title' => $notifyTitle,
                 'body' => $notifyBody,
                 'type' => 'service',
+                'target_type' => 'service_request',
+                'target_id' => $id,
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now()

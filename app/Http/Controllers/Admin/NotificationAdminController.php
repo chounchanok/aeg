@@ -50,7 +50,16 @@ class NotificationAdminController extends Controller
             'type' => 'required|in:general,promotion,privilege',
             'title' => 'required|string|max:255',
             'body' => 'required|string',
+            // 🌟 ลิงก์เมื่อกดแจ้งเตือน (คอมเมนต์ข้อ 5) — เลือกอย่างใดอย่างหนึ่ง: หน้าในแอป (target) หรือ URL ภายนอก
+            'url' => 'nullable|url|max:2048',
+            'target_type' => 'nullable|in:' . implode(',', array_keys(\App\Services\CustomerNotificationService::TARGET_TYPES)),
+            'target_id' => 'nullable|required_with:target_type|integer|min:1',
         ]);
+        $link = [
+            'url' => $request->url ?: null,
+            'target_type' => $request->target_type ?: null,
+            'target_id' => $request->target_type ? (int) $request->target_id : null,
+        ];
 
         DB::beginTransaction();
         try {
@@ -66,6 +75,9 @@ class NotificationAdminController extends Controller
                         'title' => $request->title,
                         'body' => $request->body,
                         'type' => $request->type,
+                        'url' => $link['url'],
+                        'target_type' => $link['target_type'],
+                        'target_id' => $link['target_id'],
                         'is_read' => false,
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -78,6 +90,9 @@ class NotificationAdminController extends Controller
                     'title' => $request->title,
                     'body' => $request->body,
                     'type' => $request->type,
+                    'url' => $link['url'],
+                    'target_type' => $link['target_type'],
+                    'target_id' => $link['target_id'],
                     'is_read' => false,
                     'created_at' => $now,
                     'updated_at' => $now,

@@ -72,6 +72,14 @@
                         <label class="form-label">ไฟล์รูปภาพ Popup <span class="text-danger">*</span></label>
                         <input name="images[]" type="file" class="form-control" accept="image/*" multiple required>
                         <div class="mt-1 text-xs text-slate-500">เลือกได้หลายไฟล์พร้อมกัน — ระบบจะสร้าง Popup Ad แยกทีละรูป และสลับแสดงตามลำดับไฟล์ที่เลือก</div>
+                        @include('admin.partials.image-hint', ['key' => 'popup'])
+                    </div>
+                    {{-- 🌟 รูปภาษาอังกฤษ — เลือกไฟล์ตามลำดับเดียวกับรูปไทย (ไฟล์ที่ 1 คู่กับไฟล์ที่ 1) ไม่เลือกจะใช้รูปไทยแทน --}}
+                    <div class="col-span-12">
+                        <label class="form-label">ไฟล์รูปภาพ Popup ภาษาอังกฤษ (EN)</label>
+                        <input name="images_en[]" type="file" class="form-control" accept="image/*" multiple>
+                        <div class="mt-1 text-xs text-slate-500">จับคู่กับรูปภาษาไทยตามลำดับไฟล์ที่เลือก (ไฟล์ที่ 1 คู่กับไฟล์ที่ 1)</div>
+                        @include('admin.partials.image-hint', ['key' => 'popup'])
                     </div>
                     <div class="col-span-12 sm:col-span-8">
                         <label class="form-label">ลิงก์ปลายทางเมื่อกดที่รูป (ถ้ามี)</label>
@@ -106,8 +114,18 @@
                     <div class="col-span-12">
                         <label class="form-label">เปลี่ยนไฟล์รูปภาพ Popup</label>
                         <input name="image" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'popup'])
                         <div class="mt-2 text-xs text-slate-500">
                             รูปปัจจุบัน: <a id="current_popup_ad_img" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                        </div>
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เปลี่ยนไฟล์รูปภาพ Popup ภาษาอังกฤษ (EN)</label>
+                        <input name="image_en" type="file" class="form-control" accept="image/*">
+                        @include('admin.partials.image-hint', ['key' => 'popup'])
+                        <div class="mt-2 text-xs text-slate-500" id="current_popup_ad_img_en_wrapper">
+                            รูปปัจจุบัน: <a id="current_popup_ad_img_en" href="#" target="_blank" class="text-primary underline">ดูรูปภาพ</a>
+                            <label class="ml-2"><input type="checkbox" name="remove_image_en" value="1" class="form-check-input"> ลบรูป EN</label>
                         </div>
                     </div>
                     <div class="col-span-12 sm:col-span-8">
@@ -145,6 +163,15 @@
             $('#edit_sort_order').val(popupAd.sort_order);
             $('#edit_is_active').prop('checked', popupAd.is_active == 1);
             $('#current_popup_ad_img').attr('href', popupAd.image_url);
+
+            // 🌟 รูปภาษาอังกฤษ
+            $('#edit-popup-ad-form input[name="remove_image_en"]').prop('checked', false);
+            if (popupAd.image_url_en) {
+                $('#current_popup_ad_img_en_wrapper').show();
+                $('#current_popup_ad_img_en').attr('href', popupAd.image_url_en);
+            } else {
+                $('#current_popup_ad_img_en_wrapper').hide();
+            }
         });
     });
 </script>

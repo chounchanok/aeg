@@ -415,11 +415,12 @@
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <a href="{{ $banner->link_url ?? '#' }}" target="_blank" rel="noopener">
                             <!-- 🌟 1. รูปสำหรับจอคอมพิวเตอร์ (ซ่อนในมือถือ) -->
-                            <img src="{{ $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            @php $isEnBanner = str_starts_with(app()->getLocale(), 'en'); @endphp
+                            <img src="{{ ($isEnBanner && $banner->image_url_en) ? $banner->image_url_en : $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
                             
                             <!-- 🌟 2. รูปสำหรับจอมือถือ (ซ่อนในจอคอม) -->
                             <!-- ใส่ ?? $banner->image_url เผื่อไว้ในกรณีที่บางแบนเนอร์ลืมอัปโหลดรูปมือถือ ระบบจะดึงรูปคอมมาโชว์แทนเพื่อไม่ให้ภาพพังครับ -->
-                            <img src="{{ $banner->image_url_m ?? $banner->image_url }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
+                            <img src="{{ ($isEnBanner && ($banner->image_url_m_en ?: $banner->image_url_en)) ? ($banner->image_url_m_en ?: $banner->image_url_en) : ($banner->image_url_m ?? $banner->image_url) }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
                             </a>
                         </div>
                     @endforeach
@@ -491,7 +492,8 @@
                     $quota = (($service->reference_type ?? 'product') === 'product' && $service->total_service_count > 0)
                              ? max(0, $service->total_service_count - $service->used_service_count) . ' ' . __('ครั้ง (จาก') . ' ' . $service->total_service_count . ' ' . __('ครั้ง)')
                              : '-';
-                    $detailUrl = route('repair-status', $service->id);
+                    $isLockerService = ($service->reference_type ?? 'product') === 'locker';
+                    $detailUrl = $isLockerService ? route('lockers') : route('repair-status', $service->id);
                 @endphp
 
                 <div class="col-lg-6">
@@ -506,6 +508,7 @@
                          data-end="{{ $endDate }}"
                          data-img="{{ $imgUrl }}"
                          data-quota="{{ $quota }}"
+                         data-action-label="{{ $isLockerService ? __('ดูข้อมูลตู้เซฟ') : __('ดูรายละเอียดฉบับเต็ม / ประวัติการซ่อม') }}"
                          data-url="{{ $detailUrl }}">
 
                         <img src="{{ $imgUrl }}" class="age-icon" alt="Service Icon" style="border-radius: 8px;">
@@ -638,6 +641,7 @@
                     document.getElementById('modExpEnd').textContent = button.getAttribute('data-end');
                     document.getElementById('modExpImg').src = button.getAttribute('data-img');
                     document.getElementById('modExpUrl').href = button.getAttribute('data-url');
+                    document.getElementById('modExpUrl').textContent = button.getAttribute('data-action-label');
 
                     // ซ่อน/โชว์ บรรทัดโควต้าถ้ามันไม่มีโควต้า
                     var quota = button.getAttribute('data-quota');
@@ -661,10 +665,10 @@
                 <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" aria-label="Close" style="top: 10px; right: 10px; z-index: 10; background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 8px; opacity: 1;"></button>
                 @if($popupAd->link_url)
                     <a href="{{ $popupAd->link_url }}" target="_blank" rel="noopener">
-                        <img src="{{ $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
+                        <img src="{{ (str_starts_with(app()->getLocale(), 'en') && !empty($popupAd->image_url_en)) ? $popupAd->image_url_en : $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
                     </a>
                 @else
-                    <img src="{{ $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
+                    <img src="{{ (str_starts_with(app()->getLocale(), 'en') && !empty($popupAd->image_url_en)) ? $popupAd->image_url_en : $popupAd->image_url }}" alt="{{ $popupAd->title ?? 'Popup Ad' }}" class="w-100" style="display: block;">
                 @endif
             </div>
         </div>

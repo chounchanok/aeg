@@ -1,0 +1,1223 @@
+{
+  "info": {
+    "name": "AEG — API Update 2026-10-09",
+    "description": "API ที่แก้ไข/เพิ่มตามคอมเมนต์ลูกค้า 10 ข้อ (9 ต.ค. 2569)\n\n1) ตั้งค่า login ในโฟลเดอร์ 0. Auth แล้วกด Send — token จะถูกเก็บอัตโนมัติ\n2) แก้ตัวแปร collection (locker_id, reward_id, reward_code_id, address_id ฯลฯ) ให้ตรงกับข้อมูลจริง\n\nรายละเอียด response ดู docs/mobile-api-update-2026-10-09.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "0. Auth",
+      "description": "",
+      "item": [
+        {
+          "name": "Login (เก็บ token อัตโนมัติ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "ล็อกอินแล้ว script จะเก็บ token ลงตัวแปร {{token}} ของ collection ให้อัตโนมัติ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"0812345678\",\n    \"password\": \"password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const t = j.token || j.access_token || (j.data && (j.data.token || j.data.access_token));",
+                  "if (t) { pm.collectionVariables.set('token', t); console.log('token saved'); }",
+                  "else { console.warn('ไม่พบ token ใน response — คัดลอกมาใส่ตัวแปร token เอง'); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. ตู้เซฟ — วันว่าง & ต่ออายุ",
+      "description": "",
+      "item": [
+        {
+          "name": "ปฏิทินวันว่างของตู้",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/smart-lockers/{{locker_id}}/availability?from=2026-10-09&to=2026-12-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "smart-lockers",
+                "{{locker_id}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-10-09"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "รายการตู้ (is_available ของวันนี้)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/smart-lockers?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "smart-lockers"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PRIME",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "บริการใกล้หมดอายุ (หน้าแรก) — มีตู้เซฟ + renewal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/main/expiring-services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "main",
+                "expiring-services"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "ต่ออายุสัญญาตู้เซฟ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/smart-lockers/bookings/{{booking_id}}/renew",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "smart-lockers",
+                "bookings",
+                "{{booking_id}}",
+                "renew"
+              ]
+            },
+            "description": "ได้ payment_url กลับไปเปิดใน WebView — booking_id เอาจาก expiring-services",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"duration_months\": 12,\n    \"payment_gateway\": \"bbl\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. คูปอง / ของรางวัลที่แลก",
+      "description": "",
+      "item": [
+        {
+          "name": "แลกของรางวัล (/rewards/redeem)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/redeem",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "redeem"
+              ]
+            },
+            "description": "ที่อยู่ไม่บังคับแล้ว ส่งตอนกด 'ใช้คูปอง' แทนได้ / Tier ไม่ถึง = 403 / address_id ไม่ใช่ของตัวเอง = 422 — response data.id = reward_code_id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reward_id\": {{reward_id}},\n    \"customer_name\": \"สมชาย ใจดี\",\n    \"customer_phone\": \"0812345678\",\n    \"address_id\": {{address_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "แลกของรางวัล (/ease-club/rewards/{id}/redeem)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/rewards/{{reward_id}}/redeem",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "rewards",
+                "{{reward_id}}",
+                "redeem"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"customer_name\": \"สมชาย ใจดี\",\n    \"customer_phone\": \"0812345678\",\n    \"address_id\": {{address_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ของรางวัลที่เคยแลกทั้งหมด",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes-all?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes-all"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active,shipping_confirm",
+                  "disabled": true
+                },
+                {
+                  "key": "reward_type",
+                  "value": "product",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "filter (ไม่บังคับ): status คั่นด้วย comma, reward_type = product|voucher|discount"
+          },
+          "response": []
+        },
+        {
+          "name": "คูปองส่วนลดที่ใช้ได้ (หน้า checkout)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "รายละเอียดคูปอง + timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes/{{reward_code_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes",
+                "{{reward_code_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "กดใช้คูปอง — สินค้า (ส่งที่อยู่จัดส่ง)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes/{{reward_code_id}}/use",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes",
+                "{{reward_code_id}}",
+                "use"
+              ]
+            },
+            "description": "สินค้า → status = shipping_confirm (ยืนยันการจัดส่ง) จากนั้นเปลี่ยนได้จากหลังบ้านเท่านั้น",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"address_id\": {{address_id}},\n    \"customer_name\": \"สมชาย ใจดี\",\n    \"customer_phone\": \"0812345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "กดใช้คูปอง — สินค้า (พิมพ์ที่อยู่เอง)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes/{{reward_code_id}}/use",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes",
+                "{{reward_code_id}}",
+                "use"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"address_text\": \"99/1 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110\",\n    \"customer_name\": \"สมชาย ใจดี\",\n    \"customer_phone\": \"0812345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "กดใช้คูปอง — วอยเชอร์/ส่วนลด",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/my-codes/{{reward_code_id}}/use",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "my-codes",
+                "{{reward_code_id}}",
+                "use"
+              ]
+            },
+            "description": "วอยเชอร์ต้องได้รับรหัสจากแอดมินก่อน (ไม่งั้น 400) → status = used",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout ด้วยโค้ดส่วนลด (reward_code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "checkout"
+              ]
+            },
+            "description": "reward_code รับได้ทั้ง RWD-xxxx และรหัสที่แอดมินส่งให้ (display_code) — ใช้ได้เฉพาะคูปองที่มีมูลค่าส่วนลด",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"cart_id\": [\n        1\n    ],\n    \"address_id\": {{address_id}},\n    \"payment_gateway\": \"bbl\",\n    \"reward_code\": \"RWD-XXXXXXXX\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. สิทธิพิเศษตาม Tier",
+      "description": "",
+      "item": [
+        {
+          "name": "EASE CLUB overview (tier_exclusive)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "overview"
+              ]
+            },
+            "description": "ส่ง token ถ้าล็อกอินอยู่ (ไม่ส่ง = guest เห็นเฉพาะ Tier ต่ำสุด)"
+          },
+          "response": []
+        },
+        {
+          "name": "รางวัลตามหมวด (ซ่อน Tier ไม่ถึง)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/categories/{{category_id}}/rewards",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "categories",
+                "{{category_id}}",
+                "rewards"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "รายละเอียดรางวัล (Tier ไม่ถึง = 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/rewards/{{reward_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "rewards",
+                "{{reward_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "รายละเอียดรางวัล (guest)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/rewards_guest/{{reward_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "rewards_guest",
+                "{{reward_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "สิทธิพิเศษแนะนำ (หน้าแรก)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/main/recommended-privileges",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "main",
+                "recommended-privileges"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "ข้อมูลสมาชิก (tier / แต้ม)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/user-info",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "user-info"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5-6. แจ้งเตือน (url / target / unread)",
+      "description": "",
+      "item": [
+        {
+          "name": "รายการแจ้งเตือน (มี url, target_type, target_id, action)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications?type=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "action: in_app = เปิดหน้าในแอปตาม target_type+target_id / url = เปิดลิงก์ / none = กดไม่ได้ — มี unread_count ระดับเดียวกับ data"
+          },
+          "response": []
+        },
+        {
+          "name": "จำนวนแจ้งเตือนที่ยังไม่อ่าน",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "อ่านแจ้งเตือน 1 รายการ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/{{notification_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            },
+            "description": "data.unread_count ใช้อัปเดต badge"
+          },
+          "response": []
+        },
+        {
+          "name": "อ่านทั้งหมด",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "ส่ง type=promotion เพื่ออ่านเฉพาะแท็บนั้นได้",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"all\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. ค้นหา (ชื่ออย่างเดียว)",
+      "description": "",
+      "item": [
+        {
+          "name": "Global search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/search?q=กล้อง",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "กล้อง"
+                }
+              ]
+            },
+            "description": "ส่ง token ได้ (ไม่บังคับ) เพื่อกรองของรางวัลตาม Tier",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. ที่อยู่",
+      "description": "",
+      "item": [
+        {
+          "name": "รายการที่อยู่",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "ลบที่อยู่ (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses/{{address_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses",
+                "{{address_id}}"
+              ]
+            },
+            "description": "mode: deleted = ลบจริง, archived = ซ่อน (เคยใช้กับออเดอร์)"
+          },
+          "response": []
+        },
+        {
+          "name": "ลบที่อยู่ (POST สำรอง)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/addresses/{{address_id}}/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "addresses",
+                "{{address_id}}",
+                "delete"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. แบนเนอร์ / ป๊อปอัพภาษาอังกฤษ",
+      "description": "",
+      "item": [
+        {
+          "name": "แบนเนอร์หน้าแรก (EN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/main/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "main",
+                "banners"
+              ]
+            },
+            "description": "ใช้ display_image_url / display_image_url_m (fallback รูปไทยอัตโนมัติ)",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "แบนเนอร์หน้าแรก (TH)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "th"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/main/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "main",
+                "banners"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ป๊อปอัพ (EN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/main/popup-ads?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "main",
+                "popup-ads"
+              ],
+              "query": [
+                {
+                  "key": "shown_ids",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "แบนเนอร์ EASE CLUB (EN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "banners"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "แบนเนอร์ EASE CLUB category (EN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/banners/category",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "banners",
+                "category"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. สินค้าจับกลุ่ม (Bundle)",
+      "description": "",
+      "item": [
+        {
+          "name": "เพิ่มสินค้าลงตะกร้า (ได้ bundle_suggestions กลับ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/cart/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "cart",
+                "add"
+              ]
+            },
+            "description": "response ใหม่: cart_count, applied_bundles, bundle_discount_amount, bundle_suggestions[].missing_products[]",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": {{product_id}},\n    \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ดูตะกร้า (applied_bundles / bundle_suggestions)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ecommerce/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ecommerce",
+                "cart"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://app.aeginc.co/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "locker_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "booking_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reward_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reward_code_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

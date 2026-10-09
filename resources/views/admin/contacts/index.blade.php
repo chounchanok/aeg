@@ -68,7 +68,15 @@
                                 </div>
                             </td>
                             <td>
-                                @if($type === 'sales')
+                                @if(in_array($type, ['sales', 'safe'], true) && isset($c->contact_type))
+                                    @php
+                                        $sourceLabels = ['sales' => 'ติดต่อฝ่ายขาย', 'insurance' => 'ประกันภัย', 'product' => 'สินค้า/บริการ (เว็บ)', 'safe_web' => 'ตู้เซฟนิรภัย (เว็บ)', 'safe_app' => 'ตู้เซฟนิรภัย (แอป)'];
+                                        $sourceClasses = ['sales' => 'bg-primary/10 text-primary', 'insurance' => 'bg-warning/10 text-warning', 'product' => 'bg-success/10 text-success', 'safe_web' => 'bg-slate-100 text-slate-600', 'safe_app' => 'bg-warning/10 text-warning'];
+                                        $sourceKey = $c->contact_source ?? $c->contact_type;
+                                    @endphp
+                                    <span class="px-1.5 py-0.5 rounded text-xs {{ $sourceClasses[$sourceKey] ?? 'bg-slate-100 text-slate-500' }}">{{ $sourceLabels[$sourceKey] ?? $sourceLabels[$c->contact_type] ?? $c->contact_type }}</span>
+                                @endif
+                                @if(($c->contact_type ?? $type) === 'sales')
                                     <div class="text-xs"><span class="text-slate-500">หัวข้อ:</span> <span class="font-medium">{{ $c->topic ?? '-' }}</span></div>
                                     @if($c->interest_label || $c->product_name)
                                         <div class="text-xs mt-0.5">{{ $c->interest_label ?? $c->product_name }}@if($c->quantity) × {{ $c->quantity }}@endif</div>
@@ -102,7 +110,7 @@
                                 @endif
                             </td>
                             <td class="table-report__action text-center">
-                                <a class="btn btn-sm btn-primary whitespace-nowrap" href="{{ route('admin.contacts.show', ['type' => $type, 'id' => $c->id]) }}">
+                                <a class="btn btn-sm btn-primary whitespace-nowrap" href="{{ route('admin.contacts.show', ['type' => $c->contact_type ?? $type, 'id' => $c->id]) }}">
                                     <i data-lucide="eye" class="w-4 h-4 mr-1"></i> ดำเนินการ
                                 </a>
                             </td>
