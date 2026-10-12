@@ -1220,7 +1220,9 @@ class EcommerceController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name_th,
+                    'name_en' => $product->name_en,
                     'description' => $product->description_th,
+                    'description_en' => $product->description_en,
                     // ตัดแยกบรรทัดรายละเอียดด้วย \n เพื่อให้ App นำไปทำ List Bullet ได้ง่าย
                     'details_list' => array_filter(array_map('trim', explode("\n", $product->description_th))),
                     'base_price' => (float)$product->price, // ราคาต่อ 1 เดือน ต่อ 1 อุปกรณ์
@@ -1233,21 +1235,25 @@ class EcommerceController extends Controller
             [
                 'id' => 1,
                 'label' => '1 ครั้ง (1 เดือน)',
+                'label_en' => '1 Time (1 Month)',
                 'multiplier' => 1 // ตัวคูณเดือน
             ],
             [
                 'id' => 3,
                 'label' => '3 เดือน',
+                'label_en' => '3 Months',
                 'multiplier' => 3
             ],
             [
                 'id' => 6,
                 'label' => '6 เดือน',
+                'label_en' => '6 Months',
                 'multiplier' => 6
             ],
             [
                 'id' => 12,
                 'label' => 'รายปี (12 เดือน)',
+                'label_en' => 'Annual (12 Months)',
                 'multiplier' => 12
             ]
         ];
