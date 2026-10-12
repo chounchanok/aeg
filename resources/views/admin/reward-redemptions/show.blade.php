@@ -14,6 +14,13 @@
         .rr-legend-dot { vertical-align: -1px; margin-right: 4px; }
         .is-customer { background: #f59e0b; }
         .is-admin { background: #1e40af; }
+        /* ฟอร์มหลายคอลัมน์ (คลาส sm:col-span-* ไม่มีใน CSS ที่ build ไว้) */
+        .rr-form-row { display: grid; gap: 12px; grid-template-columns: 1fr; }
+        .rr-span-all { grid-column: 1 / -1; }
+        @media (min-width: 768px) {
+            .rr-form-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .rr-form-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
     </style>
 @endsection
 
@@ -102,12 +109,12 @@
                     @if(in_array($code->status, ['active', 'shipping_confirm', 'processing'], true) && auth()->user()->can('customers.manage'))
                         <details class="mt-3">
                             <summary class="text-primary text-sm cursor-pointer">แก้ไขที่อยู่จัดส่ง (กรณีลูกค้าแจ้งเปลี่ยน)</summary>
-                            <form method="POST" action="{{ route('admin.reward-redemptions.address', $code->id) }}" class="grid grid-cols-12 gap-3 mt-3">
+                            <form method="POST" action="{{ route('admin.reward-redemptions.address', $code->id) }}" class="rr-form-row rr-form-row-2 mt-3">
                                 @csrf
-                                <input name="customer_name" class="form-control col-span-12 sm:col-span-6" placeholder="ชื่อผู้รับ" value="{{ $code->customer_name ?? ($address->contact_name ?? '') }}" required>
-                                <input name="customer_phone" class="form-control col-span-12 sm:col-span-6" placeholder="เบอร์โทร" value="{{ $code->customer_phone ?? ($address->contact_phone ?? '') }}" required>
-                                <textarea name="address_text" class="form-control col-span-12" rows="2" placeholder="ที่อยู่เต็ม" required>{{ $code->address_text ?? ($address ? $address->address_line . ' ต.' . $address->subdistrict . ' อ.' . $address->district . ' จ.' . $address->province . ' ' . $address->zipcode : '') }}</textarea>
-                                <div class="col-span-12 text-right"><button class="btn btn-outline-primary btn-sm">บันทึกที่อยู่</button></div>
+                                <input type="text" name="customer_name" class="form-control w-full" placeholder="ชื่อผู้รับ" value="{{ $code->customer_name ?? ($address->contact_name ?? '') }}" required>
+                                <input type="text" name="customer_phone" class="form-control w-full" placeholder="เบอร์โทร" value="{{ $code->customer_phone ?? ($address->contact_phone ?? '') }}" required>
+                                <textarea name="address_text" class="form-control w-full rr-span-all" rows="2" placeholder="ที่อยู่เต็ม" required>{{ $code->address_text ?? ($address ? $address->address_line . ' ต.' . $address->subdistrict . ' อ.' . $address->district . ' จ.' . $address->province . ' ' . $address->zipcode : '') }}</textarea>
+                                <div class="rr-span-all text-right"><button class="btn btn-outline-primary btn-sm">บันทึกที่อยู่</button></div>
                             </form>
                         </details>
                     @endif
@@ -119,26 +126,31 @@
                             <div class="text-sm text-slate-500">ต้องมีสิทธิ์ customers.manage จึงจะเปลี่ยนสถานะได้</div>
                         @elseif(!empty($nextStatuses))
                             {{-- 🌟 ลูกค้าระบุที่อยู่แล้ว = ยืนยันการจัดส่ง → แอดมินเลือกสถานะถัดไปได้เลย (ข้ามขั้นได้) --}}
-                            <form method="POST" action="{{ route('admin.reward-redemptions.status', $code->id) }}" class="grid grid-cols-12 gap-3">
+                            <form method="POST" action="{{ route('admin.reward-redemptions.status', $code->id) }}">
                                 @csrf
-                                <div class="col-span-12 sm:col-span-4">
-                                    <label class="form-label">เปลี่ยนสถานะเป็น</label>
-                                    <select name="status" id="rr-next-status" class="form-select" required>
-                                        @foreach($nextStatuses as $st)
-                                            <option value="{{ $st }}">{{ $statusLabels[$st] }}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="rr-form-row">
+                                    <div>
+                                        <label class="form-label">เปลี่ยนสถานะเป็น</label>
+                                        <select name="status" id="rr-next-status" class="form-select w-full" required>
+                                            @foreach($nextStatuses as $st)
+                                                <option value="{{ $st }}">{{ $statusLabels[$st] }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">บริษัทขนส่ง</label>
+                                        <input type="text" name="shipping_carrier" class="form-control w-full" placeholder="เช่น Kerry, Flash" value="{{ $code->shipping_carrier }}">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">เลขพัสดุ (Tracking) <span class="text-xs text-slate-500">— บังคับเมื่อเลือก "กำลังจัดส่ง"</span></label>
+                                        <input type="text" name="tracking_number" class="form-control w-full" placeholder="เลขพัสดุ" value="{{ $code->tracking_number }}">
+                                    </div>
                                 </div>
-                                <div class="col-span-12 sm:col-span-3">
-                                    <label class="form-label">บริษัทขนส่ง</label>
-                                    <input name="shipping_carrier" class="form-control" placeholder="เช่น Kerry, Flash" value="{{ $code->shipping_carrier }}">
+                                <div class="mt-3">
+                                    <label class="form-label">หมายเหตุ (ไม่บังคับ)</label>
+                                    <input type="text" name="note" class="form-control w-full" placeholder="เช่น แพ็กของแล้ว รอขนส่งมารับ">
                                 </div>
-                                <div class="col-span-12 sm:col-span-5">
-                                    <label class="form-label">เลขพัสดุ (Tracking) <span class="text-xs text-slate-500">— บังคับเมื่อเลือก "กำลังจัดส่ง"</span></label>
-                                    <input name="tracking_number" class="form-control" placeholder="เลขพัสดุ" value="{{ $code->tracking_number }}">
-                                </div>
-                                <input name="note" class="form-control col-span-12" placeholder="หมายเหตุ (ไม่บังคับ)">
-                                <div class="col-span-12 text-right">
+                                <div class="text-right mt-4">
                                     <button class="btn btn-primary" onclick="return confirm('ยืนยันเปลี่ยนสถานะเป็น &quot;' + document.getElementById('rr-next-status').selectedOptions[0].text + '&quot;? ลูกค้าจะได้รับแจ้งเตือน');">
                                         <i data-lucide="truck" class="w-4 h-4 mr-1"></i> บันทึกสถานะ
                                     </button>
@@ -165,7 +177,7 @@
                         <form method="POST" action="{{ route('admin.reward-redemptions.send-code', $code->id) }}">
                             @csrf
                             <label class="form-label">รหัสคูปอง / วอยเชอร์ <span class="text-danger">*</span></label>
-                            <input name="voucher_code" class="form-control font-mono" value="{{ old('voucher_code', $code->voucher_code) }}" required maxlength="255" placeholder="เช่น STARBUCKS-ABC123">
+                            <input type="text" name="voucher_code" class="form-control font-mono" value="{{ old('voucher_code', $code->voucher_code) }}" required maxlength="255" placeholder="เช่น STARBUCKS-ABC123">
                             <label class="form-label mt-3">วิธีใช้ / หมายเหตุที่จะแสดงบนแอป</label>
                             <textarea name="voucher_note" class="form-control" rows="3" placeholder="เช่น ใช้ได้ถึง 31/12/2026 แสดงรหัสที่หน้าร้าน">{{ old('voucher_note', $code->voucher_note) }}</textarea>
                             <div class="text-right mt-4">

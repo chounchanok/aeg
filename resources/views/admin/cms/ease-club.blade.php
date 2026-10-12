@@ -133,6 +133,16 @@
                         <label class="form-label">จำนวนสต๊อก (ชิ้น)</label>
                         <input name="stock_quantity" type="number" class="form-control" value="0" min="0">
                     </div>
+                    <div class="col-span-12 sm:col-span-4">
+                        <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
+                        <select name="minimum_tier_required" class="form-select">
+                            <option value="">แลกได้ทุกคน</option>
+                            <option value="Advance">Advance ขึ้นไป</option>
+                            <option value="Platinum">Platinum ขึ้นไป</option>
+                            <option value="Beyond">Beyond เท่านั้น</option>
+                        </select>
+                    </div>
+                    
                     {{-- 🌟 ประเภทของรางวัล: กำหนดว่าหลังลูกค้าแลกแล้วจะจัดการแบบไหน (หน้า "คูปอง/ของรางวัลที่ลูกค้าแลก") --}}
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ประเภทของรางวัล <span class="text-danger">*</span></label>
@@ -146,15 +156,7 @@
                         <label class="form-label">มูลค่าส่วนลด (บาท) — เฉพาะส่วนลดในแอป</label>
                         <input name="discount_amount" type="number" class="form-control" value="0" min="0" step="0.01">
                     </div>
-                    <div class="col-span-12 sm:col-span-4">
-                        <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
-                        <select name="minimum_tier_required" class="form-select">
-                            <option value="">แลกได้ทุกคน</option>
-                            <option value="Advance">Advance ขึ้นไป</option>
-                            <option value="Platinum">Platinum ขึ้นไป</option>
-                            <option value="Beyond">Beyond เท่านั้น</option>
-                        </select>
-                    </div>
+                    
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">รายละเอียด (TH)</label>
                         <textarea name="description_th" class="form-control" rows="3"></textarea>
@@ -224,6 +226,15 @@
                         <label class="form-label">จำนวนสต๊อก (ชิ้น)</label>
                         <input name="stock_quantity" id="edit_stock_quantity" type="number" class="form-control" min="0">
                     </div>
+                    <div class="col-span-12 sm:col-span-4">
+                        <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
+                        <select name="minimum_tier_required" id="edit_minimum_tier_required" class="form-select">
+                            <option value="">แลกได้ทุกคน</option>
+                            <option value="Advance">Advance ขึ้นไป</option>
+                            <option value="Platinum">Platinum ขึ้นไป</option>
+                            <option value="Beyond">Beyond เท่านั้น</option>
+                        </select>
+                    </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ประเภทของรางวัล <span class="text-danger">*</span></label>
                         <select name="reward_type" id="edit_reward_type" class="form-select" required>
@@ -235,15 +246,6 @@
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">มูลค่าส่วนลด (บาท) — เฉพาะส่วนลดในแอป</label>
                         <input name="discount_amount" id="edit_discount_amount" type="number" class="form-control" min="0" step="0.01">
-                    </div>
-                    <div class="col-span-12 sm:col-span-4">
-                        <label class="form-label">ระดับขั้นต่ำ (Tier)</label>
-                        <select name="minimum_tier_required" id="edit_minimum_tier_required" class="form-select">
-                            <option value="">แลกได้ทุกคน</option>
-                            <option value="Advance">Advance ขึ้นไป</option>
-                            <option value="Platinum">Platinum ขึ้นไป</option>
-                            <option value="Beyond">Beyond เท่านั้น</option>
-                        </select>
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">รายละเอียด (TH)</label>
