@@ -3,6 +3,21 @@
 @section('subhead')
     <title>จัดการของรางวัล EASE CLUB - AEG Admin</title>
     <link rel="stylesheet" type="text/css" href="{{ asset('dist/css/datatables.min.css') }}">
+    <style>
+        /* 🌟 ให้ตารางของรางวัลอยู่ในกรอบ box — ใช้ table-layout: fixed ตารางจะกว้างไม่เกิน 100% ของกรอบเสมอ
+           คอลัมน์ "ชื่อของรางวัล" ได้พื้นที่ที่เหลือทั้งหมด และตัดบรรทัดเองเมื่อชื่อยาว */
+        .reward-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; }
+        .reward-table-wrap .dataTables_wrapper { width: 100%; max-width: 100%; }
+        table.reward-table { table-layout: fixed; width: 100% !important; min-width: 860px; }
+        table.reward-table th, table.reward-table td { vertical-align: middle; word-break: break-word; }
+        table.reward-table th:nth-child(1) { width: 72px; }
+        table.reward-table th:nth-child(3) { width: 120px; }
+        table.reward-table th:nth-child(4) { width: 100px; }
+        table.reward-table th:nth-child(5) { width: 80px; }
+        table.reward-table th:nth-child(6) { width: 150px; }
+        table.reward-table th:nth-child(7) { width: 150px; }
+        table.reward-table td:nth-child(2) { white-space: normal; }
+    </style>
 @endsection
 
 @section('subcontent')
@@ -14,17 +29,18 @@
             </button>
         </div>
         
-        <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
-            <table class="table table-report -mt-2 w-full datatable">
+        <div class="intro-y col-span-12 box p-5 reward-table-wrap">
+            {{-- 🌟 ตารางอยู่ในกรอบ: ไม่ให้ล้นขวา (เดิม lg:overflow-visible + ชื่อไม่ตัดบรรทัด ทำให้ตารางกว้างเกินกรอบ) --}}
+            <table class="table table-report -mt-2 w-full datatable reward-table" style="width:100%">
                 <thead>
                     <tr>
-                        <th class="w-16">รูปภาพ</th>
+                        <th class="w-16 whitespace-nowrap">รูปภาพ</th>
                         <th>ชื่อของรางวัล</th>
                         <th>หมวดหมู่</th>
-                        <th class="text-center">แต้มที่ใช้</th>
-                        <th class="text-center">สต๊อก</th>
+                        <th class="text-center whitespace-nowrap">แต้มที่ใช้</th>
+                        <th class="text-center whitespace-nowrap">สต๊อก</th>
                         <th class="text-center">สิทธิ์การแลก (Tier)</th>
-                        <th class="text-center">จัดการ</th>
+                        <th class="text-center whitespace-nowrap">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,10 +52,10 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="font-medium whitespace-nowrap">{{ $rw->title_th }}</div>
-                                <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $rw->title_en ?? '-' }}</div>
+                                <div class="font-medium">{{ $rw->title_th }}</div>
+                                <div class="text-slate-500 text-xs mt-0.5">{{ $rw->title_en ?? '-' }}</div>
                             </td>
-                            <td><span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">{{ $rw->category_name }}</span></td>
+                            <td><span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded inline-block">{{ $rw->category_name }}</span></td>
                             <td class="text-center">
                                 <div class="text-primary font-medium">{{ number_format($rw->points_required) }} Pt</div>
                                 <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">
@@ -62,7 +78,7 @@
                                     <span class="text-success">แลกได้ทุกคน</span>
                                 @endif
                             </td>
-                            <td class="table-report__action w-56">
+                            <td class="table-report__action whitespace-nowrap">
                                 <div class="flex justify-center items-center">
                                     <button type="button" class="btn-edit-reward flex items-center mr-3 text-primary" data-tw-toggle="modal" data-tw-target="#edit-reward-modal" data-reward="{{ json_encode($rw) }}">
                                         <i data-lucide="edit" class="w-4 h-4 mr-1"></i> แก้ไข
@@ -270,7 +286,10 @@
 <script>
     $(document).ready(function() {
         $('.datatable').DataTable({
-            "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
+            "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
+            "autoWidth": false, // 🌟 ไม่ให้ DataTables ล็อกความกว้างคอลัมน์จนตารางเกินกรอบ
+            "order": [], // เรียงตามลำดับจาก server (ล่าสุดก่อน)
+            "columnDefs": [{ "orderable": false, "targets": [0, 6] }] // รูปภาพ / จัดการ ไม่ต้องเรียง
         });
 
         // ดึงข้อมูลเข้าฟอร์มตอนกดแก้ไข
