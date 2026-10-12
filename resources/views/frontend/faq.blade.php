@@ -306,8 +306,8 @@
                                 <div class="accordion-body">
                                     @foreach($topic->faqs as $faq)
                                         <div class="faq-qa-item">
-                                            <div class="faq-qa-question"><i class="fas fa-circle-question"></i> {{ $faq->question_th }}</div>
-                                            <div class="faq-qa-answer">{{ $faq->answer_th }}</div>
+                                            <div class="faq-qa-question"><i class="fas fa-circle-question"></i> {{ \App\Support\Loc::f($faq, 'question') }}</div>
+                                            <div class="faq-qa-answer">{{ \App\Support\Loc::f($faq, 'answer') }}</div>
                                         </div>
                                     @endforeach
                                 </div>

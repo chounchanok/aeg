@@ -41,6 +41,14 @@
                                         <div class="text-slate-600 mt-2 pl-2 border-l-2 border-slate-200">
                                             A: {!! nl2br(e($faq->answer_th)) !!}
                                         </div>
+                                        @if(!empty($faq->question_en) || !empty($faq->answer_en))
+                                            <div class="text-slate-500 text-sm mt-2 pl-2 border-l-2 border-primary/30">
+                                                <span class="font-medium">EN:</span> {{ $faq->question_en }}<br>
+                                                {!! nl2br(e($faq->answer_en)) !!}
+                                            </div>
+                                        @else
+                                            <div class="text-xs text-warning mt-2">ยังไม่มีภาษาอังกฤษ (หน้าเว็บ EN จะแสดงภาษาไทยแทน)</div>
+                                        @endif
                                     </div>
                                     <div class="ml-4 flex items-center flex-shrink-0">
                                         <button type="button" class="btn-edit-faq flex items-center mr-3 text-primary" data-tw-toggle="modal" data-tw-target="#edit-faq-modal" data-faq="{{ json_encode($faq) }}">
@@ -90,6 +98,14 @@
                         <label class="form-label font-medium">คำตอบ (Answer)</label>
                         <textarea name="answer_th" class="form-control" rows="4" required></textarea>
                     </div>
+                    <div class="col-span-12">
+                        <label class="form-label font-medium">คำถาม (English)</label>
+                        <input name="question_en" type="text" class="form-control">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label font-medium">คำตอบ (English)</label>
+                        <textarea name="answer_en" class="form-control" rows="4"></textarea>
+                    </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ลำดับการแสดงผล</label>
                         <input name="sort_order" type="number" class="form-control" value="0">
@@ -136,6 +152,14 @@
                     <div class="col-span-12">
                         <label class="form-label font-medium">คำตอบ (Answer)</label>
                         <textarea name="answer_th" id="edit_answer_th" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label font-medium">คำถาม (English)</label>
+                        <input name="question_en" id="edit_question_en" type="text" class="form-control">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label font-medium">คำตอบ (English)</label>
+                        <textarea name="answer_en" id="edit_answer_en" class="form-control" rows="4"></textarea>
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">ลำดับการแสดงผล</label>
@@ -192,6 +216,8 @@
                 document.getElementById('edit-faq-form').action = `{{ url('/admin/cms/faqs') }}/${faq.id}/update`;
                 document.getElementById('edit_question_th').value = faq.question_th;
                 document.getElementById('edit_answer_th').value = faq.answer_th;
+                document.getElementById('edit_question_en').value = faq.question_en || '';
+                document.getElementById('edit_answer_en').value = faq.answer_en || '';
                 document.getElementById('edit_sort_order').value = faq.sort_order;
                 document.getElementById('edit_is_active_faq').checked = (faq.is_active == 1);
 

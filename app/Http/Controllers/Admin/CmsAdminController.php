@@ -254,7 +254,7 @@ class CmsAdminController extends Controller
             ->orderBy('s.sort_order', 'asc')
             ->orderBy('f.sort_order', 'asc')
             ->select(
-                'f.id', 'f.question_th', 'f.answer_th', 'f.sort_order', 'f.is_active',
+                'f.*',
                 's.id as service_id', 's.name_th as service_name',
                 't.id as topic_id', 't.name_th as topic_name'
             )
@@ -286,6 +286,7 @@ class CmsAdminController extends Controller
             'service_id' => $request->service_id,
             'question_th' => $request->question_th,
             'answer_th' => $request->answer_th,
+        ] + $this->faqEnFields($request) + [
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
             'created_at' => now(),
@@ -307,12 +308,25 @@ class CmsAdminController extends Controller
             'service_id' => $request->service_id,
             'question_th' => $request->question_th,
             'answer_th' => $request->answer_th,
+        ] + $this->faqEnFields($request) + [
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->has('is_active'),
             'updated_at' => now()
         ]);
 
         return redirect()->back()->with('success', 'แก้ไขคำถาม FAQ เรียบร้อยแล้ว');
+    }
+
+    /** 🌟 คำถาม/คำตอบภาษาอังกฤษ (บันทึกเมื่อรัน migration เพิ่มคอลัมน์แล้วเท่านั้น) */
+    private function faqEnFields(Request $request): array
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('chatbot_service_faqs', 'question_en')) {
+            return [];
+        }
+        return [
+            'question_en' => $request->filled('question_en') ? trim($request->question_en) : null,
+            'answer_en' => $request->filled('answer_en') ? trim($request->answer_en) : null,
+        ];
     }
 
     public function deleteFaq($id)

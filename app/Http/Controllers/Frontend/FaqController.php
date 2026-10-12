@@ -25,7 +25,7 @@ class FaqController extends Controller
             ->where('s.is_active', true)
             ->orderBy('s.sort_order', 'asc')
             ->orderBy('f.sort_order', 'asc')
-            ->select('f.id', 'f.question_th', 'f.answer_th', 's.id as service_id', 's.name_th as service_name', 's.topic_id')
+            ->select('f.*', 's.id as service_id', 's.name_th as service_name', 's.topic_id')
             ->get()
             ->groupBy('topic_id');
 

@@ -238,6 +238,8 @@
     // 🌟 ชื่อหัวข้อ/บริการของแชทบอทตามภาษาหน้าเว็บ (EN ว่าง → ใช้ภาษาไทย)
     const uiIsEn = @json(\App\Support\Loc::isEn());
     function locName(o) { return o ? ((uiIsEn && o.name_en) ? o.name_en : (o.name_th || '')) : ''; }
+    function locQ(o) { return o ? ((uiIsEn && o.question_en) ? o.question_en : (o.question_th || '')) : ''; }
+    function locA(o) { return o ? ((uiIsEn && o.answer_en) ? o.answer_en : (o.answer_th || '')) : ''; }
     function locInfo(o) { return o ? ((uiIsEn && o.info_en) ? o.info_en : (o.info_th || '')) : ''; }
 
     function refCardHtml(ref) {
@@ -489,7 +491,7 @@
     function showFaqList() {
         renderUserHtml(@json(__('แก้ปัญหาเบื้องต้น (FAQ)')));
         const detail = botServiceDetailCache[currentServiceId];
-        const btns = (detail.faqs || []).map((f, idx) => `<button type="button" class="bot-btn" onclick="showFaqAnswer(${idx})">${escapeHtml(f.question_th)}</button>`).join('');
+        const btns = (detail.faqs || []).map((f, idx) => `<button type="button" class="bot-btn" onclick="showFaqAnswer(${idx})">${escapeHtml(locQ(f))}</button>`).join('');
         const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('กลับ'))}</button>`;
         renderBotHtml(`${@json(__('เลือกคำถามที่ตรงกับปัญหาของท่านได้เลยครับ'))}<div class="bot-buttons">${btns}${backBtn}</div>`);
     }
@@ -498,8 +500,8 @@
         const detail = botServiceDetailCache[currentServiceId];
         const faq = (detail.faqs || [])[idx];
         if (!faq) return;
-        renderUserHtml(escapeHtml(faq.question_th));
-        const answerHtml = escapeHtml(faq.answer_th).replace(/\n/g, '<br>');
+        renderUserHtml(escapeHtml(locQ(faq)));
+        const answerHtml = escapeHtml(locA(faq)).replace(/\n/g, '<br>');
         let btns = `<button type="button" class="bot-btn bot-btn-outline" onclick="showFaqList()">← ${@json(__('กลับรายการคำถาม'))}</button>`;
         if (detail.has_technician_contact) {
             btns += `<button type="button" class="bot-btn" onclick="showTechnicianContact()">${@json(__('ยังไม่หาย ติดต่อช่าง'))}</button>`;

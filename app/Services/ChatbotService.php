@@ -60,7 +60,7 @@ class ChatbotService
             ->where('service_id', $serviceId)
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get(['id', 'question_th', 'answer_th']);
+            ->get(); // 🌟 รวม question_en / answer_en (ถ้ามีคอลัมน์แล้ว) ให้หน้าเว็บ/แอปเลือกภาษาเอง
 
         return [
             'id' => $service->id,
@@ -116,14 +116,14 @@ class ChatbotService
         if ($topicId) {
             $faqQuery->where('s.topic_id', $topicId);
         }
-        foreach ($faqQuery->get(['f.question_th', 'f.answer_th']) as $row) {
+        foreach ($faqQuery->get(['f.*']) as $row) {
             $score = $this->scoreAgainstCandidates($userNorm, [$row->question_th]);
             if ($score > $bestScore) {
                 $bestScore = $score;
                 $best = [
                     'source' => 'service_faq',
-                    'question' => $row->question_th,
-                    'answer' => $row->answer_th,
+                    'question' => \App\Support\Loc::f($row, 'question'), // 🌟 ตามภาษาหน้าเว็บ (EN ว่าง → ไทย)
+                    'answer' => \App\Support\Loc::f($row, 'answer'),
                 ];
             }
         }
