@@ -413,6 +413,15 @@ class EcommerceController extends Controller
                     'bundle_id' => $bundle->id,
                     'name_th' => $bundle->name_th,
                     'name_en' => $bundle->name_en,
+                    // 🌟 สินค้าที่อยู่ในชุดนี้ — ให้แอปรู้ว่าต้องเลือกสินค้าตัวไหนบ้างตอน checkout จึงจะได้ราคาชุด
+                    'product_ids' => $bundle->items->pluck('product_id')->map(fn ($id) => (int) $id)->values()->all(),
+                    'items' => $bundle->items->map(fn ($i) => [
+                        'product_id' => (int) $i->product_id,
+                        'name_th' => $i->name_th,
+                        'name_en' => $i->name_en,
+                        'quantity' => (int) $i->required_qty,
+                        'price' => (float) $i->price,
+                    ])->values()->all(),
                     'original_total' => (float) $bundle->original_total,
                     'bundle_price' => (float) $bundle->bundle_price,
                     'savings' => (float) $bundle->savings,
@@ -543,6 +552,21 @@ class EcommerceController extends Controller
         $bundleMatch = $this->calculateBundleMatches($bundleQtyMap);
         $bundleDiscount = $bundleMatch['total_discount'];
         $bundleSuggestions = $this->calculateBundleSuggestions($bundleQtyMap, $bundleMatch);
+
+        // 🌟 ผูก cart_item_id ให้แต่ละชุดที่ได้ส่วนลด (checkout ส่งเป็น cart_id[]) และบอกในแต่ละรายการว่าอยู่ในชุดไหน
+        // นับเฉพาะรายการที่ไม่ใช่แพ็กเกจรายเดือน (duration_months) เหมือนตอนคำนวณบันเดิล
+        $bundleItems = $items->filter(fn ($i) => empty($i->duration_months));
+        foreach ($bundleMatch['applied'] as &$appliedBundle) {
+            $appliedBundle['cart_item_ids'] = $bundleItems->whereIn('product_id', $appliedBundle['product_ids'])
+                ->pluck('cart_item_id')->map(fn ($id) => (int) $id)->values()->all();
+        }
+        unset($appliedBundle);
+        $items = $items->map(function ($item) use ($bundleMatch) {
+            $item->bundle_ids = empty($item->duration_months)
+                ? collect($bundleMatch['applied'])->filter(fn ($b) => in_array((int) $item->product_id, $b['product_ids'], true))->pluck('bundle_id')->values()->all()
+                : [];
+            return $item;
+        });
 
         // 3. คำนวณยอดสุทธิ (Net Total) ป้องกันยอดติดลบ — รวมส่วนลด reward + bundle เข้าด้วยกัน
         $netTotal = max(0, $subtotal - $discountAmount - $bundleDiscount);

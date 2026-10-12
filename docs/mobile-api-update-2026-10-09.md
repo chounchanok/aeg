@@ -310,7 +310,11 @@ Response เหมือนเดิม ไม่ต้องแก้แอป
 ```
 
 ### `GET /ecommerce/cart` (auth)
-- `summary.applied_bundles[]`: `{ bundle_id, name_th, name_en, original_total, bundle_price, savings }` — ชุดที่ครบแล้วและได้ส่วนลด
+- `summary.applied_bundles[]`: `{ bundle_id, name_th, name_en, product_ids, items, cart_item_ids, original_total, bundle_price, savings }` — ชุดที่ครบแล้วและได้ส่วนลด
+  - `product_ids`: สินค้าที่อยู่ในชุด เช่น `[11, 16]`
+  - `items`: `[{ product_id, name_th, name_en, quantity, price }]` จำนวนที่ต้องมีต่อชุด
+  - `cart_item_ids`: รายการในตะกร้าที่ตรงกับชุดนี้ — ตอน checkout ต้องเลือก (`cart_id[]`) ให้ครบทุกตัวจึงจะได้ราคาชุด
+- `items[].bundle_ids`: รายการในตะกร้าแต่ละตัวอยู่ในชุดไหน (`[]` = ไม่อยู่ในชุด) ใช้แสดง badge "ราคาชุด" ข้างสินค้า
 - `summary.bundle_discount_amount`: ส่วนลดรวมจากบันเดิล (รวมอยู่ใน `summary.net_total` แล้ว)
 - `bundle_suggestions[]`: เหมือนด้านบน (ตอนนี้ `missing_products` มี `image_url` ด้วย)
 
