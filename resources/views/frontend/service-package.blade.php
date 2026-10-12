@@ -319,7 +319,7 @@
                     <option value="" selected>{{ __('- เลือกบริการ -') }}</option>
                     @if(!empty($products))
                         @foreach($products as $product)
-                            <option value="service-{{ $product->id }}">{{ $product->name_th }}</option>
+                            <option value="service-{{ $product->id }}">{{ \App\Support\Loc::f($product, 'name') }}</option>
                         @endforeach
                     @endif
                 </select>
@@ -333,7 +333,7 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-6">
                                     <div class="detail-image-box">
-                                    <img src="{{ $product->image_url }}" alt="{{ $product->name_th }}"
+                                    <img src="{{ $product->image_url }}" alt="{{ \App\Support\Loc::f($product, 'name') }}"
                                         onerror="this.src='https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80'">
                                     </div>
                                 </div>
@@ -341,7 +341,7 @@
                                     <div class="detail-info-text">
                                         <h2 class="info-header">{{ __('รายละเอียด') }}</h2>
                                         <ul class="info-list">
-                                            @foreach(explode("\n", $product->description_th) as $point)
+                                            @foreach(explode("\n", (string) \App\Support\Loc::f($product, 'description')) as $point)
                                                 <li>{{ trim($point) }}</li>
                                             @endforeach
                                         </ul>

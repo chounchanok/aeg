@@ -235,6 +235,11 @@
     }
 
     // 🌟 การ์ดสินค้า/บริการ/ของรางวัลที่แนบมากับข้อความ (ส่งจากแอปด้วย ref_type + ref_id)
+    // 🌟 ชื่อหัวข้อ/บริการของแชทบอทตามภาษาหน้าเว็บ (EN ว่าง → ใช้ภาษาไทย)
+    const uiIsEn = @json(\App\Support\Loc::isEn());
+    function locName(o) { return o ? ((uiIsEn && o.name_en) ? o.name_en : (o.name_th || '')) : ''; }
+    function locInfo(o) { return o ? ((uiIsEn && o.info_en) ? o.info_en : (o.info_th || '')) : ''; }
+
     function refCardHtml(ref) {
         if (!ref) return '';
         const isEn = @json(app()->getLocale() === 'en');
@@ -407,13 +412,13 @@
     }
 
     function renderMainMenu() {
-        const btns = botTopicsCache.map(t => `<button type="button" class="bot-btn" onclick="selectTopic(${t.id})">${escapeHtml(t.name_th)}</button>`).join('');
+        const btns = botTopicsCache.map(t => `<button type="button" class="bot-btn" onclick="selectTopic(${t.id})">${escapeHtml(locName(t))}</button>`).join('');
         renderBotHtml(`${@json(__('เลือกหัวข้อที่ต้องการได้เลยครับ'))}<div class="bot-buttons">${btns}</div>`);
     }
 
     async function selectTopic(topicId) {
         const t = findTopic(topicId);
-        renderUserHtml(escapeHtml(t ? t.name_th : ''));
+        renderUserHtml(escapeHtml(t ? locName(t) : ''));
         currentTopicId = topicId;
         currentServiceId = null;
 
@@ -427,14 +432,14 @@
     function renderTopicMenu(topicId) {
         const t = findTopic(topicId);
         const services = botServicesCache[topicId] || [];
-        const btns = services.map(s => `<button type="button" class="bot-btn" onclick="selectService(${s.id})">${escapeHtml(s.name_th)}</button>`).join('');
+        const btns = services.map(s => `<button type="button" class="bot-btn" onclick="selectService(${s.id})">${escapeHtml(locName(s))}</button>`).join('');
         const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goMainMenu()">← ${@json(__('กลับเมนูหลัก'))}</button>`;
-        renderBotHtml(`${@json(__('หัวข้อ'))} "${escapeHtml(t ? t.name_th : '')}" ${@json(__('มีบริการดังนี้ครับ เลือกได้เลย'))}<div class="bot-buttons">${btns}${backBtn}</div>`);
+        renderBotHtml(`${@json(__('หัวข้อ'))} "${escapeHtml(t ? locName(t) : '')}" ${@json(__('มีบริการดังนี้ครับ เลือกได้เลย'))}<div class="bot-buttons">${btns}${backBtn}</div>`);
     }
 
     async function selectService(serviceId) {
         const s = findService(currentTopicId, serviceId);
-        renderUserHtml(escapeHtml(s ? s.name_th : ''));
+        renderUserHtml(escapeHtml(s ? locName(s) : ''));
         currentServiceId = serviceId;
 
         if (!botServiceDetailCache[serviceId]) {
@@ -470,7 +475,7 @@
     function showServiceInfo() {
         renderUserHtml(@json(__('ข้อมูลบริการ')));
         const detail = botServiceDetailCache[currentServiceId];
-        let html = (detail.info_th ? escapeHtml(detail.info_th).replace(/\n/g, '<br>') : @json(__('ยังไม่มีข้อมูลบริการนี้')));
+        let html = (locInfo(detail) ? escapeHtml(locInfo(detail)).replace(/\n/g, '<br>') : @json(__('ยังไม่มีข้อมูลบริการนี้')));
         if (detail.extra_info) {
             Object.keys(detail.extra_info).forEach((key) => {
                 html += `<div class="bot-subhead">${escapeHtml(key)}</div>`;

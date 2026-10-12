@@ -34,7 +34,7 @@ class CartController extends Controller
                 )
                 ->get()
                 ->map(function ($item) {
-                    $item->name = $item->name_th ?? $item->name_en ?? __('ไม่มีชื่อสินค้า');
+                    $item->name = \App\Support\Loc::f($item, 'name', __('ไม่มีชื่อสินค้า'));
                     return $item;
                 });
 

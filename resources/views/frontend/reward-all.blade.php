@@ -338,7 +338,7 @@
                                         <img src="{{ $category->icon_url ?? asset('assets/image/w-default.webp') }}" class="icon-default">
                                         <img src="{{ $category->icon_url_active ?? asset('assets/image/gd-default.webp') }}" class="icon-active">
                                     </div>
-                                    <span>{{ $category->name }}</span>
+                                    <span>{{ \App\Support\Loc::f($category, 'name') }}</span>
                                 </button>
                             </li>
                         @endforeach
@@ -360,8 +360,8 @@
                                         <a href="{{ route('rewards-detail', $reward->id ?? 0) }}" style="text-decoration: none !important;">
                                             <div class="reward-img-container"><img src="{{ $reward->image_url ?? asset('assets/image/asd.webp') }}"></div>
                                             <div class="reward-body">
-                                                <h3 class="reward-title">{{ $reward->title_th ?? 'Reward Title' }}</h3>
-                                                <p class="reward-desc">{{ $reward->description_th ?? 'Reward Description' }}</p>
+                                                <h3 class="reward-title">{{ \App\Support\Loc::f($reward, 'title', 'Reward Title') }}</h3>
+                                                <p class="reward-desc">{{ \App\Support\Loc::f($reward, 'description', '') }}</p>
                                                 <div class="reward-points-wrapper"><img src="{{ asset('assets/image/objects.webp') }}" class="coin-icon"><span class="points-text">{{ $reward->points_required ?? 0 }}</span></div>
                                                 <div class="dashed-line"></div>
                                                 <div class="reward-expiry-wrapper">

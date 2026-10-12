@@ -299,7 +299,7 @@
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#faqTopic{{ $topic->id }}">
                                     @if($topic->icon)<i class="{{ $topic->icon }} me-2"></i>@endif
-                                    {{ $topic->name_th }}@if($topic->name_en) ({{ $topic->name_en }})@endif
+                                    @if(\App\Support\Loc::isEn()){{ \App\Support\Loc::f($topic, 'name') }}@else{{ $topic->name_th }}@if($topic->name_en) ({{ $topic->name_en }})@endif @endif
                                 </button>
                             </h2>
                             <div id="faqTopic{{ $topic->id }}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion{{ $topic->id }}">

@@ -38,7 +38,11 @@ class HomeController extends Controller
                 ->where('warranty_expire_date', '>=', Carbon::now()) // ยังไม่หมดอายุ
                 // ->where('warranty_expire_date', '<=', Carbon::now()->addDays(90)) // (เปิดคอมเมนต์บรรทัดนี้ได้ ถ้าอยากให้โชว์เฉพาะตัวที่จะหมดใน 90 วัน)
                 ->orderBy('warranty_expire_date', 'asc') // เอาตัวที่ใกล้หมดอายุสุดขึ้นก่อน
-                ->get();
+                ->get()
+                ->map(function ($pkg) {
+                    $pkg->product_name = \App\Support\Loc::customerProductName($pkg, $pkg->product_name); // 🌟 ชื่อ EN จากตารางหลัก
+                    return $pkg;
+                });
 
             $expiringLockers = DB::table('locker_bookings as b')
                 ->join('smart_lockers as l', 'b.smart_locker_id', '=', 'l.id')
@@ -49,12 +53,12 @@ class HomeController extends Controller
                 ->orderBy('b.end_date')
                 ->get([
                     'b.id', 'b.smart_locker_id', 'b.start_date', 'b.end_date', 'b.status',
-                    'l.locker_number', 'l.title_th', 'l.image_url',
+                    'l.locker_number', 'l.title_th', 'l.title_en', 'l.image_url',
                 ])
                 ->map(function ($booking) {
                     return (object) [
                         'id' => $booking->id,
-                        'product_name' => __('ตู้เซฟนิรภัย') . ' ' . $booking->locker_number . ' · ' . $booking->title_th,
+                        'product_name' => __('ตู้เซฟนิรภัย') . ' ' . $booking->locker_number . ' · ' . \App\Support\Loc::f($booking, 'title', ''),
                         'serial_number' => $booking->locker_number,
                         'created_at' => $booking->start_date,
                         'warranty_expire_date' => $booking->end_date,

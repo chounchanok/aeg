@@ -28,8 +28,8 @@ class PackageController extends Controller
             return [
                 'id' => $p->id,
                 // ปรับให้ดึงจากคอลัมน์ที่มีอยู่จริงในฐานข้อมูล
-                'name' => $p->name ?? '',
-                'description' => $p->description ?? '',
+                'name' => \App\Support\Loc::f($p, 'name', ''),
+                'description' => \App\Support\Loc::f($p, 'description', ''),
                 'price' => $p->price ?? 0,
                 'image_url' => $p->image_url ?? null,
             ];
@@ -64,7 +64,7 @@ class PackageController extends Controller
             // จัดโครงสร้างส่งให้หน้า Blade ทำงานง่ายๆ
             $formattedData = (object)[
                 'id' => $pkg->id,
-                'product_name' => $pkg->product_name ?? __('ไม่ระบุชื่อ'),
+                'product_name' => \App\Support\Loc::customerProductName($pkg, __('ไม่ระบุชื่อ')),
                 'serial_number' => $pkg->serial_number ?? '-',
                 'image_url' => $pkg->image_url ?? asset('assets/image/img-zo1.webp'),
                 'warranty_expire_date' => $pkg->warranty_expire_date,
@@ -184,12 +184,14 @@ class PackageController extends Controller
 
         if (($package->reference_type ?? 'product') === 'product') {
             $master = DB::table('products')->where('id', $package->reference_id)->first();
-            $description = $master->description_th ?? '';
+            $description = \App\Support\Loc::f($master, 'description', '');
         } elseif ($package->reference_type === 'insurance') {
             $master = DB::table('insurances')->where('id', $package->reference_id)->first();
-            $description = $master->description_th ?? '';
+            $description = \App\Support\Loc::f($master, 'description', '');
             $coverage = $master->insurance_coverage ?? '';
         }
+
+        $package->product_name = \App\Support\Loc::customerProductName($package, $package->product_name); // 🌟 ชื่อ EN จากตารางหลัก
 
         return view('frontend.package-detail', compact('package', 'repairs', 'description', 'coverage'));
     }

@@ -315,7 +315,7 @@
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
                 <!-- 🌟 เปลี่ยนจาก $insurance เป็น $locker -->
-                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ $locker->title_th ?? $locker->locker_number }}</p>
+                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ \App\Support\Loc::f($locker, 'title', $locker->locker_number) }}</p>
 
                 <form id="contactForm">
                     @csrf

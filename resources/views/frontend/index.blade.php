@@ -539,9 +539,9 @@
                 <div class="col-6 col-md-3">
                     <a href="{{ route('product-detail', $service->id) }}" class="text-decoration-none d-block">
                         <div class="rec-card shadow-sm">
-                            <img src="{{ $service->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ $service->name ?? 'Service' }}">
+                            <img src="{{ $service->image_url ?? asset('assets/image/img-zo1.webp') }}" alt="{{ \App\Support\Loc::f($service, 'name', 'Service') }}">
                             <div class="rec-overlay">
-                                <h5 class="fw-bold text-white">{{ $service->name_th ?? __('ไม่มีชื่อ') }}</h5>
+                                <h5 class="fw-bold text-white">{{ \App\Support\Loc::f($service, 'name', __('ไม่มีชื่อ')) }}</h5>
                             </div>
                         </div>
                     </a>
@@ -568,9 +568,9 @@
                     <div class="col-md-4">
                         <a href="{{ route('rewards-detail', $privilege->id ?? 0) }}" class="text-decoration-none d-block h-100">
                             <div class="privilege-card shadow-sm">
-                                <img src="{{ $privilege->image_url ?? asset('assets/image/rew3.webp') }}" alt="{{ $privilege->title ?? 'Privilege' }}">
+                                <img src="{{ $privilege->image_url ?? asset('assets/image/rew3.webp') }}" alt="{{ \App\Support\Loc::f($privilege, 'title', 'Privilege') }}">
                                 <div class="service-card-body">
-                                    <h5 class="fw-bold text-dark">{{ $privilege->title_th ?? __('ไม่มีชื่อ') }}</h5>
+                                    <h5 class="fw-bold text-dark">{{ \App\Support\Loc::f($privilege, 'title', __('ไม่มีชื่อ')) }}</h5>
                                     <div class="text-danger fw-bold mt-2">
                                         {{ __('ใช้') }} {{ $privilege->points_required ?? 0 }} {{ __('คะแนน') }}
                                     </div>

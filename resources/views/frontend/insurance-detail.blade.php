@@ -288,15 +288,15 @@
         <div class="container">
             <div class="insurance-detail-card">
                 <img src="{{ $insurance->image_inside_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}"
-                    alt="{{ $insurance->title_th }}" class="banner-image">
+                    alt="{{ \App\Support\Loc::f($insurance, 'title') }}" class="banner-image">
 
                 <div class="detail-body">
                     <h1 class="detail-header-title">
-                        {{ $insurance->title_th }}
+                        {{ \App\Support\Loc::f($insurance, 'title') }}
                     </h1>
 
                     <div class="detail-description mb-5">
-                        {!! $insurance->description_th !!}
+                        {!! \App\Support\Loc::f($insurance, 'description') !!}
                     </div>
 
                     <a href="{{ route('insurance-contact', $insurance->id) }}" class="btn-consult">{{ __('ปรึกษาผู้เชี่ยวชาญ') }}</a>

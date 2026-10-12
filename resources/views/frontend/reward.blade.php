@@ -380,11 +380,11 @@
                 <div class="container-950">
                     <div class="hero-inner">
                         <div class="reward-img-frame">
-                            <img src="{{ $rewards->image_url }}" alt="{{ $rewards->title }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
+                            <img src="{{ $rewards->image_url }}" alt="{{ \App\Support\Loc::f($rewards, 'title') }}" onerror="this.src='https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=800&q=80'">
                         </div>
                         <div class="hero-text-side">
-                            <h1>{{ $rewards->title_th }}</h1>
-                            <h2>{!! nl2br(e($rewards->description_th)) !!}</h2>
+                            <h1>{{ \App\Support\Loc::f($rewards, 'title') }}</h1>
+                            <h2>{!! nl2br(e(\App\Support\Loc::f($rewards, 'description'))) !!}</h2>
 
                             <button type="button" class="btn-redeem-pill" data-bs-toggle="modal" data-bs-target="#redeemModal">
                                 <span class="lbl">{{ __('รับสิทธิ์') }}</span>
@@ -400,7 +400,7 @@
             <!-- Detailed Info -->
             <section class="reward-details-area mb-5">
                 <div class="container-950">
-                    <h3 class="main-product-title">{{ $rewards->title_th }}</h3>
+                    <h3 class="main-product-title">{{ \App\Support\Loc::f($rewards, 'title') }}</h3>
 
                     <h4 class="section-sub-title">{{ __('รายละเอียดการแลกรางวัล') }}</h4>
                     <p class="section-desc-text">{{ __('*แลกใช้เพียง') }} {{ number_format($rewards->points_required) }} {{ __('พอยท์ โดยแต้มจะถูกหักทันทีหลังการยืนยันผ่านแอปพลิเคชัน') }}</p>

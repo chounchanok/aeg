@@ -515,7 +515,9 @@
                                     <img src="{{ $icon }}" alt="{{ $catNameEn }}">
                                 </div>
                                 <div class="category-text-en">{{ $catNameEn }}</div>
+                                @unless(\App\Support\Loc::isEn())
                                 <div class="category-text-th">{{ $catNameTh }}</div>
+                                @endunless
                             </div>
                         </a>
                     @endforeach

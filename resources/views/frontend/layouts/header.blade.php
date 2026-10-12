@@ -331,7 +331,7 @@ function performHeaderSearch() {
     box.style.display = 'block';
     box.innerHTML = '<div class="hs-loading">' + @json(__('กำลังค้นหา...')) + '</div>';
 
-    fetch('/api/search?q=' + encodeURIComponent(keyword))
+    fetch('/api/search?q=' + encodeURIComponent(keyword), { headers: { 'Accept': 'application/json', 'Accept-Language': @json(\App\Support\Loc::isEn() ? 'en' : 'th') } }) // 🌟 ผลค้นหาตามภาษาหน้าเว็บ
         .then((res) => res.json())
         .then((json) => renderHeaderSearchResults(json.data || {}))
         .catch(() => { box.innerHTML = '<div class="hs-empty">' + @json(__('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')) + '</div>'; });

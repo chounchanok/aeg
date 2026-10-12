@@ -314,7 +314,7 @@
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
-                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ $product->name_th }}</p>
+                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ \App\Support\Loc::f($product, 'name') }}</p>
 
                 <form id="contactForm">
                     @csrf <!-- 🌟 ขาดไม่ได้สำหรับ Laravel -->

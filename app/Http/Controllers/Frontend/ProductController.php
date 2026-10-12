@@ -38,8 +38,9 @@ class ProductController extends Controller
 
         // 4. แปลงภาษา
         $products->getCollection()->transform(function ($p) {
-            $p->name = $p->name_th ?? $p->name_en ?? __('ไม่มีชื่อสินค้า');
-            $p->description = $p->description_th ?? $p->description_en ?? '';
+            // 🌟 เลือกภาษาตามหน้าเว็บ (EN ว่าง → ใช้ภาษาไทย)
+            $p->name = \App\Support\Loc::f($p, 'name', __('ไม่มีชื่อสินค้า'));
+            $p->description = \App\Support\Loc::f($p, 'description', '');
             return $p;
         });
 
@@ -59,8 +60,8 @@ class ProductController extends Controller
         }
 
         // จัดการเรื่องชื่อคอลัมน์ภาษา ให้ตรงกับหน้า Blade
-        $product->name = $product->name_th ?? $product->name_en ?? __('ไม่มีชื่อสินค้า');
-        $product->description = $product->description_th ?? $product->description_en ?? __('ยังไม่มีรายละเอียดสินค้า');
+        $product->name = \App\Support\Loc::f($product, 'name', __('ไม่มีชื่อสินค้า'));
+        $product->description = \App\Support\Loc::f($product, 'description', __('ยังไม่มีรายละเอียดสินค้า'));
 
         return view('frontend.product-detail', compact('product'));
     }

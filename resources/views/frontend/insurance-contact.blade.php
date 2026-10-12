@@ -314,7 +314,7 @@
         <div class="container">
             <div class="contact-card">
                 <h1 class="contact-title">Contact AEG Specialist</h1>
-                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ $insurance->title_th }}</p>
+                <p class="text-center mb-4 text-muted">{{ __('เรื่อง:') }} {{ \App\Support\Loc::f($insurance, 'title') }}</p>
 
                 <form id="contactForm">
                     @csrf

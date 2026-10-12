@@ -289,10 +289,10 @@
                 <div class="insurance-card">
                     <div class="insurance-image-box">
                         <img src="{{ $item->image_url ?? 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80' }}"
-                            alt="{{ $item->title_th }}">
+                            alt="{{ \App\Support\Loc::f($item, 'title') }}">
                     </div>
                     <div class="insurance-content">
-                        <h2 class="insurance-title">{{ $item->title_th }}</h2>
+                        <h2 class="insurance-title">{{ \App\Support\Loc::f($item, 'title') }}</h2>
                         <a href="{{ route('insurance-detail', $item->id) }}" class="btn-details">{{ __('ดูรายละเอียด') }}</a>
                     </div>
                 </div>
