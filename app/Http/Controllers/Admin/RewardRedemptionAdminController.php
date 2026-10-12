@@ -95,7 +95,7 @@ class RewardRedemptionAdminController extends Controller
             'address' => $address,
             'logs' => $logs,
             'type' => $code->reward_type ?: RewardService::TYPE_PRODUCT,
-            'nextStatuses' => RewardService::PRODUCT_ADMIN_TRANSITIONS[$code->status] ?? [],
+            'nextStatuses' => RewardService::adminNextStatuses($code),
             'first_level_active_index' => 'reward-redemptions',
             'second_level_active_index' => '',
             'third_level_active_index' => '',
@@ -110,7 +110,6 @@ class RewardRedemptionAdminController extends Controller
             'shipping_carrier' => 'nullable|string|max:100',
             'tracking_number' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:1000',
-            'address_checked' => 'nullable|boolean',
         ]);
 
         $code = DB::table('customer_reward_codes as c')->join('rewards as r', 'c.reward_id', '=', 'r.id')
@@ -120,11 +119,9 @@ class RewardRedemptionAdminController extends Controller
         if (($code->reward_type ?: 'product') !== RewardService::TYPE_PRODUCT) {
             return back()->with('error', 'เปลี่ยนสถานะการจัดส่งได้เฉพาะของรางวัลประเภทสินค้า');
         }
-        if (!in_array($data['status'], RewardService::PRODUCT_ADMIN_TRANSITIONS[$code->status] ?? [], true)) {
+        // 🌟 เปลี่ยนสถานะได้เลย (ข้ามขั้นไปข้างหน้าได้) — ไม่ต้องติ๊กยืนยันที่อยู่แล้ว
+        if (!in_array($data['status'], RewardService::adminNextStatuses($code), true)) {
             return back()->with('error', 'ไม่สามารถเปลี่ยนจากสถานะ "' . (RewardService::STATUS_LABELS[$code->status] ?? $code->status) . '" เป็น "' . RewardService::STATUS_LABELS[$data['status']] . '" ได้');
-        }
-        if ($code->status === 'shipping_confirm' && !$request->boolean('address_checked')) {
-            return back()->with('error', 'กรุณาตรวจสอบที่อยู่จัดส่ง แล้วติ๊ก "ตรวจสอบที่อยู่แล้ว" ก่อนยืนยัน');
         }
         if ($data['status'] === 'shipping' && empty($data['tracking_number']) && empty($code->tracking_number)) {
             return back()->with('error', 'กรุณากรอกเลขพัสดุ (Tracking) ก่อนเปลี่ยนเป็น "กำลังจัดส่ง"');

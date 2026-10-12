@@ -85,7 +85,7 @@ API ไม่เปลี่ยนจากเอกสาร `docs/smart-locker
 
 | ค่า | ความหมาย | หลังลูกค้ากด "ใช้คูปอง" |
 |-----|----------|--------------------------|
-| `product` | สินค้า ต้องจัดส่ง | สถานะเป็น `shipping_confirm` (ยืนยันการจัดส่ง) จากนั้นหลังบ้านเปลี่ยนเป็น `processing` → `shipping` → `delivered` |
+| `product` | สินค้า ต้องจัดส่ง | **(12 ต.ค.)** ถ้าส่งที่อยู่ครบตอนแลก สถานะเป็น `shipping_confirm` (ยืนยันการจัดส่ง) ทันที ไม่ต้องกดใช้ซ้ำ จากนั้นหลังบ้านเปลี่ยนเป็น `processing` / `shipping` / `delivered` (ข้ามขั้นได้) |
 | `voucher` | วอยเชอร์ แอดมินกรอกรหัสส่งให้ | ใช้ได้เมื่อแอดมินส่งรหัสแล้ว (`can_use = true`) กดแล้วเป็น `used` |
 | `discount` | ส่วนลดในแอป ใช้ตอน checkout | ส่ง `display_code` ใน `reward_code` ตอน checkout หรือกดใช้เองแล้วเป็น `used` |
 
@@ -107,6 +107,7 @@ Body เหมือนเดิม (`reward_id` สำหรับเส้น�
 { "reward_id": 5, "customer_name": "สมชาย", "customer_phone": "0812345678", "address_id": 12 }
 ```
 Response `data` เพิ่ม `id` (ใช้เรียก endpoint ด้านล่าง), `reward_type`, `display_code`, `status`
+**(12 ต.ค.) สินค้า:** ถ้าส่ง `address_id` (หรือ `address_text`) + ชื่อ + เบอร์ ครบตอนแลก → `status = "shipping_confirm"` ทันที (ถ้าเลือก `address_id` ไม่ส่งชื่อ/เบอร์ ระบบใช้ผู้ติดต่อของที่อยู่นั้น) แอปไม่ต้องเรียก `/use` ซ้ำ — ถ้าข้อมูลไม่ครบ สถานะเป็น `active` แล้วค่อยส่งที่อยู่ผ่าน `POST /rewards/my-codes/{id}/use`
 Error ใหม่: `403` เมื่อ Tier ไม่ถึง, `422` เมื่อ `address_id` ไม่ใช่ที่อยู่ของลูกค้าเอง
 
 ### `GET /rewards/my-codes-all` (auth) — ของรางวัลทั้งหมดที่เคยแลก

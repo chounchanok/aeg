@@ -21,7 +21,7 @@
     $statusLabels = \App\Services\RewardService::STATUS_LABELS;
     $customerName = trim(($code->first_name ?? '') . ' ' . ($code->last_name ?? '')) ?: $code->username;
     $productSteps = ['active', 'shipping_confirm', 'processing', 'shipping', 'delivered'];
-    $currentStep = array_search($code->status, $productSteps, true);
+    $currentStep = array_search(($code->status === 'active' && \App\Services\RewardService::hasShippingInfo($code)) ? 'shipping_confirm' : $code->status, $productSteps, true);
 @endphp
 
 @section('subcontent')
@@ -92,7 +92,7 @@
                             @endif
                         </div>
                         @if($code->requested_at)
-                            <div class="text-xs text-slate-500 mt-2">ลูกค้ากดใช้คูปองเมื่อ {{ \Carbon\Carbon::parse($code->requested_at)->format('d/m/Y H:i') }}</div>
+                            <div class="text-xs text-slate-500 mt-2">ลูกค้ายืนยันที่อยู่จัดส่งเมื่อ {{ \Carbon\Carbon::parse($code->requested_at)->format('d/m/Y H:i') }}</div>
                         @endif
                         @if($code->tracking_number)
                             <div class="mt-2"><span class="text-slate-500">ขนส่ง/Tracking:</span> {{ $code->shipping_carrier }} {{ $code->tracking_number }}</div>
@@ -113,29 +113,34 @@
                     @endif
 
                     <div class="border-t mt-5 pt-5">
-                        @if($code->status === 'active')
-                            <div class="alert alert-secondary show">ลูกค้ายังไม่ได้กด "ใช้คูปอง" ในแอป — เมื่อกดแล้วสถานะจะเป็น "ยืนยันการจัดส่ง" และจะยืนยันได้ที่นี่</div>
+                        @if(empty($nextStatuses) && $code->status === 'active')
+                            <div class="alert alert-secondary show">ลูกค้ายังไม่ได้ระบุที่อยู่จัดส่ง — เมื่อลูกค้าส่งที่อยู่ในแอป สถานะจะเป็น "ยืนยันการจัดส่ง" และจัดส่งได้ทันที (หรือกรอกที่อยู่ให้ลูกค้าที่ "แก้ไขที่อยู่จัดส่ง" ด้านบน)</div>
                         @elseif(!empty($nextStatuses) && !auth()->user()->can('customers.manage'))
                             <div class="text-sm text-slate-500">ต้องมีสิทธิ์ customers.manage จึงจะเปลี่ยนสถานะได้</div>
                         @elseif(!empty($nextStatuses))
+                            {{-- 🌟 ลูกค้าระบุที่อยู่แล้ว = ยืนยันการจัดส่ง → แอดมินเลือกสถานะถัดไปได้เลย (ข้ามขั้นได้) --}}
                             <form method="POST" action="{{ route('admin.reward-redemptions.status', $code->id) }}" class="grid grid-cols-12 gap-3">
                                 @csrf
-                                <input type="hidden" name="status" value="{{ $nextStatuses[0] }}">
-                                @if($code->status === 'shipping_confirm')
-                                    <label class="col-span-12 flex items-center text-sm">
-                                        <input type="checkbox" name="address_checked" value="1" class="form-check-input mr-2" required>
-                                        ตรวจสอบชื่อ เบอร์โทร และที่อยู่จัดส่งด้านบนแล้ว ถูกต้อง
-                                    </label>
-                                @endif
-                                @if(in_array($nextStatuses[0], ['shipping'], true))
-                                    <input name="shipping_carrier" class="form-control col-span-12 sm:col-span-5" placeholder="บริษัทขนส่ง เช่น Kerry, Flash" value="{{ $code->shipping_carrier }}">
-                                    <input name="tracking_number" class="form-control col-span-12 sm:col-span-7" placeholder="เลขพัสดุ (Tracking) *" value="{{ $code->tracking_number }}" required>
-                                @endif
+                                <div class="col-span-12 sm:col-span-4">
+                                    <label class="form-label">เปลี่ยนสถานะเป็น</label>
+                                    <select name="status" id="rr-next-status" class="form-select" required>
+                                        @foreach($nextStatuses as $st)
+                                            <option value="{{ $st }}">{{ $statusLabels[$st] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-span-12 sm:col-span-3">
+                                    <label class="form-label">บริษัทขนส่ง</label>
+                                    <input name="shipping_carrier" class="form-control" placeholder="เช่น Kerry, Flash" value="{{ $code->shipping_carrier }}">
+                                </div>
+                                <div class="col-span-12 sm:col-span-5">
+                                    <label class="form-label">เลขพัสดุ (Tracking) <span class="text-xs text-slate-500">— บังคับเมื่อเลือก "กำลังจัดส่ง"</span></label>
+                                    <input name="tracking_number" class="form-control" placeholder="เลขพัสดุ" value="{{ $code->tracking_number }}">
+                                </div>
                                 <input name="note" class="form-control col-span-12" placeholder="หมายเหตุ (ไม่บังคับ)">
                                 <div class="col-span-12 text-right">
-                                    <button class="btn btn-primary" onclick="return confirm('ยืนยันเปลี่ยนสถานะเป็น &quot;{{ $statusLabels[$nextStatuses[0]] }}&quot;? ลูกค้าจะได้รับแจ้งเตือน');">
-                                        <i data-lucide="truck" class="w-4 h-4 mr-1"></i>
-                                        {{ $code->status === 'shipping_confirm' ? 'ยืนยันการจัดส่ง → ' : 'เปลี่ยนเป็น ' }}{{ $statusLabels[$nextStatuses[0]] }}
+                                    <button class="btn btn-primary" onclick="return confirm('ยืนยันเปลี่ยนสถานะเป็น &quot;' + document.getElementById('rr-next-status').selectedOptions[0].text + '&quot;? ลูกค้าจะได้รับแจ้งเตือน');">
+                                        <i data-lucide="truck" class="w-4 h-4 mr-1"></i> บันทึกสถานะ
                                     </button>
                                 </div>
                             </form>

@@ -32,12 +32,32 @@ class RewardService
         'cancelled' => 'ยกเลิก',
     ];
 
-    /** ลำดับสถานะสินค้าที่แอดมินเปลี่ยนได้ (จาก → ไป) — ตั้งแต่ processing เปลี่ยนได้จากหลังบ้านเท่านั้น */
+    /**
+     * สถานะสินค้าที่แอดมินเปลี่ยนได้ (จาก → ไป) — เปลี่ยนข้ามขั้นไปข้างหน้าได้เลย (เช่น ยืนยันการจัดส่ง → กำลังจัดส่ง)
+     * ตั้งแต่ processing เปลี่ยนได้จากหลังบ้านเท่านั้น
+     */
     public const PRODUCT_ADMIN_TRANSITIONS = [
-        'shipping_confirm' => ['processing'],
-        'processing' => ['shipping'],
+        'shipping_confirm' => ['processing', 'shipping', 'delivered'],
+        'processing' => ['shipping', 'delivered'],
         'shipping' => ['delivered'],
     ];
+
+    /** ของรางวัลสินค้ามีข้อมูลจัดส่งครบหรือยัง (ชื่อ + เบอร์ + ที่อยู่) */
+    public static function hasShippingInfo(object $row): bool
+    {
+        return (!empty($row->address_id) || !empty($row->address_text))
+            && !empty($row->customer_name) && !empty($row->customer_phone);
+    }
+
+    /** สถานะที่แอดมินเปลี่ยนไปได้ — สินค้าที่ยัง active แต่มีที่อยู่ครบ (ข้อมูลเก่า) ถือเป็น "ยืนยันการจัดส่ง" */
+    public static function adminNextStatuses(object $row): array
+    {
+        $status = $row->status;
+        if ($status === 'active' && self::hasShippingInfo($row)) {
+            $status = 'shipping_confirm';
+        }
+        return self::PRODUCT_ADMIN_TRANSITIONS[$status] ?? [];
+    }
 
     // ==========================================
     // Tier
@@ -250,6 +270,21 @@ class RewardService
             return ['ok' => false, 'status' => 422, 'message' => 'ไม่พบที่อยู่ที่เลือก'];
         }
 
+        // 🌟 สินค้า: ถ้าลูกค้าส่งที่อยู่มาครบตอนแลก → สถานะเป็น "ยืนยันการจัดส่ง" ทันที (แอดมินจัดส่งต่อได้เลย)
+        // ไม่ได้ส่งชื่อ/เบอร์มา แต่เลือกที่อยู่จากสมุดที่อยู่ → ใช้ผู้ติดต่อของที่อยู่นั้น
+        if (!$isCoupon && !empty($input['address_id'])) {
+            $addr = AddressService::activeQuery($userId)->where('id', $input['address_id'])->first();
+            $input['customer_name'] = ($input['customer_name'] ?? null) ?: ($addr->contact_name ?? null);
+            $input['customer_phone'] = ($input['customer_phone'] ?? null) ?: ($addr->contact_phone ?? null);
+        }
+        $readyToShip = !$isCoupon && self::hasShippingInfo((object) [
+            'address_id' => $input['address_id'] ?? null,
+            'address_text' => $input['address_text'] ?? null,
+            'customer_name' => $input['customer_name'] ?? null,
+            'customer_phone' => $input['customer_phone'] ?? null,
+        ]);
+        $initialStatus = $readyToShip ? 'shipping_confirm' : 'active';
+
         DB::beginTransaction();
         try {
             // ล็อกแถว wallet กันการกดยืนยันซ้ำ/ยิงพร้อมกันจนแต้มติดลบ
@@ -285,8 +320,9 @@ class RewardService
                 'reward_id' => $reward->id,
                 'code' => $code,
                 'discount_amount' => $type === self::TYPE_DISCOUNT ? $reward->discount_amount : 0,
-                'status' => 'active',
-                // สินค้า: เก็บที่อยู่ที่ส่งมาตอนแลกไว้ก่อน (แก้ไขได้อีกครั้งตอนกด "ใช้คูปอง")
+                'status' => $initialStatus,
+                'requested_at' => $readyToShip ? now() : null,
+                // สินค้า: ที่อยู่ครบ = ยืนยันการจัดส่งทันที / ไม่ครบ = ส่งที่อยู่ภายหลังตอนกด "ใช้คูปอง"
                 'customer_name' => $isCoupon ? null : ($input['customer_name'] ?? null),
                 'customer_phone' => $isCoupon ? null : ($input['customer_phone'] ?? null),
                 'address_id' => $isCoupon ? null : ($input['address_id'] ?? null),
@@ -295,6 +331,9 @@ class RewardService
                 'updated_at' => now(),
             ]);
             self::log($codeId, 'active', 'แลกของรางวัล ใช้ ' . $reward->points_required . ' แต้ม', 'customer', $userId);
+            if ($readyToShip) {
+                self::log($codeId, 'shipping_confirm', 'ลูกค้าระบุที่อยู่จัดส่งแล้ว รอเจ้าหน้าที่จัดส่ง', 'customer', $userId);
+            }
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -311,7 +350,8 @@ class RewardService
             'reward_type' => $type,
             'reward_point' => $wallet->current_points - $reward->points_required,
             'is_coupon' => $isCoupon,
-            'status' => 'active',
+            'status' => $initialStatus,
+            'status_label' => self::STATUS_LABELS[$initialStatus],
         ]];
     }
 
