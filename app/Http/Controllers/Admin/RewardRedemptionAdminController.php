@@ -186,7 +186,7 @@ class RewardRedemptionAdminController extends Controller
                 'voucher_sent_at' => now(),
                 'updated_at' => now(),
             ]);
-            RewardService::log((int) $id, 'active', ($isResend ? 'แก้ไขรหัสคูปอง' : 'ส่งรหัสคูปองให้ลูกค้า') . ': ' . $voucherCode, 'admin', auth()->id());
+            RewardService::log((int) $id, 'active', ($isResend ? 'แก้ไขรหัสคูปอง' : 'ส่งรหัสคูปองให้ลูกค้า') , 'admin', auth()->id());
         });
 
         CustomerNotificationService::notify(
