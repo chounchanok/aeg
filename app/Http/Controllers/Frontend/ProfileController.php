@@ -69,11 +69,11 @@ class ProfileController extends Controller
                 );
 
             DB::commit();
-            return back()->with('success', 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว');
+            return back()->with('success', __('อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว'));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => __('เกิดข้อผิดพลาดในการบันทึกข้อมูล:') . ' ' . $e->getMessage()]);
         }
     }
 
@@ -122,7 +122,7 @@ class ProfileController extends Controller
             'updated_at' => now()
         ]);
 
-        return back()->with('success', 'เพิ่มที่อยู่ใหม่เรียบร้อยแล้ว');
+        return back()->with('success', __('เพิ่มที่อยู่ใหม่เรียบร้อยแล้ว'));
     }
 
     // 3. ฟังก์ชันอัปเดตที่อยู่
@@ -141,7 +141,7 @@ class ProfileController extends Controller
 
         // เช็คว่าเป็นเจ้าของที่อยู่จริงไหม
         $address = DB::table('customer_addresses')->where('id', $id)->where('user_id', Auth::id())->first();
-        if (!$address) return back()->withErrors(['error' => 'ไม่พบข้อมูลที่อยู่นี้']);
+        if (!$address) return back()->withErrors(['error' => __('ไม่พบข้อมูลที่อยู่นี้')]);
 
         DB::table('customer_addresses')->where('id', $id)->update([
             'title' => $request->title,
@@ -155,7 +155,7 @@ class ProfileController extends Controller
             'updated_at' => now()
         ]);
 
-        return back()->with('success', 'อัปเดตข้อมูลที่อยู่เรียบร้อยแล้ว');
+        return back()->with('success', __('อัปเดตข้อมูลที่อยู่เรียบร้อยแล้ว'));
     }
 
     // 4. ฟังก์ชันลบที่อยู่
@@ -163,7 +163,7 @@ class ProfileController extends Controller
     {
         // 🌟 ใช้ AddressService: ที่อยู่ที่เคยใช้ในออเดอร์จะ soft delete (ลบจริงจะติด foreign key ของ orders)
         \App\Services\AddressService::delete(Auth::id(), (int) $id);
-        return back()->with('success', 'ลบที่อยู่เรียบร้อยแล้ว');
+        return back()->with('success', __('ลบที่อยู่เรียบร้อยแล้ว'));
     }
 
     // ==========================================
@@ -195,6 +195,6 @@ class ProfileController extends Controller
             $profileData
         );
 
-        return response()->json(['status' => 'success', 'message' => 'บันทึกข้อมูลอัตโนมัติเรียบร้อยแล้ว']);
+        return response()->json(['status' => 'success', 'message' => __('บันทึกข้อมูลอัตโนมัติเรียบร้อยแล้ว')]);
     }
 }

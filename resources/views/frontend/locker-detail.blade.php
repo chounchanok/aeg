@@ -286,7 +286,7 @@
 
         .promo-highlight {
             color: var(--primary-red);
-            font-weight: 600;
+            font-weight: 700;
         }
 
         /* Action Button */
@@ -445,8 +445,8 @@
         <div class="container">
             <div class="locker-detail-card">
                 <!-- Banner Image -->
-                <img src="assets/image/locker-banner-full.webp" alt="AEG Smart Locker Banner" class="locker-banner"
-                    onerror="this.src='assets/image/locker-banner-full.jpg';">
+                <img src="{{ asset('assets/image/locker-banner-full.webp') }}" alt="AEG Smart Locker" class="locker-banner"
+                    onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='{{ asset('assets/image/locker-banner-full.jpg') }}';}else{this.style.display='none';}">
 
                 <div class="detail-body">
                     <h1 class="locker-main-title">AEG Smart Locker</h1>

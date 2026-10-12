@@ -371,7 +371,7 @@
             e.preventDefault();
             let form = this;
             let btnSubmit = document.getElementById('btnSubmit');
-            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + @json(__('กำลังส่ง...'));
             btnSubmit.disabled = true;
 
             fetch("{{ route('insurance-contact.submit') }}", {
@@ -381,13 +381,13 @@
             })
             .then(res => res.json())
             .then(data => {
-                btnSubmit.innerHTML = 'ส่งข้อความถึงเรา';
+                btnSubmit.innerHTML = @json(__('ส่งข้อความถึงเรา'));
                 btnSubmit.disabled = false;
                 if (data.success) {
                     form.reset();
                     new bootstrap.Modal(document.getElementById('successModal')).show();
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                    alert(@json(__('เกิดข้อผิดพลาด:')) + ' ' + data.message);
                 }
             });
         });

@@ -170,11 +170,11 @@
                                                 
                                                 <!-- 🌟 เอา w-100 ออก แล้วใส่ flex-grow-1 เพื่อให้ข้อความใช้พื้นที่ที่เหลือพอดี -->
                                                 <label class="form-check-label ms-2 mb-0 flex-grow-1" for="chkService{{ $index }}" style="cursor: pointer; user-select: none;">
-                                                    {{ $serviceName }}
+                                                    {{ __($serviceName) }}
                                                 </label>
                                                 
                                                 <!-- 🌟 เพิ่ม flex-shrink-0 ป้องกันไม่ให้ checkbox หดตัวเบี้ยว -->
-                                                <input class="form-check-input service-checkbox m-0 flex-shrink-0" type="checkbox" value="{{ $serviceName }}" id="chkService{{ $index }}" {{ in_array($serviceName, $savedServices) ? 'checked' : '' }} style="cursor: pointer;">
+                                                <input class="form-check-input service-checkbox m-0 flex-shrink-0" type="checkbox" value="{{ $serviceName }}" data-label="{{ __($serviceName) }}" id="chkService{{ $index }}" {{ in_array($serviceName, $savedServices) ? 'checked' : '' }} style="cursor: pointer;">
                                                 
                                             </div>
                                         </li>
@@ -414,15 +414,15 @@
 
         // ฟังก์ชันอัปเดตข้อความบนปุ่ม Dropdown
         function updateDropdownText() {
-            let checkedItems = Array.from(serviceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            let checkedItems = Array.from(serviceCheckboxes).filter(cb => cb.checked).map(cb => cb.dataset.label || cb.value); // แสดงชื่อตามภาษา (value ที่บันทึกยังเป็นภาษาไทย)
             if (checkedItems.length > 0) {
                 // ถ้าเลือกเกิน 2 อัน ให้แสดงจำนวนแทน เพื่อไม่ให้ข้อความล้น
                 serviceBtnText.innerText = checkedItems.length > 2 
-                    ? `เลือกแล้ว ${checkedItems.length} บริการ` 
+                    ? `${@json(__('เลือกแล้ว'))} ${checkedItems.length} ${@json(__('บริการ'))}` 
                     : checkedItems.join(', ');
                 serviceBtnText.classList.add('text-dark', 'fw-bold');
             } else {
-                serviceBtnText.innerText = '-- เลือกบริการที่สนใจ --';
+                serviceBtnText.innerText = @json(__('-- เลือกบริการที่สนใจ --'));
                 serviceBtnText.classList.remove('text-dark', 'fw-bold');
             }
         }

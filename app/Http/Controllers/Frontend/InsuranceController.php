@@ -77,12 +77,12 @@ class InsuranceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'ส่งข้อมูลติดต่อสำเร็จ'
+                'message' => __('ส่งข้อมูลติดต่อสำเร็จ')
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+                'message' => __('เกิดข้อผิดพลาด:') . ' ' . $e->getMessage()
             ], 500);
         }
     }

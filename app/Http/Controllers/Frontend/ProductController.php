@@ -38,7 +38,7 @@ class ProductController extends Controller
 
         // 4. แปลงภาษา
         $products->getCollection()->transform(function ($p) {
-            $p->name = $p->name_th ?? $p->name_en ?? 'ไม่มีชื่อสินค้า';
+            $p->name = $p->name_th ?? $p->name_en ?? __('ไม่มีชื่อสินค้า');
             $p->description = $p->description_th ?? $p->description_en ?? '';
             return $p;
         });
@@ -55,12 +55,12 @@ class ProductController extends Controller
         $product = DB::table('products')->where('id', $id)->where('is_active', true)->first();
 
         if (!$product) {
-            abort(404, 'ไม่พบสินค้านี้');
+            abort(404, __('ไม่พบสินค้านี้'));
         }
 
         // จัดการเรื่องชื่อคอลัมน์ภาษา ให้ตรงกับหน้า Blade
-        $product->name = $product->name_th ?? $product->name_en ?? 'ไม่มีชื่อสินค้า';
-        $product->description = $product->description_th ?? $product->description_en ?? 'ยังไม่มีรายละเอียดสินค้า';
+        $product->name = $product->name_th ?? $product->name_en ?? __('ไม่มีชื่อสินค้า');
+        $product->description = $product->description_th ?? $product->description_en ?? __('ยังไม่มีรายละเอียดสินค้า');
 
         return view('frontend.product-detail', compact('product'));
     }
@@ -114,13 +114,13 @@ class ProductController extends Controller
             // ส่ง JSON กลับไปให้ Frontend (เพื่อเรียกโชว์ Modal)
             return response()->json([
                 'success' => true, 
-                'message' => 'ส่งข้อมูลติดต่อสำเร็จ'
+                'message' => __('ส่งข้อมูลติดต่อสำเร็จ')
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false, 
-                'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+                'message' => __('เกิดข้อผิดพลาด:') . ' ' . $e->getMessage()
             ], 500);
         }
     }
@@ -129,7 +129,7 @@ class ProductController extends Controller
     public function safeContact($id)
     {
         $locker = DB::table('smart_lockers')->where('id', $id)->where('is_active', true)->first();
-        if (!$locker) abort(404, 'ไม่พบข้อมูลตู้เซฟนี้');
+        if (!$locker) abort(404, __('ไม่พบข้อมูลตู้เซฟนี้'));
         
         return view('frontend.safe-contact', compact('locker'));
     }

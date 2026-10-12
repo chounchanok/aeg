@@ -282,10 +282,10 @@ function hsResultLink(item) {
 function renderHeaderSearchResults(data) {
     const box = document.getElementById('headerSearchResults');
     const groups = [
-        { key: 'products_and_services', label: 'สินค้า/บริการ' },
-        { key: 'lockers', label: 'ตู้เซฟนิรภัย' },
-        { key: 'rewards', label: 'ของรางวัล' },
-        { key: 'insurances', label: 'ประกันภัย' },
+        { key: 'products_and_services', label: @json(__('สินค้า/บริการ')) },
+        { key: 'lockers', label: @json(__('ตู้เซฟนิรภัย')) },
+        { key: 'rewards', label: @json(__('ของรางวัล')) },
+        { key: 'insurances', label: @json(__('ประกันภัย')) },
     ];
     let html = '';
     let hasAny = false;
@@ -298,9 +298,9 @@ function renderHeaderSearchResults(data) {
         items.forEach((item) => {
             let priceText = '';
             if (item.price !== null && item.price !== undefined) {
-                priceText = Number(item.price).toLocaleString() + ' บาท';
+                priceText = Number(item.price).toLocaleString() + ' ' + @json(__('บาท'));
             } else if (item.points_required) {
-                priceText = Number(item.points_required).toLocaleString() + ' แต้ม';
+                priceText = Number(item.points_required).toLocaleString() + ' ' + @json(__('แต้ม'));
             }
             html += `
                 <a class="hs-item" href="${hsResultLink(item)}">
@@ -313,7 +313,7 @@ function renderHeaderSearchResults(data) {
         });
     });
 
-    box.innerHTML = hasAny ? html : '<div class="hs-empty">ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา</div>';
+    box.innerHTML = hasAny ? html : '<div class="hs-empty">' + @json(__('ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา')) + '</div>';
 }
 
 function performHeaderSearch() {
@@ -329,12 +329,12 @@ function performHeaderSearch() {
     }
 
     box.style.display = 'block';
-    box.innerHTML = '<div class="hs-loading">กำลังค้นหา...</div>';
+    box.innerHTML = '<div class="hs-loading">' + @json(__('กำลังค้นหา...')) + '</div>';
 
     fetch('/api/search?q=' + encodeURIComponent(keyword))
         .then((res) => res.json())
         .then((json) => renderHeaderSearchResults(json.data || {}))
-        .catch(() => { box.innerHTML = '<div class="hs-empty">เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง</div>'; });
+        .catch(() => { box.innerHTML = '<div class="hs-empty">' + @json(__('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')) + '</div>'; });
 }
 
 document.addEventListener('DOMContentLoaded', function () {

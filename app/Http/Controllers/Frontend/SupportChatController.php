@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Services\StaffNotificationService;
+use App\Services\SupportChatReferenceService;
 use App\Services\SupportChatTopicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,7 @@ class SupportChatController extends Controller
                 ->where('topic', $topic)
                 ->orderBy('created_at', 'asc')
                 ->get()
+                ->map(fn ($m) => SupportChatReferenceService::present($m))
             : collect();
 
         return view('frontend.support-chat', compact('messages', 'topic', 'user'));
@@ -56,7 +58,7 @@ class SupportChatController extends Controller
         if (!SupportChatTopicService::isValid($topic)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'หัวข้อแชทไม่ถูกต้อง กรุณาเลือกหัวข้อจากรายการ (GET /support-chats/topics)',
+                'message' => __('หัวข้อแชทไม่ถูกต้อง กรุณาเลือกหัวข้อจากรายการ (GET /support-chats/topics)'),
             ], 422);
         }
 
@@ -64,24 +66,47 @@ class SupportChatController extends Controller
             ->where('user_id', Auth::id())
             ->where('topic', $topic)
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(fn ($m) => SupportChatReferenceService::present($m)); // 🌟 แนบการ์ด ref (สินค้า/บริการ/ของรางวัล) ถ้ามี
 
         return response()->json(['status' => 'success', 'topic' => $topic, 'data' => $messages]);
     }
 
     public function sendMessage(Request $request)
     {
+        // 🌟 แนบรายการไปกับข้อความได้ด้วย ref_type + ref_id (ดู SupportChatReferenceService::TYPES)
+        //    - ส่งแค่การ์ดอย่างเดียว (ไม่มี message) ได้
+        //    - ไม่ส่ง topic มาได้ถ้ามี ref_type — ระบบเลือกหัวข้อให้ตามประเภทรายการ
         $request->validate([
-            'topic' => 'required|string|in:' . implode(',', array_keys(SupportChatTopicService::topics())),
-            'message' => 'required|string|max:2000'
+            'topic' => 'nullable|required_without:ref_type|string|in:' . implode(',', array_keys(SupportChatTopicService::topics())),
+            'message' => 'nullable|required_without:ref_type|string|max:2000',
+            'ref_type' => 'nullable|string|in:' . implode(',', SupportChatReferenceService::types()),
+            'ref_id' => 'nullable|required_with:ref_type|integer|min:1',
         ], [
-            'topic.required' => 'กรุณาเลือกหัวข้อที่ต้องการสอบถาม',
-            'topic.in' => 'หัวข้อแชทไม่ถูกต้อง กรุณาเลือกหัวข้อจากรายการ',
-            'message.required' => 'กรุณาพิมพ์ข้อความ',
+            'topic.required_without' => __('กรุณาเลือกหัวข้อที่ต้องการสอบถาม'),
+            'topic.in' => __('หัวข้อแชทไม่ถูกต้อง กรุณาเลือกหัวข้อจากรายการ'),
+            'message.required_without' => __('กรุณาพิมพ์ข้อความ'),
+            'ref_type.in' => __('ประเภทรายการที่แนบไม่ถูกต้อง'),
+            'ref_id.required_with' => __('กรุณาระบุรายการที่ต้องการแนบ'),
         ]);
 
         $user = Auth::user();
-        $topic = $request->topic;
+
+        $refSnapshot = null;
+        if ($request->filled('ref_type')) {
+            $refSnapshot = SupportChatReferenceService::resolve($request->ref_type, (int) $request->ref_id, (int) $user->id);
+            if (!$refSnapshot) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => __('ไม่พบรายการที่แนบ หรือรายการนี้ไม่ใช่ของคุณ'),
+                ], 422);
+            }
+        }
+
+        $topic = $request->filled('topic')
+            ? $request->topic
+            : SupportChatReferenceService::topicFor($request->ref_type, $refSnapshot);
+        $text = trim((string) $request->message);
 
         // ดูข้อความล่าสุดของเธรดนี้ก่อนบันทึก — ใช้ตัดสินว่าต้องแจ้งเตือนแผนกไหม (ดูด้านล่าง)
         $lastMessage = DB::table('support_chats')
@@ -95,14 +120,17 @@ class SupportChatController extends Controller
         $messageId = DB::table('support_chats')->insertGetId([
             'user_id' => $user->id,
             'topic' => $topic,
-            'message' => $request->message,
+            'message' => $text,
+            'ref_type' => $refSnapshot ? $request->ref_type : null,
+            'ref_id' => $refSnapshot ? (int) $request->ref_id : null,
+            'ref_snapshot' => $refSnapshot ? json_encode($refSnapshot, JSON_UNESCAPED_UNICODE) : null,
             'sender_type' => 'customer',
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
         // 2. ดึงข้อมูลที่เพิ่งสร้างเพื่อเอาไป Broadcast
-        $newMessage = DB::table('support_chats')->where('id', $messageId)->first();
+        $newMessage = SupportChatReferenceService::present(DB::table('support_chats')->where('id', $messageId)->first());
 
         // 3. ส่ง Event ไปที่ Pusher (ครอบ try-catch กันแชทพังถ้า Pusher ล่ม เหมือนฝั่งแอดมิน)
         try {
@@ -119,7 +147,7 @@ class SupportChatController extends Controller
             StaffNotificationService::notifyRoles(
                 SupportChatTopicService::roleKeysForTopic($topic),
                 'มีแชทสอบถามใหม่: ' . SupportChatTopicService::label($topic),
-                "{$displayName}: " . \Illuminate\Support\Str::limit($request->message, 80),
+                "{$displayName}: " . \Illuminate\Support\Str::limit($text !== '' ? $text : ('📎 ' . ($refSnapshot['title'] ?? '')), 80),
                 '/admin/support-chats/' . $user->id . '?topic=' . $topic,
                 'support_chat'
             );

@@ -318,7 +318,7 @@
         <div class="container">
             <div class="safe-detail-card">
                 <!-- Header Banner Image (Matching Safe.jpg) -->
-                <img src="assets/image/safe-banner.webp" alt="{{ __('แพ็กเกจบริการตู้เซฟนิรภัย') }}" class="banner-image"
+                <img src="{{ asset('assets/image/safe-banner.webp') }}" alt="{{ __('แพ็กเกจบริการตู้เซฟนิรภัย') }}" class="banner-image"
                     onerror="this.src='https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=1200&q=80'">
 
                 <div class="card-body-content">

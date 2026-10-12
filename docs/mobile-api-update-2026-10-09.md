@@ -324,3 +324,61 @@ Response เหมือนเดิม ไม่ต้องแก้แอป
 - สินค้าแพ็กเกจที่คิดตาม `duration_months` ไม่นับในบันเดิล
 - แอปไม่ต้องคำนวณส่วนลดเอง ใช้ `net_total` จาก server
 - ตอนนี้ยังไม่มี endpoint แสดงบันเดิลในหน้ารายละเอียดสินค้า (ก่อนเพิ่มลงตะกร้า) ถ้าต้องการแจ้ง backend ได้
+
+---
+
+## 11. แชทติดต่อสอบถาม — แนบสินค้า / บริการ / ของรางวัล (ใหม่ 2026-10-12)
+
+> ⚠️ `topic` ต้องเป็น **key** จาก `GET /support-chats/topics` เสมอ (`general`, `security-system`, `technician-service`, `insurance`, `locker`, `ease-club`, `application`) — ห้ามส่งชื่อแพ็กเกจหรือชื่อสินค้าเป็น topic (จะได้ 422 "หัวข้อแชทไม่ถูกต้อง") ถ้าต้องการอ้างถึงรายการ ให้ใช้ `ref_type` + `ref_id` ด้านล่างแทน
+
+### `POST /support-chats/send` (auth)
+
+| field | บังคับ | หมายเหตุ |
+|---|---|---|
+| `topic` | บังคับถ้าไม่มี `ref_type` | key หัวข้อ — ถ้าไม่ส่งแต่มี `ref_type` ระบบเลือกหัวข้อให้ (ดูตาราง) |
+| `message` | บังคับถ้าไม่มี `ref_type` | ส่งการ์ดอย่างเดียวโดยไม่มีข้อความก็ได้ |
+| `ref_type` | – | ประเภทรายการที่แนบ (ตาราง) |
+| `ref_id` | บังคับถ้ามี `ref_type` | id ของรายการ |
+
+| `ref_type` | id มาจาก | ตรวจว่าเป็นของลูกค้า | topic อัตโนมัติ |
+|---|---|---|---|
+| `product` | สินค้า/แพ็กเกจในแคตตาล็อก (`products.id`) | – | `security-system` |
+| `insurance` | ประกันในแคตตาล็อก (`insurances.id`) | – | `insurance` |
+| `locker` | ตู้เซฟในแคตตาล็อก (`smart_lockers.id`) | – | `locker` |
+| `customer_product` | แพ็กเกจ/บริการที่ซื้อแล้ว — `GET /user/my-packages` → `active[].id` / `history[].id` | ✅ | ตามประเภทแพ็กเกจ (product→`security-system`, insurance→`insurance`, locker→`locker`) |
+| `reward` | ของรางวัล EASE CLUB (`rewards.id`) | – | `ease-club` |
+| `reward_code` | คูปองที่แลกแล้ว — `GET /rewards/my-codes-all` | ✅ | `ease-club` |
+| `order` | ออเดอร์ — `GET /ecommerce/orders` | ✅ | `general` |
+| `service_request` | งานแจ้งซ่อม — `GET /service-requests` | ✅ | `technician-service` |
+| `locker_booking` | การจองตู้เซฟ (`locker_bookings.id`) | ✅ | `locker` |
+
+ตัวอย่าง — ลูกค้ากด "สอบถาม" จากหน้าแพ็กเกจของฉัน (กรณี "แพ็กเกจดูแลกล้องวงจรปิด (รายปี) - Teste 2455"):
+```json
+{ "topic": "security-system", "message": "กล้องตัวนี้ภาพไม่ขึ้นครับ", "ref_type": "customer_product", "ref_id": 15 }
+```
+
+Response — `data` คือข้อความที่บันทึก พร้อม `ref`:
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 321, "user_id": 8, "topic": "security-system", "message": "กล้องตัวนี้ภาพไม่ขึ้นครับ",
+    "sender_type": "customer", "ref_type": "customer_product", "ref_id": 15,
+    "created_at": "2026-10-12 10:00:00",
+    "ref": {
+      "type": "customer_product", "id": 15,
+      "title": "แพ็กเกจดูแลกล้องวงจรปิด (รายปี)", "title_en": "CCTV Care Package (Yearly)",
+      "subtitle": "S/N Teste 2455", "image_url": "uploads/products/cctv.webp", "status": "active",
+      "package_type": "product", "reference_id": 4, "serial_number": "Teste 2455", "warranty_expire_date": "2027-10-01"
+    }
+  }
+}
+```
+
+Error 422: `ref_type` ไม่ถูกต้อง / ไม่พบรายการ / รายการส่วนตัวที่ไม่ใช่ของผู้ใช้คนนี้ → `"ไม่พบรายการที่แนบ หรือรายการนี้ไม่ใช่ของคุณ"`
+
+### `GET /support-chats/history?topic=security-system` (auth)
+ทุกข้อความใน `data[]` มี field `ref` เพิ่ม — `null` = ข้อความธรรมดา, object = แสดงเป็นการ์ด (ใช้ `title`/`title_en`, `subtitle`, `image_url`, `status`)
+- `ref` เป็น snapshot ณ ตอนส่ง (ถ้าสินค้าถูกแก้ชื่อ/ลบภายหลัง การ์ดในแชทยังแสดงเหมือนเดิม)
+- event realtime `.message.sent` (Pusher channel `support-chat.{user_id}`) ก็มี `messageData.ref` เหมือนกัน
+- ฝั่งหลังบ้านแสดงการ์ดในหน้าแชท และกดไปหน้าออเดอร์ / งานแจ้งซ่อม / คูปองที่แลก / ข้อมูลลูกค้า ได้

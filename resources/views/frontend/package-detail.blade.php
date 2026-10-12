@@ -390,7 +390,7 @@
                     const data = res.data;
 
                     // เซ็ตชื่อหัวข้อบิล
-                    document.getElementById('modalTitle').innerText = `รายละเอียดรายงานของใบงาน: ${data.ticket_number}`;
+                    document.getElementById('modalTitle').innerText = `${@json(__('รายละเอียดรายงานของใบงาน:'))} ${data.ticket_number}`;
 
                     // เซ็ตหมายเหตุช่าง และลายเซ็น
                     document.getElementById('techNote').innerText = data.technician_note;
@@ -398,12 +398,12 @@
 
                     // วาดชุดประวัติเวลา (Timeline)
                     let timelineHtml = `
-                        <li><span class="text-muted">จ่ายงาน:</span> <strong class="text-dark">${data.timestamps.assigned}</strong></li>
-                        <li><span class="text-muted">รับงาน:</span> <strong class="text-dark">${data.timestamps.accepted}</strong></li>
-                        <li><span class="text-muted">เริ่มเดินทาง:</span> <strong class="text-dark">${data.timestamps.traveling}</strong></li>
-                        <li><span class="text-muted">ถึงหน้างาน:</span> <strong class="text-dark">${data.timestamps.arrived}</strong></li>
-                        <li><span class="text-muted">เริ่มลงมือซ่อม:</span> <strong class="text-dark">${data.timestamps.started}</strong></li>
-                        <li><span class="text-muted">ส่งมอบงาน:</span> <strong class="text-success">${data.timestamps.completed}</strong></li>
+                        <li><span class="text-muted">${@json(__('จ่ายงาน:'))}</span> <strong class="text-dark">${data.timestamps.assigned}</strong></li>
+                        <li><span class="text-muted">${@json(__('รับงาน:'))}</span> <strong class="text-dark">${data.timestamps.accepted}</strong></li>
+                        <li><span class="text-muted">${@json(__('เริ่มเดินทาง:'))}</span> <strong class="text-dark">${data.timestamps.traveling}</strong></li>
+                        <li><span class="text-muted">${@json(__('ถึงหน้างาน:'))}</span> <strong class="text-dark">${data.timestamps.arrived}</strong></li>
+                        <li><span class="text-muted">${@json(__('เริ่มลงมือซ่อม:'))}</span> <strong class="text-dark">${data.timestamps.started}</strong></li>
+                        <li><span class="text-muted">${@json(__('ส่งมอบงาน:'))}</span> <strong class="text-success">${data.timestamps.completed}</strong></li>
                     `;
                     document.getElementById('logTimeline').innerHTML = timelineHtml;
 
@@ -413,7 +413,7 @@
                         data.before_media.forEach(url => {
                             beforeHtml += `<a href="${url}" target="_blank" class="d-block border rounded overflow-hidden" style="width:75px; height:75px;"><img src="${url}" style="width:100%; height:100%; object-fit:cover;"></a>`;
                         });
-                    } else { beforeHtml = '<span class="text-muted small">ไม่มีรูปภาพ</span>'; }
+                    } else { beforeHtml = '<span class="text-muted small">' + @json(__('ไม่มีรูปภาพ')) + '</span>'; }
                     document.getElementById('galleryBefore').innerHTML = beforeHtml;
 
                     // วาดรูปแกลเลอรี่หลังซ่อม
@@ -422,7 +422,7 @@
                         data.after_media.forEach(url => {
                             afterHtml += `<a href="${url}" target="_blank" class="d-block border rounded overflow-hidden" style="width:75px; height:75px;"><img src="${url}" style="width:100%; height:100%; object-fit:cover;"></a>`;
                         });
-                    } else { afterHtml = '<span class="text-muted small">ไม่มีรูปภาพ</span>'; }
+                    } else { afterHtml = '<span class="text-muted small">' + @json(__('ไม่มีรูปภาพ')) + '</span>'; }
                     document.getElementById('galleryAfter').innerHTML = afterHtml;
 
                     // ปิดโหมดโหลด โชว์คอนเทนต์จริง
@@ -430,12 +430,12 @@
                     document.getElementById('modalLoading').classList.add('d-none');
                     document.getElementById('modalContent').classList.remove('d-none');
                 } else {
-                    alert('ไม่สามารถดึงข้อมูลรายงานได้');
+                    alert(@json(__('ไม่สามารถดึงข้อมูลรายงานได้')));
                 }
             })
             .catch(err => {
                 console.error(err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อระบบหลังบ้าน');
+                alert(@json(__('เกิดข้อผิดพลาดในการเชื่อมต่อระบบหลังบ้าน')));
             });
         }
     </script>

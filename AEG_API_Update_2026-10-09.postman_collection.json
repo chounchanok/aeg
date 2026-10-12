@@ -1286,6 +1286,254 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "11. แชทติดต่อสอบถาม — แนบสินค้า/บริการ/ของรางวัล",
+      "item": [
+        {
+          "name": "หัวข้อแชท (topics)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/support-chats/topics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "topics"
+              ],
+              "query": []
+            },
+            "description": "topic ต้องใช้ค่า key จากรายการนี้ (general, security-system, technician-service, insurance, locker, ease-club, application)",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ประวัติแชท (ตาม topic)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/support-chats/history?topic=security-system",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "topic",
+                  "value": "security-system"
+                }
+              ]
+            },
+            "description": "แต่ละข้อความมี field ref (object หรือ null) = การ์ดรายการที่แนบ"
+          },
+          "response": []
+        },
+        {
+          "name": "ส่งข้อความธรรมดา",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"security-system\",\n  \"message\": \"สอบถามเรื่องแพ็กเกจกล้องครับ\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/support-chats/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "send"
+              ]
+            },
+            "description": "เหมือนเดิม"
+          },
+          "response": []
+        },
+        {
+          "name": "ส่งข้อความ + แนบแพ็กเกจของฉัน (customer_product)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"security-system\",\n  \"message\": \"กล้องตัวนี้ภาพไม่ขึ้นครับ\",\n  \"ref_type\": \"customer_product\",\n  \"ref_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/support-chats/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "send"
+              ]
+            },
+            "description": "ref_id = id จาก GET /user/my-packages (active[].id / history[].id)"
+          },
+          "response": []
+        },
+        {
+          "name": "แนบคูปองที่แลก (ไม่ส่ง topic → ระบบเลือก ease-club ให้)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref_type\": \"reward_code\",\n  \"ref_id\": 1,\n  \"message\": \"ยังไม่ได้รับของครับ\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/support-chats/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "send"
+              ]
+            },
+            "description": "ไม่ส่ง topic ได้เมื่อมี ref_type"
+          },
+          "response": []
+        },
+        {
+          "name": "แนบสินค้าในแคตตาล็อก (การ์ดอย่างเดียว ไม่มีข้อความ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref_type\": \"product\",\n  \"ref_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/support-chats/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "send"
+              ]
+            },
+            "description": "message ไม่บังคับเมื่อมี ref_type"
+          },
+          "response": []
+        },
+        {
+          "name": "แนบออเดอร์",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"general\",\n  \"message\": \"ขอเปลี่ยนที่อยู่จัดส่ง\",\n  \"ref_type\": \"order\",\n  \"ref_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/support-chats/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support-chats",
+                "send"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

@@ -54,7 +54,7 @@ class HomeController extends Controller
                 ->map(function ($booking) {
                     return (object) [
                         'id' => $booking->id,
-                        'product_name' => 'ตู้เซฟนิรภัย ' . $booking->locker_number . ' · ' . $booking->title_th,
+                        'product_name' => __('ตู้เซฟนิรภัย') . ' ' . $booking->locker_number . ' · ' . $booking->title_th,
                         'serial_number' => $booking->locker_number,
                         'created_at' => $booking->start_date,
                         'warranty_expire_date' => $booking->end_date,

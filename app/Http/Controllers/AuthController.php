@@ -83,7 +83,7 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'], // บังคับว่าต้องขึ้นต้นด้วย 0 และมี 9-10 หลัก
             'password' => ['required'],
         ], [
-            'phone.regex' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง'
+            'phone.regex' => __('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง')
         ]);
 
         // =========================================
@@ -103,7 +103,7 @@ class AuthController extends Controller
 
         // ถ้าล็อกอินไม่ผ่าน
         return back()->withErrors([
-            'phone' => 'เบอร์มือถือหรือรหัสผ่านไม่ถูกต้อง',
+            'phone' => __('เบอร์มือถือหรือรหัสผ่านไม่ถูกต้อง'),
         ])->onlyInput('phone');
     }
 
@@ -135,8 +135,8 @@ class AuthController extends Controller
         $request->validate([
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/', 'unique:users,phone'],
         ], [
-            'phone.regex' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
-            'phone.unique' => 'เบอร์มือถือนี้มีการลงทะเบียนในระบบแล้ว'
+            'phone.regex' => __('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง'),
+            'phone.unique' => __('เบอร์มือถือนี้มีการลงทะเบียนในระบบแล้ว')
         ]);
 
         try {
@@ -179,16 +179,16 @@ class AuthController extends Controller
                 // 6. บันทึก Session
                 session(['verify_phone' => $request->phone, 'ref_code' => $refCode]);
 
-                return redirect()->route('verify-otp')->with('success', 'ส่งรหัส OTP แล้ว (Ref: ' . $refCode . ')');
+                return redirect()->route('verify-otp')->with('success', __('ส่งรหัส OTP แล้ว (Ref:') . ' ' . $refCode . ')');
 
             } else {
                 // กรณี ThaiBulkSMS ปฏิเสธ (เช่น เงินหมด, คีย์ผิด)
-                $errorMsg = $responseData['error']['description'] ?? 'ระบบ SMS ขัดข้อง';
-                return back()->withErrors(['phone' => 'ไม่สามารถส่ง SMS ได้: ' . $errorMsg])->withInput();
+                $errorMsg = $responseData['error']['description'] ?? __('ระบบ SMS ขัดข้อง');
+                return back()->withErrors(['phone' => __('ไม่สามารถส่ง SMS ได้:') . ' ' . $errorMsg])->withInput();
             }
 
         } catch (\Exception $e) {
-            return back()->withErrors(['phone' => 'ระบบขัดข้อง ไม่สามารถเชื่อมต่อ SMS ได้: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['phone' => __('ระบบขัดข้อง ไม่สามารถเชื่อมต่อ SMS ได้:') . ' ' . $e->getMessage()])->withInput();
         }
     }
 
@@ -200,7 +200,7 @@ class AuthController extends Controller
         // เช็ค Session ด้วยชื่อ verify_phone
         $phone = session('verify_phone');
         if (!$phone) {
-            return redirect()->route('register')->withErrors(['phone' => 'เซสชันหมดอายุ กรุณากรอกเบอร์โทรศัพท์ใหม่']);
+            return redirect()->route('register')->withErrors(['phone' => __('เซสชันหมดอายุ กรุณากรอกเบอร์โทรศัพท์ใหม่')]);
         }
 
         $refCode = session('ref_code');
@@ -215,14 +215,14 @@ class AuthController extends Controller
         $phone = session('verify_phone');
 
         if (!$phone) {
-            return redirect()->route('login')->with('error', 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+            return redirect()->route('login')->with('error', __('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง'));
         }
 
         $request->validate([
             'otp' => 'required|string|size:6',
         ], [
-            'otp.required' => 'กรุณากรอกรหัส OTP',
-            'otp.size' => 'รหัส OTP ต้องมี 6 หลักพอดี'
+            'otp.required' => __('กรุณากรอกรหัส OTP'),
+            'otp.size' => __('รหัส OTP ต้องมี 6 หลักพอดี')
         ]);
 
         // 1. ดึง Token ของ ThaiBulkSMS จาก DB ขึ้นมา
@@ -232,7 +232,7 @@ class AuthController extends Controller
             ->first();
 
         if (!$otpRecord) {
-            return back()->withErrors(['otp' => 'รหัสอ้างอิงหมดอายุหรือถูกรีเซ็ต กรุณาขอรหัสใหม่']);
+            return back()->withErrors(['otp' => __('รหัสอ้างอิงหมดอายุหรือถูกรีเซ็ต กรุณาขอรหัสใหม่')]);
         }
 
         DB::beginTransaction();
@@ -294,17 +294,17 @@ class AuthController extends Controller
 
                 // ล็อกอินและพากลับหน้าแรก
                 Auth::login($user);
-                return redirect()->route('home')->with('success', 'ยืนยันตัวตนและลงทะเบียนสำเร็จ');
+                return redirect()->route('home')->with('success', __('ยืนยันตัวตนและลงทะเบียนสำเร็จ'));
 
             } else {
                 DB::rollBack();
                 // ถ้ารหัสผิด
-                return back()->withErrors(['otp' => 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง']);
+                return back()->withErrors(['otp' => __('รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')]);
             }
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'เกิดข้อผิดพลาดในการสร้างบัญชี: ' . $e->getMessage());
+            return back()->with('error', __('เกิดข้อผิดพลาดในการสร้างบัญชี:') . ' ' . $e->getMessage());
         }
     }
 
@@ -317,9 +317,9 @@ class AuthController extends Controller
         $status = Password::sendResetLink($request->only('email'));
 
         if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', 'ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณแล้ว');
+            return back()->with('status', __('ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณแล้ว'));
         }
-        return back()->withErrors(['email' => 'ไม่สามารถส่งอีเมลได้ กรุณาลองใหม่']);
+        return back()->withErrors(['email' => __('ไม่สามารถส่งอีเมลได้ กรุณาลองใหม่')]);
     }
 
     public function resetPasswordView($token, Request $request)
@@ -343,7 +343,7 @@ class AuthController extends Controller
         );
 
         if ($response === Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('success', 'รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่');
+            return redirect()->route('login')->with('success', __('รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่'));
         }
 
         return back()->withErrors(['email' => trans($response)]);
@@ -425,16 +425,16 @@ class AuthController extends Controller
                     DB::commit();
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    return redirect()->route('login')->with('error', 'ระบบขัดข้อง: ' . $e->getMessage());
+                    return redirect()->route('login')->with('error', __('ระบบขัดข้อง:') . ' ' . $e->getMessage());
                 }
             }
 
             // เข้าสู่ระบบ
             Auth::login($user);
-            return redirect()->route('home')->with('success', 'เข้าสู่ระบบด้วย ' . ucfirst($provider) . ' สำเร็จ')->with(['update_first' => $user->update_first ?? false]);
+            return redirect()->route('home')->with('success', __('เข้าสู่ระบบด้วย :provider สำเร็จ', ['provider' => ucfirst($provider)]))->with(['update_first' => $user->update_first ?? false]);
 
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ ' . ucfirst($provider));
+            return redirect()->route('login')->with('error', __('เกิดข้อผิดพลาดในการเชื่อมต่อกับ') . ' ' . ucfirst($provider));
         }
     }
 

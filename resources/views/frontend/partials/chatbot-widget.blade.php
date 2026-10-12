@@ -228,28 +228,44 @@
         const cls = msg.sender_type === 'customer' ? 'msg-customer' : 'msg-admin';
         chatBox.insertAdjacentHTML('beforeend', `
             <div class="chat-msg ${cls}">
-                ${escapeHtml(msg.message)}
+                ${refCardHtml(msg.ref)}
+                ${msg.message ? escapeHtml(msg.message) : ''}
                 <div class="time-text ${align}">${timeStr}</div>
             </div>`);
     }
 
+    // 🌟 การ์ดสินค้า/บริการ/ของรางวัลที่แนบมากับข้อความ (ส่งจากแอปด้วย ref_type + ref_id)
+    function refCardHtml(ref) {
+        if (!ref) return '';
+        const isEn = @json(app()->getLocale() === 'en');
+        const title = (isEn ? ref.title_en : ref.title) || ref.title || '-';
+        const img = ref.image_url ? (/^(https?:)?\//.test(ref.image_url) ? ref.image_url : `{{ asset('') }}${ref.image_url}`) : '';
+        return `<div style="display:flex;gap:8px;align-items:center;background:#fff;color:#334155;border:1px solid #e2e8f0;border-radius:10px;padding:6px 8px;margin-bottom:6px;">
+            ${img ? `<img src="${escapeHtml(img)}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+            <div style="min-width:0;">
+                <div style="font-weight:600;font-size:0.85rem;line-height:1.3;">📎 ${escapeHtml(title)}</div>
+                ${ref.subtitle ? `<div style="font-size:0.75rem;color:#64748b;">${escapeHtml(ref.subtitle)}</div>` : ''}
+            </div>
+        </div>`;
+    }
+
     function loadAgentHistory() {
         if (!chatTopic) return;
-        chatBox.innerHTML = '<div class="text-center text-muted" style="font-size:0.8rem;">กำลังโหลดข้อมูล...</div>';
+        chatBox.innerHTML = '<div class="text-center text-muted" style="font-size:0.8rem;">' + @json(__('กำลังโหลดข้อมูล...')) + '</div>';
         fetch(`{{ route('support-chat.history') }}?topic=${encodeURIComponent(chatTopic)}`)
             .then((res) => res.json())
             .then((json) => {
                 chatBox.innerHTML = '';
                 const list = json.data || [];
                 if (list.length === 0) {
-                    chatBox.innerHTML = '<div class="text-center text-muted" style="font-size:0.8rem;">เริ่มการสนทนากับเจ้าหน้าที่ได้เลยครับ</div>';
+                    chatBox.innerHTML = '<div class="text-center text-muted" style="font-size:0.8rem;">' + @json(__('เริ่มการสนทนากับเจ้าหน้าที่ได้เลยครับ')) + '</div>';
                 } else {
                     list.forEach((m) => appendAgentMessage(m));
                 }
                 scrollToBottom();
             })
             .catch(() => {
-                chatBox.innerHTML = '<div class="text-center text-danger" style="font-size:0.8rem;">โหลดข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง</div>';
+                chatBox.innerHTML = '<div class="text-center text-danger" style="font-size:0.8rem;">' + @json(__('โหลดข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง')) + '</div>';
             });
     }
 
@@ -296,7 +312,7 @@
     }
 
     function showTopicPicker() {
-        document.getElementById('panelTitle').textContent = 'ปรึกษาผู้เชี่ยวชาญ';
+        document.getElementById('panelTitle').textContent = @json(__('ปรึกษาผู้เชี่ยวชาญ'));
         document.getElementById('agentChatArea').style.display = 'none';
         document.getElementById('agentTopicPicker').style.display = 'block';
     }
@@ -304,7 +320,7 @@
     function selectChatTopic(key) {
         if (!isChatTopic(key)) { showTopicPicker(); return; }
         chatTopic = key;
-        document.getElementById('panelTitle').textContent = 'ปรึกษาผู้เชี่ยวชาญ · ' + chatTopicLabel(key);
+        document.getElementById('panelTitle').textContent = @json(__('ปรึกษาผู้เชี่ยวชาญ')) + ' · ' + chatTopicLabel(key);
         document.getElementById('agentTopicLabel').textContent = chatTopicLabel(key);
         document.getElementById('agentTopicPicker').style.display = 'none';
         document.getElementById('agentChatArea').style.display = 'flex';
@@ -329,7 +345,7 @@
             document.getElementById('agentPanel').style.display = 'none';
         }
         document.getElementById('botPanel').style.display = 'flex';
-        document.getElementById('panelTitle').textContent = 'ถามบอทตอบอัตโนมัติ';
+        document.getElementById('panelTitle').textContent = @json(__('ถามบอทตอบอัตโนมัติ'));
         const toggleBtn = document.getElementById('toggleAgentBtn');
         if (toggleBtn) toggleBtn.style.display = 'inline-flex';
     }
@@ -376,7 +392,7 @@
     function findService(topicId, id) { return (botServicesCache[topicId] || []).find(s => s.id === id); }
 
     async function initBot() {
-        renderBotHtml('สวัสดีค่ะ/ครับ AEG ยินดีต้อนรับ<br>หากท่านมีข้อสงสัยหรือสนใจอุปกรณ์ใดสามารถเลือกหัวข้อที่ต้องการ หรือพิมพ์สอบถามได้ที่ช่องทางนี้เลยค่ะ');
+        renderBotHtml(@json(__('สวัสดีค่ะ/ครับ AEG ยินดีต้อนรับ')) + '<br>' + @json(__('หากท่านมีข้อสงสัยหรือสนใจอุปกรณ์ใดสามารถเลือกหัวข้อที่ต้องการ หรือพิมพ์สอบถามได้ที่ช่องทางนี้เลยค่ะ')));
         await goMainMenu();
     }
 
@@ -392,7 +408,7 @@
 
     function renderMainMenu() {
         const btns = botTopicsCache.map(t => `<button type="button" class="bot-btn" onclick="selectTopic(${t.id})">${escapeHtml(t.name_th)}</button>`).join('');
-        renderBotHtml(`เลือกหัวข้อที่ต้องการได้เลยครับ<div class="bot-buttons">${btns}</div>`);
+        renderBotHtml(`${@json(__('เลือกหัวข้อที่ต้องการได้เลยครับ'))}<div class="bot-buttons">${btns}</div>`);
     }
 
     async function selectTopic(topicId) {
@@ -412,8 +428,8 @@
         const t = findTopic(topicId);
         const services = botServicesCache[topicId] || [];
         const btns = services.map(s => `<button type="button" class="bot-btn" onclick="selectService(${s.id})">${escapeHtml(s.name_th)}</button>`).join('');
-        const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goMainMenu()">← กลับเมนูหลัก</button>`;
-        renderBotHtml(`หัวข้อ "${escapeHtml(t ? t.name_th : '')}" มีบริการดังนี้ครับ เลือกได้เลย<div class="bot-buttons">${btns}${backBtn}</div>`);
+        const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goMainMenu()">← ${@json(__('กลับเมนูหลัก'))}</button>`;
+        renderBotHtml(`${@json(__('หัวข้อ'))} "${escapeHtml(t ? t.name_th : '')}" ${@json(__('มีบริการดังนี้ครับ เลือกได้เลย'))}<div class="bot-buttons">${btns}${backBtn}</div>`);
     }
 
     async function selectService(serviceId) {
@@ -434,43 +450,43 @@
     function renderServiceActions() {
         const detail = botServiceDetailCache[currentServiceId];
         if (!detail) return;
-        let btns = `<button type="button" class="bot-btn" onclick="showServiceInfo()">ข้อมูลบริการ</button>`;
+        let btns = `<button type="button" class="bot-btn" onclick="showServiceInfo()">${@json(__('ข้อมูลบริการ'))}</button>`;
         if (detail.faqs && detail.faqs.length) {
-            btns += `<button type="button" class="bot-btn" onclick="showFaqList()">แก้ปัญหาเบื้องต้น (FAQ)</button>`;
+            btns += `<button type="button" class="bot-btn" onclick="showFaqList()">${@json(__('แก้ปัญหาเบื้องต้น (FAQ)'))}</button>`;
         }
         if (detail.has_technician_contact) {
-            btns += `<button type="button" class="bot-btn" onclick="showTechnicianContact()">ติดต่อช่าง</button>`;
+            btns += `<button type="button" class="bot-btn" onclick="showTechnicianContact()">${@json(__('ติดต่อช่าง'))}</button>`;
         }
         if (detail.has_claim) {
-            btns += `<button type="button" class="bot-btn" onclick="showLeadForm('claim')">แจ้งเคลม</button>`;
+            btns += `<button type="button" class="bot-btn" onclick="showLeadForm('claim')">${@json(__('แจ้งเคลม'))}</button>`;
         }
         if (detail.has_purchase_interest) {
-            btns += `<button type="button" class="bot-btn" onclick="handlePurchaseInterest()">สนใจซื้อบริการ</button>`;
+            btns += `<button type="button" class="bot-btn" onclick="handlePurchaseInterest()">${@json(__('สนใจซื้อบริการ'))}</button>`;
         }
-        btns += `<button type="button" class="bot-btn bot-btn-outline" onclick="goServiceMenu()">← กลับ</button>`;
-        renderBotHtml(`เลือกสิ่งที่ต้องการได้เลยครับ<div class="bot-buttons">${btns}</div>`);
+        btns += `<button type="button" class="bot-btn bot-btn-outline" onclick="goServiceMenu()">← ${@json(__('กลับ'))}</button>`;
+        renderBotHtml(`${@json(__('เลือกสิ่งที่ต้องการได้เลยครับ'))}<div class="bot-buttons">${btns}</div>`);
     }
 
     function showServiceInfo() {
-        renderUserHtml('ข้อมูลบริการ');
+        renderUserHtml(@json(__('ข้อมูลบริการ')));
         const detail = botServiceDetailCache[currentServiceId];
-        let html = (detail.info_th ? escapeHtml(detail.info_th).replace(/\n/g, '<br>') : 'ยังไม่มีข้อมูลบริการนี้');
+        let html = (detail.info_th ? escapeHtml(detail.info_th).replace(/\n/g, '<br>') : @json(__('ยังไม่มีข้อมูลบริการนี้')));
         if (detail.extra_info) {
             Object.keys(detail.extra_info).forEach((key) => {
                 html += `<div class="bot-subhead">${escapeHtml(key)}</div>`;
                 html += `<div>${escapeHtml(detail.extra_info[key]).replace(/\n/g, '<br>')}</div>`;
             });
         }
-        html += `<div class="bot-buttons"><button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← กลับ</button></div>`;
+        html += `<div class="bot-buttons"><button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('กลับ'))}</button></div>`;
         renderBotHtml(html);
     }
 
     function showFaqList() {
-        renderUserHtml('แก้ปัญหาเบื้องต้น (FAQ)');
+        renderUserHtml(@json(__('แก้ปัญหาเบื้องต้น (FAQ)')));
         const detail = botServiceDetailCache[currentServiceId];
         const btns = (detail.faqs || []).map((f, idx) => `<button type="button" class="bot-btn" onclick="showFaqAnswer(${idx})">${escapeHtml(f.question_th)}</button>`).join('');
-        const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← กลับ</button>`;
-        renderBotHtml(`เลือกคำถามที่ตรงกับปัญหาของท่านได้เลยครับ<div class="bot-buttons">${btns}${backBtn}</div>`);
+        const backBtn = `<button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('กลับ'))}</button>`;
+        renderBotHtml(`${@json(__('เลือกคำถามที่ตรงกับปัญหาของท่านได้เลยครับ'))}<div class="bot-buttons">${btns}${backBtn}</div>`);
     }
 
     function showFaqAnswer(idx) {
@@ -479,20 +495,20 @@
         if (!faq) return;
         renderUserHtml(escapeHtml(faq.question_th));
         const answerHtml = escapeHtml(faq.answer_th).replace(/\n/g, '<br>');
-        let btns = `<button type="button" class="bot-btn bot-btn-outline" onclick="showFaqList()">← กลับรายการคำถาม</button>`;
+        let btns = `<button type="button" class="bot-btn bot-btn-outline" onclick="showFaqList()">← ${@json(__('กลับรายการคำถาม'))}</button>`;
         if (detail.has_technician_contact) {
-            btns += `<button type="button" class="bot-btn" onclick="showTechnicianContact()">ยังไม่หาย ติดต่อช่าง</button>`;
+            btns += `<button type="button" class="bot-btn" onclick="showTechnicianContact()">${@json(__('ยังไม่หาย ติดต่อช่าง'))}</button>`;
         }
         renderBotHtml(`${answerHtml}<div class="bot-buttons">${btns}</div>`);
     }
 
     function showTechnicianContact() {
-        renderUserHtml('ติดต่อช่าง');
+        renderUserHtml(@json(__('ติดต่อช่าง')));
         const btns = `
-            <button type="button" class="bot-btn" onclick="switchToAgent(agentTopicFromBot())">ติดต่อเจ้าหน้าที่</button>
-            <button type="button" class="bot-btn" onclick="goToRepairRequest()">แจ้งซ่อม</button>
-            <button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← กลับ</button>`;
-        renderBotHtml(`เลือกได้เลยครับ ต้องการคุยกับเจ้าหน้าที่ทันที หรือไปที่หน้าแจ้งซ่อมเพื่อเลือกอุปกรณ์/แพ็กเกจที่ต้องการแจ้งซ่อม<div class="bot-buttons">${btns}</div>`);
+            <button type="button" class="bot-btn" onclick="switchToAgent(agentTopicFromBot())">${@json(__('ติดต่อเจ้าหน้าที่'))}</button>
+            <button type="button" class="bot-btn" onclick="goToRepairRequest()">${@json(__('แจ้งซ่อม'))}</button>
+            <button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('กลับ'))}</button>`;
+        renderBotHtml(`${@json(__('เลือกได้เลยครับ ต้องการคุยกับเจ้าหน้าที่ทันที หรือไปที่หน้าแจ้งซ่อมเพื่อเลือกอุปกรณ์/แพ็กเกจที่ต้องการแจ้งซ่อม'))}<div class="bot-buttons">${btns}</div>`);
     }
 
     function goToRepairRequest() {
@@ -502,8 +518,8 @@
     function handlePurchaseInterest() {
         const detail = botServiceDetailCache[currentServiceId];
         if (detail.purchase_link_route && botUrls.routeMap[detail.purchase_link_route]) {
-            renderUserHtml('สนใจซื้อบริการ');
-            renderBotHtml('กำลังพาไปยังหน้าบริการให้เลยครับ...');
+            renderUserHtml(@json(__('สนใจซื้อบริการ')));
+            renderBotHtml(@json(__('กำลังพาไปยังหน้าบริการให้เลยครับ...')));
             window.location.href = botUrls.routeMap[detail.purchase_link_route];
             return;
         }
@@ -511,19 +527,19 @@
     }
 
     function showLeadForm(type) {
-        renderUserHtml(type === 'claim' ? 'แจ้งเคลม' : 'สนใจซื้อบริการ');
+        renderUserHtml(type === 'claim' ? @json(__('แจ้งเคลม')) : @json(__('สนใจซื้อบริการ')));
         const formHtml = `
             <div class="bot-form">
-                <input type="text" id="leadName" class="bot-input" placeholder="ชื่อ-นามสกุล">
-                <input type="text" id="leadPhone" class="bot-input" placeholder="เบอร์โทรศัพท์">
-                <input type="email" id="leadEmail" class="bot-input" placeholder="อีเมล (ถ้ามี)">
-                <textarea id="leadMessage" class="bot-input bot-textarea" placeholder="${type === 'claim' ? 'รายละเอียดที่ต้องการแจ้งเคลม' : 'รายละเอียดเพิ่มเติม (ถ้ามี)'}"></textarea>
+                <input type="text" id="leadName" class="bot-input" placeholder="${@json(__('ชื่อ-นามสกุล'))}">
+                <input type="text" id="leadPhone" class="bot-input" placeholder="${@json(__('เบอร์โทรศัพท์'))}">
+                <input type="email" id="leadEmail" class="bot-input" placeholder="${@json(__('อีเมล (ถ้ามี)'))}">
+                <textarea id="leadMessage" class="bot-input bot-textarea" placeholder="${type === 'claim' ? @json(__('รายละเอียดที่ต้องการแจ้งเคลม')) : @json(__('รายละเอียดเพิ่มเติม (ถ้ามี)'))}"></textarea>
                 <div class="bot-buttons">
-                    <button type="button" class="bot-btn" onclick="submitLeadForm('${type}')">ส่งข้อมูล</button>
-                    <button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ยกเลิก</button>
+                    <button type="button" class="bot-btn" onclick="submitLeadForm('${type}')">${@json(__('ส่งข้อมูล'))}</button>
+                    <button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('ยกเลิก'))}</button>
                 </div>
             </div>`;
-        renderBotHtml(`กรอกข้อมูลเพื่อให้ผู้เชี่ยวชาญติดต่อกลับได้เลยครับ${formHtml}`);
+        renderBotHtml(`${@json(__('กรอกข้อมูลเพื่อให้ผู้เชี่ยวชาญติดต่อกลับได้เลยครับ'))}${formHtml}`);
     }
 
     async function submitLeadForm(type) {
@@ -532,7 +548,7 @@
         const email = document.getElementById('leadEmail').value.trim();
         const message = document.getElementById('leadMessage').value.trim();
         if (!name || !phone) {
-            alert('กรุณากรอกชื่อและเบอร์โทรศัพท์');
+            alert(@json(__('กรุณากรอกชื่อและเบอร์โทรศัพท์')));
             return;
         }
         const s = findService(currentTopicId, currentServiceId);
@@ -548,10 +564,10 @@
         });
         const data = json.data || {};
         if (data.require_membership) {
-            renderBotHtml(`ขออภัยครับ ต้องเข้าสู่ระบบก่อนจึงจะใช้งานส่วนนี้ได้<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">เข้าสู่ระบบ</a></div>`);
+            renderBotHtml(`${@json(__('ขออภัยครับ ต้องเข้าสู่ระบบก่อนจึงจะใช้งานส่วนนี้ได้'))}<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">${@json(__('เข้าสู่ระบบ'))}</a></div>`);
             return;
         }
-        renderBotHtml((json.message || 'ขอบคุณครับ ทีมงานจะติดต่อกลับโดยเร็วที่สุด') + `<div class="bot-buttons"><button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← กลับ</button></div>`);
+        renderBotHtml((json.message || @json(__('ขอบคุณครับ ทีมงานจะติดต่อกลับโดยเร็วที่สุด'))) + `<div class="bot-buttons"><button type="button" class="bot-btn bot-btn-outline" onclick="goServiceActions()">← ${@json(__('กลับ'))}</button></div>`);
     }
 
     // ===================== พิมพ์คำถามอิสระ (จับ Keyword) =====================
@@ -563,21 +579,21 @@
         if (!text) return;
         botChatInput.value = '';
         renderUserHtml(escapeHtml(text));
-        const typingEl = renderBotHtml('<i>กำลังค้นคำตอบ...</i>');
+        const typingEl = renderBotHtml('<i>' + @json(__('กำลังค้นคำตอบ...')) + '</i>');
 
         let json;
         try {
             json = await apiPost(botUrls.search, { message: text, topic_id: currentTopicId });
         } catch (e) {
             typingEl.remove();
-            renderBotHtml('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+            renderBotHtml(@json(__('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')));
             return;
         }
         typingEl.remove();
 
         const data = json.data || {};
         if (data.require_membership) {
-            renderBotHtml(`ขออภัยครับ ต้องเข้าสู่ระบบก่อนจึงจะถามคำถามเพิ่มเติมได้<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">เข้าสู่ระบบ</a></div>`);
+            renderBotHtml(`${@json(__('ขออภัยครับ ต้องเข้าสู่ระบบก่อนจึงจะถามคำถามเพิ่มเติมได้'))}<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">${@json(__('เข้าสู่ระบบ'))}</a></div>`);
             return;
         }
 
@@ -585,10 +601,10 @@
             renderBotHtml(escapeHtml(data.answer).replace(/\n/g, '<br>'));
         } else if (botUserId) {
             lastUnansweredQuestion = text;
-            renderBotHtml(escapeHtml(data.escalation_message || 'ทางเราได้รับเรื่องแล้ว กำลังส่งต่อให้เจ้าหน้าที่ครับ'));
+            renderBotHtml(escapeHtml(data.escalation_message || @json(__('ทางเราได้รับเรื่องแล้ว กำลังส่งต่อให้เจ้าหน้าที่ครับ'))));
             setTimeout(() => { if (lastUnansweredQuestion) switchToAgent(agentTopicFromBot()); }, 1200);
         } else {
-            renderBotHtml(`ขออภัยครับ บอทยังไม่พบคำตอบที่ตรงกับคำถามนี้ กรุณาเข้าสู่ระบบเพื่อคุยกับเจ้าหน้าที่ต่อได้เลยครับ<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">เข้าสู่ระบบ</a></div>`);
+            renderBotHtml(`${@json(__('ขออภัยครับ บอทยังไม่พบคำตอบที่ตรงกับคำถามนี้ กรุณาเข้าสู่ระบบเพื่อคุยกับเจ้าหน้าที่ต่อได้เลยครับ'))}<div class="bot-buttons"><a href="${loginUrl}" class="bot-btn">${@json(__('เข้าสู่ระบบ'))}</a></div>`);
         }
     }
 

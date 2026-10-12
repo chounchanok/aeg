@@ -34,7 +34,7 @@ class CartController extends Controller
                 )
                 ->get()
                 ->map(function ($item) {
-                    $item->name = $item->name_th ?? $item->name_en ?? 'ไม่มีชื่อสินค้า';
+                    $item->name = $item->name_th ?? $item->name_en ?? __('ไม่มีชื่อสินค้า');
                     return $item;
                 });
 
@@ -59,7 +59,7 @@ class CartController extends Controller
         $user = Auth::user();
         $product = DB::table('products')->where('id', $request->product_id)->first();
 
-        if (!$product) return back()->withErrors(['error' => 'ไม่พบสินค้า']);
+        if (!$product) return back()->withErrors(['error' => __('ไม่พบสินค้า')]);
 
         // 🌟 2. คำนวณราคา: ถ้าระบุเดือนมา เอาไปคูณราคาตั้งต้น
         $quantity = $request->quantity ?? 1;
@@ -103,13 +103,13 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart')->with('success', 'เพิ่มแพ็กเกจลงตะกร้าเรียบร้อยแล้ว');
+        return redirect()->route('cart')->with('success', __('เพิ่มแพ็กเกจลงตะกร้าเรียบร้อยแล้ว'));
     }
 
     // ลบสินค้าออกจากตะกร้า
     public function removeFromCart($cartItemId)
     {
         DB::table('cart_items')->where('id', $cartItemId)->delete();
-        return back()->with('success', 'ลบสินค้าออกจากตะกร้าแล้ว');
+        return back()->with('success', __('ลบสินค้าออกจากตะกร้าแล้ว'));
     }
 }

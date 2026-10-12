@@ -64,7 +64,7 @@ class PackageController extends Controller
             // จัดโครงสร้างส่งให้หน้า Blade ทำงานง่ายๆ
             $formattedData = (object)[
                 'id' => $pkg->id,
-                'product_name' => $pkg->product_name ?? 'ไม่ระบุชื่อ',
+                'product_name' => $pkg->product_name ?? __('ไม่ระบุชื่อ'),
                 'serial_number' => $pkg->serial_number ?? '-',
                 'image_url' => $pkg->image_url ?? asset('assets/image/img-zo1.webp'),
                 'warranty_expire_date' => $pkg->warranty_expire_date,
@@ -123,7 +123,7 @@ class PackageController extends Controller
         // เช็คว่าเคยรีวิวรายการนี้ไปแล้วหรือยัง
         $existingReview = PackageReview::where('order_item_id', $id)->where('user_id', $user->id)->first();
         if ($existingReview) {
-            return back()->with('error', 'คุณได้ให้คะแนนแพ็กเกจนี้ไปแล้ว');
+            return back()->with('error', __('คุณได้ให้คะแนนแพ็กเกจนี้ไปแล้ว'));
         }
 
         DB::beginTransaction();
@@ -149,11 +149,11 @@ class PackageController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('packages.mine')->with('success', 'ขอบคุณสำหรับคำติชม คุณได้รับ 1 EASE Coin แล้ว');
+            return redirect()->route('packages.mine')->with('success', __('ขอบคุณสำหรับคำติชม คุณได้รับ 1 EASE Coin แล้ว'));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'เกิดข้อผิดพลาดในการส่งข้อมูล: ' . $e->getMessage());
+            return back()->with('error', __('เกิดข้อผิดพลาดในการส่งข้อมูล:') . ' ' . $e->getMessage());
         }
     }
 
@@ -179,7 +179,7 @@ class PackageController extends Controller
             ->get();
 
         // ดึงข้อมูลรายละเอียดข้อความคุ้มครอง/คำอธิบายสินค้าจากตารางหลัก Master
-        $description = 'ไม่มีข้อมูลรายละเอียดอุปกรณ์';
+        $description = __('ไม่มีข้อมูลรายละเอียดอุปกรณ์');
         $coverage = '';
 
         if (($package->reference_type ?? 'product') === 'product') {
@@ -208,7 +208,7 @@ class PackageController extends Controller
             ->first();
 
         if (!$repair) {
-            return response()->json(['success' => false, 'message' => 'ไม่พบข้อมูลรายการนี้'], 404);
+            return response()->json(['success' => false, 'message' => __('ไม่พบข้อมูลรายการนี้')], 404);
         }
 
         // 2. ดึงข้อมูลบันทึกการส่งงานของช่างจากตารางย่อย
@@ -222,20 +222,20 @@ class PackageController extends Controller
 
         // 3. เตรียมข้อมูลเวลาสเตปการทำงานของช่าง
         $timestamps = [
-            'assigned'  => $repair->updated_at ? \Carbon\Carbon::parse($repair->updated_at)->format('d/m/Y H:i') . ' น.' : '-',
-            'accepted'  => $repair->accepted_at ? \Carbon\Carbon::parse($repair->accepted_at)->format('d/m/Y H:i') . ' น.' : 'ไม่มีข้อมูล',
-            'traveling' => $repair->traveling_at ? \Carbon\Carbon::parse($repair->traveling_at)->format('d/m/Y H:i') . ' น.' : 'ไม่มีข้อมูล',
-            'arrived'   => $repair->arrived_at ? \Carbon\Carbon::parse($repair->arrived_at)->format('d/m/Y H:i') . ' น.' : 'ไม่มีข้อมูล',
-            'started'   => $repair->started_at ? \Carbon\Carbon::parse($repair->started_at)->format('d/m/Y H:i') . ' น.' : 'ไม่มีข้อมูล',
-            'completed' => $repair->completed_at ? \Carbon\Carbon::parse($repair->completed_at)->format('d/m/Y H:i') . ' น.' : '-',
+            'assigned'  => $repair->updated_at ? \Carbon\Carbon::parse($repair->updated_at)->format('d/m/Y H:i') . ' ' . __('น.') : '-',
+            'accepted'  => $repair->accepted_at ? \Carbon\Carbon::parse($repair->accepted_at)->format('d/m/Y H:i') . ' ' . __('น.') : __('ไม่มีข้อมูล'),
+            'traveling' => $repair->traveling_at ? \Carbon\Carbon::parse($repair->traveling_at)->format('d/m/Y H:i') . ' ' . __('น.') : __('ไม่มีข้อมูล'),
+            'arrived'   => $repair->arrived_at ? \Carbon\Carbon::parse($repair->arrived_at)->format('d/m/Y H:i') . ' ' . __('น.') : __('ไม่มีข้อมูล'),
+            'started'   => $repair->started_at ? \Carbon\Carbon::parse($repair->started_at)->format('d/m/Y H:i') . ' ' . __('น.') : __('ไม่มีข้อมูล'),
+            'completed' => $repair->completed_at ? \Carbon\Carbon::parse($repair->completed_at)->format('d/m/Y H:i') . ' ' . __('น.') : '-',
         ];
 
         return response()->json([
             'success' => true,
             'data' => [
                 'ticket_number' => $repair->ticket_number,
-                'status_text' => $repair->status === 'completed' ? 'ซ่อมเสร็จสิ้น' : 'อยู่ระหว่างดำเนินการ',
-                'technician_note' => $completion->technician_note ?? 'ช่างไม่ได้ระบุหมายเหตุไว้',
+                'status_text' => $repair->status === 'completed' ? __('ซ่อมเสร็จสิ้น') : __('อยู่ระหว่างดำเนินการ'),
+                'technician_note' => $completion->technician_note ?? __('ช่างไม่ได้ระบุหมายเหตุไว้'),
                 'customer_signature' => $completion->customer_signature_path ?? null,
                 'before_media' => $beforeMedia,
                 'after_media' => $afterMedia,

@@ -380,7 +380,7 @@
             let btnSubmit = document.getElementById('btnSubmit');
 
             // เปลี่ยนข้อความปุ่มระหว่างส่ง
-            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + @json(__('กำลังส่ง...'));
             btnSubmit.disabled = true;
 
             // ยิงข้อมูลไปที่ Laravel Backend
@@ -394,7 +394,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                btnSubmit.innerHTML = 'ส่งข้อความถึงเรา';
+                btnSubmit.innerHTML = @json(__('ส่งข้อความถึงเรา'));
                 btnSubmit.disabled = false;
 
                 if (data.success) {
@@ -403,14 +403,14 @@
                     const successModal = new bootstrap.Modal(document.getElementById('successModal'));
                     successModal.show();
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                    alert(@json(__('เกิดข้อผิดพลาด:')) + ' ' + data.message);
                 }
             })
             .catch(error => {
-                btnSubmit.innerHTML = 'ส่งข้อความถึงเรา';
+                btnSubmit.innerHTML = @json(__('ส่งข้อความถึงเรา'));
                 btnSubmit.disabled = false;
                 console.error("Error:", error);
-                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+                alert(@json(__('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง')));
             });
         });
     </script>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\SupportChatReferenceService;
 use App\Services\SupportChatTopicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -92,7 +93,8 @@ class SupportChatAdminController extends Controller
             ->where('user_id', $user_id)
             ->where('topic', $topic)
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(fn ($m) => SupportChatReferenceService::present($m)); // 🌟 การ์ดสินค้า/บริการ/ของรางวัลที่ลูกค้าแนบมา
 
         return view('admin.support-chats.show', [
             'messages' => $messages,
@@ -127,7 +129,7 @@ class SupportChatAdminController extends Controller
             'updated_at' => now()
         ]);
 
-        $newMessage = DB::table('support_chats')->where('id', $messageId)->first();
+        $newMessage = SupportChatReferenceService::present(DB::table('support_chats')->where('id', $messageId)->first());
 
         // 🌟 ครอบด้วย try-catch
         try {

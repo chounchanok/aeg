@@ -76,11 +76,11 @@ class ServiceRequestController extends Controller
             DB::commit();
 
             // ส่งกลับไปหน้า "สถานะแจ้งซ่อม" พร้อมข้อความสำเร็จ
-            return redirect()->route('repair-status', $requestId)->with('success', 'ส่งคำขอแจ้งซ่อมสำเร็จ ทีมงานจะติดต่อกลับโดยเร็วที่สุด');
+            return redirect()->route('repair-status', $requestId)->with('success', __('ส่งคำขอแจ้งซ่อมสำเร็จ ทีมงานจะติดต่อกลับโดยเร็วที่สุด'));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'เกิดข้อผิดพลาด: ' . $e->getMessage())->withInput();
+            return back()->with('error', __('เกิดข้อผิดพลาด:') . ' ' . $e->getMessage())->withInput();
         }
     }
 
