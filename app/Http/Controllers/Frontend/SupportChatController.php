@@ -116,18 +116,22 @@ class SupportChatController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        // 1. บันทึกลง DB
-        $messageId = DB::table('support_chats')->insertGetId([
+        // 1. บันทึกลง DB — แชททั่วไป (ไม่มี ref) ไม่แตะคอลัมน์ ref_* เลย
+        //    จึงส่งข้อความธรรมดาได้แม้เซิร์ฟเวอร์ยังไม่ได้รัน migration 2026_10_12_110000
+        $row = [
             'user_id' => $user->id,
             'topic' => $topic,
             'message' => $text,
-            'ref_type' => $refSnapshot ? $request->ref_type : null,
-            'ref_id' => $refSnapshot ? (int) $request->ref_id : null,
-            'ref_snapshot' => $refSnapshot ? json_encode($refSnapshot, JSON_UNESCAPED_UNICODE) : null,
             'sender_type' => 'customer',
             'created_at' => now(),
             'updated_at' => now()
-        ]);
+        ];
+        if ($refSnapshot) {
+            $row['ref_type'] = $request->ref_type;
+            $row['ref_id'] = (int) $request->ref_id;
+            $row['ref_snapshot'] = json_encode($refSnapshot, JSON_UNESCAPED_UNICODE);
+        }
+        $messageId = DB::table('support_chats')->insertGetId($row);
 
         // 2. ดึงข้อมูลที่เพิ่งสร้างเพื่อเอาไป Broadcast
         $newMessage = SupportChatReferenceService::present(DB::table('support_chats')->where('id', $messageId)->first());
