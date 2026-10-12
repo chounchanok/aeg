@@ -2,6 +2,19 @@
 
 @section('subhead')
     <title>{{ $code->code }} - คูปอง/ของรางวัล - AEG Admin</title>
+    <style>
+        .rr-timeline { position: relative; padding-left: 4px; }
+        .rr-timeline-item { position: relative; padding: 0 0 18px 26px; }
+        .rr-timeline-item:last-child { padding-bottom: 0; }
+        /* เส้นแนวตั้งเชื่อมระหว่างจุด */
+        .rr-timeline-item::before { content: ""; position: absolute; left: 5px; top: 16px; bottom: -2px; width: 2px; background: #e2e8f0; }
+        .rr-timeline-item:last-child::before { display: none; }
+        .rr-timeline-dot, .rr-legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 9999px; }
+        .rr-timeline-dot { position: absolute; left: 0; top: 4px; box-shadow: 0 0 0 3px #fff; }
+        .rr-legend-dot { vertical-align: -1px; margin-right: 4px; }
+        .is-customer { background: #f59e0b; }
+        .is-admin { background: #1e40af; }
+    </style>
 @endsection
 
 @php
@@ -167,19 +180,28 @@
         <div class="col-span-12 lg:col-span-5">
             <div class="box p-5">
                 <h3 class="font-medium mb-4">ประวัติสถานะ</h3>
-                @forelse($logs as $log)
-                    <div class="relative pl-5 pb-4 border-l border-slate-200 last:pb-0">
-                        <div class="absolute -left-1.5 top-1 w-3 h-3 rounded-full {{ $log->actor === 'customer' ? 'bg-warning' : 'bg-primary' }}"></div>
-                        <div class="text-sm font-medium">{{ $statusLabels[$log->status] ?? $log->status }}</div>
-                        @if($log->note)<div class="text-xs text-slate-600">{{ $log->note }}</div>@endif
-                        <div class="text-xs text-slate-400">
-                            {{ \Carbon\Carbon::parse($log->created_at)->format('d/m/Y H:i') }}
-                            · {{ $log->actor === 'customer' ? 'ลูกค้า' : ($log->actor === 'system' ? 'ระบบ' : ($log->changed_by_name ?? 'แอดมิน')) }}
+                {{-- 🌟 timeline: ใช้ CSS ของหน้านี้เอง (คลาส Tailwind อย่าง -left-1.5 / pl-5 ไม่มีใน CSS ที่ build ไว้ ทำให้จุดทับข้อความ) --}}
+                <div class="rr-timeline">
+                    @forelse($logs as $log)
+                        <div class="rr-timeline-item">
+                            <span class="rr-timeline-dot {{ $log->actor === 'customer' ? 'is-customer' : 'is-admin' }}"></span>
+                            <div class="text-sm font-medium">{{ $statusLabels[$log->status] ?? $log->status }}</div>
+                            @if($log->note)<div class="text-xs text-slate-600 mt-0.5">{{ $log->note }}</div>@endif
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                {{ \Carbon\Carbon::parse($log->created_at)->format('d/m/Y H:i') }}
+                                · {{ $log->actor === 'customer' ? 'ลูกค้า' : ($log->actor === 'system' ? 'ระบบ' : ($log->changed_by_name ?? 'แอดมิน')) }}
+                            </div>
                         </div>
+                    @empty
+                        <div class="text-sm text-slate-500">ยังไม่มีประวัติ (รายการที่แลกก่อนเปิดใช้ระบบนี้)</div>
+                    @endforelse
+                </div>
+                @if($logs->isNotEmpty())
+                    <div class="text-xs text-slate-500 mt-4">
+                        <span class="rr-legend-dot is-customer"></span> ลูกค้า
+                        <span class="rr-legend-dot is-admin" style="margin-left:12px"></span> แอดมิน/ระบบ
                     </div>
-                @empty
-                    <div class="text-sm text-slate-500">ยังไม่มีประวัติ (รายการที่แลกก่อนเปิดใช้ระบบนี้)</div>
-                @endforelse
+                @endif
             </div>
         </div>
     </div>
