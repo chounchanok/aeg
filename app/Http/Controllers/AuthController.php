@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Services\PasswordResetOtpService;
 use Carbon\Carbon;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Cache;
@@ -38,6 +39,7 @@ class AuthController extends Controller
     public function forgotPasswordView()
     {
         return view('frontend.forgot-password', [
+            'step' => 'phone',
             'layout' => 'base',
             'dark_mode' => false,
             'color_scheme' => 'default'
@@ -311,15 +313,103 @@ class AuthController extends Controller
     // ==========================================
     // 4. ลืมรหัสผ่าน (Forgot & Reset Password)
     // ==========================================
+    // 🌟 ขั้นที่ 1: กรอกเบอร์มือถือ → ส่ง OTP (ThaiBulkSMS)
     public function forgotPasswordSubmit(Request $request)
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
-        $status = Password::sendResetLink($request->only('email'));
+        $request->validate(['phone' => 'required|string'], ['phone.required' => __('กรุณากรอกเบอร์มือถือ')]);
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', __('ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณแล้ว'));
+        $result = PasswordResetOtpService::requestOtp($request->phone);
+        if (!$result['ok']) {
+            return back()->withErrors(['phone' => $result['message']])->withInput();
         }
-        return back()->withErrors(['email' => __('ไม่สามารถส่งอีเมลได้ กรุณาลองใหม่')]);
+
+        session([
+            'pwreset_phone' => $result['phone'],
+            'pwreset_ref' => $result['ref_code'],
+            'pwreset_resend_at' => time() + $result['resend_in'],
+        ]);
+        session()->forget('pwreset_token');
+
+        return redirect()->route('forgot-password.verify')->with('success', $result['message']);
+    }
+
+    // 🌟 ขั้นที่ 2: หน้ากรอก OTP
+    public function forgotPasswordVerifyView()
+    {
+        if (!session('pwreset_phone')) {
+            return redirect()->route('forgot-password');
+        }
+        return view('frontend.forgot-password', [
+            'step' => 'verify',
+            'phone' => session('pwreset_phone'),
+            'refCode' => session('pwreset_ref'),
+            'resendIn' => max(0, (int) session('pwreset_resend_at', 0) - time()),
+        ]);
+    }
+
+    public function forgotPasswordVerifySubmit(Request $request)
+    {
+        $phone = session('pwreset_phone');
+        if (!$phone) {
+            return redirect()->route('forgot-password')->withErrors(['phone' => __('เซสชันหมดอายุ กรุณากรอกเบอร์โทรศัพท์ใหม่')]);
+        }
+        $request->validate(['otp' => 'required|string'], ['otp.required' => __('กรุณากรอกรหัส OTP')]);
+
+        $result = PasswordResetOtpService::verifyOtp($phone, trim($request->otp));
+        if (!$result['ok']) {
+            return back()->withErrors(['otp' => $result['message']]);
+        }
+
+        session(['pwreset_token' => $result['reset_token']]);
+        return redirect()->route('forgot-password.new');
+    }
+
+    public function forgotPasswordResend()
+    {
+        $phone = session('pwreset_phone');
+        if (!$phone) {
+            return redirect()->route('forgot-password');
+        }
+        $result = PasswordResetOtpService::requestOtp($phone);
+        if (!$result['ok']) {
+            return back()->withErrors(['otp' => $result['message']]);
+        }
+        session(['pwreset_ref' => $result['ref_code'], 'pwreset_resend_at' => time() + $result['resend_in']]);
+        return back()->with('success', $result['message']);
+    }
+
+    // 🌟 ขั้นที่ 3: ตั้งรหัสผ่านใหม่ (เข้าได้หลังยืนยัน OTP ผ่านแล้วเท่านั้น)
+    public function forgotPasswordNewView()
+    {
+        if (!session('pwreset_phone') || !session('pwreset_token')) {
+            return redirect()->route('forgot-password');
+        }
+        return view('frontend.forgot-password', ['step' => 'reset', 'phone' => session('pwreset_phone')]);
+    }
+
+    public function forgotPasswordNewSubmit(Request $request)
+    {
+        $phone = session('pwreset_phone');
+        $token = session('pwreset_token');
+        if (!$phone || !$token) {
+            return redirect()->route('forgot-password')->withErrors(['phone' => __('เซสชันหมดอายุ กรุณากรอกเบอร์โทรศัพท์ใหม่')]);
+        }
+
+        $request->validate([
+            'password' => 'required|string|min:' . PasswordResetOtpService::PASSWORD_MIN . '|confirmed',
+        ], [
+            'password.required' => __('กรุณากรอกรหัสผ่านใหม่'),
+            'password.min' => __('รหัสผ่านต้องมีอย่างน้อย :min ตัวอักษร', ['min' => PasswordResetOtpService::PASSWORD_MIN]),
+            'password.confirmed' => __('ยืนยันรหัสผ่านไม่ตรงกัน'),
+        ]);
+
+        $result = PasswordResetOtpService::resetPassword($phone, $token, $request->password);
+        session()->forget(['pwreset_phone', 'pwreset_ref', 'pwreset_resend_at', 'pwreset_token']);
+
+        if (!$result['ok']) {
+            return redirect()->route('forgot-password')->withErrors(['phone' => $result['message']]);
+        }
+        return redirect()->route('login')->with('success', $result['message']);
     }
 
     public function resetPasswordView($token, Request $request)

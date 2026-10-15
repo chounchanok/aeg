@@ -210,6 +210,13 @@
         <h1 class="form-title">{{ __('เข้าสู่ระบบ') }}</h1>
         <p class="form-subtitle">{{ __('ยินดีต้อนรับกลับมา! กรุณาเข้าสู่ระบบ') }}</p>
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         @if (session('error'))
             <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px;">
                 <strong>{{ __('เกิดข้อผิดพลาด!') }}</strong> {{ session('error') }}

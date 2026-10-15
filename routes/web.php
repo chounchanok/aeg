@@ -154,7 +154,13 @@ Route::middleware('guest')->group(function() {
     Route::post('verify-otp', [AuthController::class, 'verifyOtpSubmit'])->name('verify-otp.submit');
 
     Route::get('forgot-password', [AuthController::class, 'forgotPasswordView'])->name('forgot-password');
-    Route::post('forgot-password', [AuthController::class, 'forgotPasswordSubmit'])->name('forgot-password.submit');
+    Route::post('forgot-password', [AuthController::class, 'forgotPasswordSubmit'])->name('forgot-password.submit')->middleware('throttle:10,1');
+    // 🌟 ลืมรหัสผ่านด้วยเบอร์มือถือ: ส่ง OTP → ยืนยัน OTP → ตั้งรหัสผ่านใหม่
+    Route::get('forgot-password/verify', [AuthController::class, 'forgotPasswordVerifyView'])->name('forgot-password.verify');
+    Route::post('forgot-password/verify', [AuthController::class, 'forgotPasswordVerifySubmit'])->name('forgot-password.verify.submit')->middleware('throttle:20,1');
+    Route::post('forgot-password/resend', [AuthController::class, 'forgotPasswordResend'])->name('forgot-password.resend')->middleware('throttle:10,1');
+    Route::get('forgot-password/new-password', [AuthController::class, 'forgotPasswordNewView'])->name('forgot-password.new');
+    Route::post('forgot-password/new-password', [AuthController::class, 'forgotPasswordNewSubmit'])->name('forgot-password.new.submit');
     Route::get('reset-password/{token}', [AuthController::class, 'resetPasswordView'])->name('password.reset');
     Route::post('reset-password', [AuthController::class, 'resetPasswordSubmit'])->name('password.update');
 

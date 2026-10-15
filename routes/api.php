@@ -72,6 +72,13 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 // 3. กรอกข้อมูลส่วนตัวต่อให้จบ (มีอยู่แล้ว)
 Route::post('/register', [AuthController::class, 'register']);
 
+// 🌟 ลืมรหัสผ่านด้วยเบอร์มือถือ (flow เดียวกับเว็บ): ขอ OTP → ยืนยัน OTP (ได้ reset_token) → ตั้งรหัสผ่านใหม่
+Route::prefix('auth/forgot-password')->middleware('throttle:10,1')->group(function () {
+    Route::post('/request-otp', [AuthController::class, 'forgotPasswordRequestOtp']);
+    Route::post('/verify-otp', [AuthController::class, 'forgotPasswordVerifyOtp']);
+    Route::post('/reset', [AuthController::class, 'forgotPasswordReset']);
+});
+
 // API สำหรับล็อกอินและสมัครสมาชิก
 Route::post('/auth/social-login', [AuthController::class, 'socialLogin']);
 

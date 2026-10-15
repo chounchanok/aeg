@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="UTF-8">
@@ -132,6 +132,24 @@
             text-decoration: underline;
         }
 
+        .otp-input {
+            letter-spacing: 12px;
+            text-align: center;
+            font-size: 1.6rem !important;
+            font-weight: 600;
+        }
+
+        .step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; }
+        .step-dots span { width: 34px; height: 6px; border-radius: 6px; background: #e2e8f0; }
+        .step-dots span.active { background: var(--accent-red); }
+
+        .resend-row { text-align: center; margin-top: 18px; font-size: 0.92rem; color: #64748b; }
+        .resend-row button { background: none; border: none; color: var(--accent-red); font-weight: 600; padding: 0; }
+        .resend-row button:disabled { color: #94a3b8; cursor: not-allowed; }
+
+        .pw-wrap { position: relative; }
+        .pw-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 0.85rem; }
+
         @media (max-width: 576px) {
             .forgot-card {
                 padding: 35px 25px;
@@ -149,24 +167,93 @@
 
 <body>
 
+    @php $step = $step ?? 'phone'; @endphp
     <div class="forgot-card">
-        <h1 class="form-title">{{ __('ลืมรหัสผ่าน?') }}</h1>
-        <p class="form-subtitle">{{ __('ไม่ต้องกังวล! ระบุเบอร์มือถือของคุณเพื่อรับรหัสยืนยันในการตั้งรหัสผ่านใหม่') }}</p>
+        <div class="step-dots">
+            <span class="active"></span>
+            <span class="{{ in_array($step, ['verify', 'reset']) ? 'active' : '' }}"></span>
+            <span class="{{ $step === 'reset' ? 'active' : '' }}"></span>
+        </div>
 
-        <form>
-            <div class="mb-4">
-                <label class="input-label">{{ __('เบอร์มือถือ') }}</label>
-                <div class="phone-input-group">
-                    <div class="country-code-box">
-                        <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
-                        <span class="fw-medium">+66</span>
+        @if (session('success'))
+            <div class="alert alert-success" style="border-radius: 12px;">{{ session('success') }}</div>
+        @endif
+
+        @if ($step === 'phone')
+            {{-- ขั้นที่ 1: กรอกเบอร์มือถือ --}}
+            <h1 class="form-title">{{ __('ลืมรหัสผ่าน?') }}</h1>
+            <p class="form-subtitle">{{ __('ไม่ต้องกังวล! ระบุเบอร์มือถือของคุณเพื่อรับรหัสยืนยันในการตั้งรหัสผ่านใหม่') }}</p>
+
+            <form method="POST" action="{{ route('forgot-password.submit') }}" onsubmit="lockSubmit(this)">
+                @csrf
+                <div class="mb-4">
+                    <label class="input-label">{{ __('เบอร์มือถือ') }}</label>
+                    <div class="phone-input-group" style="margin-bottom: 8px;">
+                        <div class="country-code-box">
+                            <img src="https://flagcdn.com/w20/th.png" width="20" alt="Thailand Flag">
+                            <span class="fw-medium">+66</span>
+                        </div>
+                        <input type="tel" name="phone" value="{{ old('phone') }}" class="form-control input-field @error('phone') is-invalid @enderror" placeholder="08x-xxx-xxxx" required autofocus>
                     </div>
-                    <input type="tel" name="phone" class="form-control input-field" placeholder="08x-xxx-xxxx" required>
+                    @error('phone')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
-            </div>
 
-            <button type="submit" class="btn btn-submit-custom">{{ __('ส่งรหัสยืนยัน') }}</button>
-        </form>
+                <button type="submit" class="btn btn-submit-custom">{{ __('ส่งรหัสยืนยัน') }}</button>
+            </form>
+
+        @elseif ($step === 'verify')
+            {{-- ขั้นที่ 2: กรอก OTP --}}
+            <h1 class="form-title">{{ __('ยืนยันรหัส OTP') }}</h1>
+            <p class="form-subtitle">
+                {{ __('กรอกรหัส 6 หลักที่ส่งไปยังเบอร์') }} <strong>{{ substr($phone, 0, 3) }}-xxx-{{ substr($phone, -4) }}</strong>
+                @if (!empty($refCode))<br><small>(Ref: {{ $refCode }})</small>@endif
+            </p>
+
+            <form method="POST" action="{{ route('forgot-password.verify.submit') }}" onsubmit="lockSubmit(this)">
+                @csrf
+                <div class="mb-4">
+                    <input type="text" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                        class="form-control input-field otp-input @error('otp') is-invalid @enderror" placeholder="------" required autofocus>
+                    @error('otp')<div class="text-danger small mt-2 text-center">{{ $message }}</div>@enderror
+                </div>
+                <button type="submit" class="btn btn-submit-custom">{{ __('ยืนยัน') }}</button>
+            </form>
+
+            <form method="POST" action="{{ route('forgot-password.resend') }}" class="resend-row">
+                @csrf
+                {{ __('ไม่ได้รับรหัส?') }}
+                <button type="submit" id="resendBtn" {{ ($resendIn ?? 0) > 0 ? 'disabled' : '' }}>
+                    {{ __('ส่งรหัสอีกครั้ง') }}<span id="resendTimer">{{ ($resendIn ?? 0) > 0 ? ' (' . $resendIn . ')' : '' }}</span>
+                </button>
+                <div class="mt-2"><a href="{{ route('forgot-password') }}" style="color:#64748b;">{{ __('เปลี่ยนเบอร์มือถือ') }}</a></div>
+            </form>
+
+        @else
+            {{-- ขั้นที่ 3: ตั้งรหัสผ่านใหม่ --}}
+            <h1 class="form-title">{{ __('ตั้งรหัสผ่านใหม่') }}</h1>
+            <p class="form-subtitle">{{ __('กรุณาตั้งรหัสผ่านใหม่สำหรับบัญชี') }} <strong>{{ substr($phone, 0, 3) }}-xxx-{{ substr($phone, -4) }}</strong></p>
+
+            <form method="POST" action="{{ route('forgot-password.new.submit') }}" onsubmit="lockSubmit(this)">
+                @csrf
+                <div class="mb-3">
+                    <label class="input-label">{{ __('รหัสผ่านใหม่') }}</label>
+                    <div class="pw-wrap">
+                        <input type="password" name="password" id="pw1" minlength="{{ \App\Services\PasswordResetOtpService::PASSWORD_MIN }}" class="form-control input-field @error('password') is-invalid @enderror" required autofocus autocomplete="new-password">
+                        <button type="button" class="pw-toggle" onclick="togglePw('pw1', this)">{{ __('แสดง') }}</button>
+                    </div>
+                    <div class="text-muted small mt-1">{{ __('อย่างน้อย :min ตัวอักษร', ['min' => \App\Services\PasswordResetOtpService::PASSWORD_MIN]) }}</div>
+                </div>
+                <div class="mb-4">
+                    <label class="input-label">{{ __('ยืนยันรหัสผ่านใหม่') }}</label>
+                    <div class="pw-wrap">
+                        <input type="password" name="password_confirmation" id="pw2" class="form-control input-field" required autocomplete="new-password">
+                        <button type="button" class="pw-toggle" onclick="togglePw('pw2', this)">{{ __('แสดง') }}</button>
+                    </div>
+                    @error('password')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
+                </div>
+                <button type="submit" class="btn btn-submit-custom">{{ __('บันทึกรหัสผ่านใหม่') }}</button>
+            </form>
+        @endif
 
         <div class="back-to-login">
             <a href="{{ route('login') }}">
@@ -179,6 +266,32 @@
             </a>
         </div>
     </div>
+
+    <script>
+        // กันกดส่งซ้ำ (SMS เสียเครดิต)
+        function lockSubmit(form) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.style.opacity = 0.7; }
+        }
+        function togglePw(id, btn) {
+            const el = document.getElementById(id);
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            btn.textContent = show ? @json(__('ซ่อน')) : @json(__('แสดง'));
+        }
+        // นับถอยหลังปุ่ม "ส่งรหัสอีกครั้ง"
+        (function () {
+            const btn = document.getElementById('resendBtn');
+            const timer = document.getElementById('resendTimer');
+            let left = {{ (int) ($resendIn ?? 0) }};
+            if (!btn || left <= 0) return;
+            const t = setInterval(() => {
+                left--;
+                if (left <= 0) { clearInterval(t); btn.disabled = false; timer.textContent = ''; }
+                else { timer.textContent = ' (' + left + ')'; }
+            }, 1000);
+        })();
+    </script>
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use App\Services\DeviceTokenService;
+use App\Services\PasswordResetOtpService;
 use Carbon\Carbon;
 
 class AuthController extends Controller
@@ -203,6 +204,59 @@ class AuthController extends Controller
         // กรณี Token หมดอายุ, ไม่ถูกต้อง, หรืออีเมลไม่ตรงกัน
         // $response จะเป็นสตริงข้อความที่แปลแล้ว (เช่น "passwords.token")
         return response()->json(['message' => trans($response)], 400);
+    }
+
+    // ==========================================
+    // 🌟 ลืมรหัสผ่านด้วยเบอร์มือถือ + OTP (ใช้ PasswordResetOtpService ตัวเดียวกับหน้าเว็บ)
+    // ==========================================
+
+    /** POST /auth/forgot-password/request-otp  body: { phone } */
+    public function forgotPasswordRequestOtp(Request $request)
+    {
+        $request->validate(['phone' => 'required|string']);
+        $r = PasswordResetOtpService::requestOtp($request->phone);
+        if (!$r['ok']) {
+            return $this->errorResponse($r['message'], $r['status'], isset($r['retry_after']) ? ['retry_after' => $r['retry_after']] : null);
+        }
+        return $this->successResponse([
+            'phone' => $r['phone'],
+            'ref_code' => $r['ref_code'],
+            'expires_in' => $r['expires_in'],   // วินาที — OTP ใช้ได้ 5 นาที
+            'resend_in' => $r['resend_in'],     // วินาที — ขอใหม่ได้หลังจากนี้
+        ], $r['message']);
+    }
+
+    /** POST /auth/forgot-password/verify-otp  body: { phone, code } */
+    public function forgotPasswordVerifyOtp(Request $request)
+    {
+        $request->validate(['phone' => 'required|string', 'code' => 'required|string']);
+        $r = PasswordResetOtpService::verifyOtp($request->phone, trim($request->code));
+        if (!$r['ok']) {
+            return $this->errorResponse($r['message'], $r['status'], isset($r['attempts_left']) ? ['attempts_left' => $r['attempts_left']] : null);
+        }
+        return $this->successResponse([
+            'phone' => $r['phone'],
+            'reset_token' => $r['reset_token'], // ใช้ครั้งเดียวกับ /reset
+            'expires_in' => $r['expires_in'],   // วินาที (15 นาที)
+        ], $r['message']);
+    }
+
+    /** POST /auth/forgot-password/reset  body: { phone, reset_token, password, password_confirmation } */
+    public function forgotPasswordReset(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'reset_token' => 'required|string',
+            'password' => 'required|string|min:' . PasswordResetOtpService::PASSWORD_MIN . '|confirmed',
+        ], [
+            'password.min' => __('รหัสผ่านต้องมีอย่างน้อย :min ตัวอักษร', ['min' => PasswordResetOtpService::PASSWORD_MIN]),
+            'password.confirmed' => __('ยืนยันรหัสผ่านไม่ตรงกัน'),
+        ]);
+        $r = PasswordResetOtpService::resetPassword($request->phone, $request->reset_token, $request->password);
+        if (!$r['ok']) {
+            return $this->errorResponse($r['message'], $r['status']);
+        }
+        return $this->successResponse(['phone' => $r['phone']], $r['message']);
     }
 
     public function logout(Request $request)

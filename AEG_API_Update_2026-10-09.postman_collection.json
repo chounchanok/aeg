@@ -1534,6 +1534,146 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "12. ลืมรหัสผ่าน (เบอร์มือถือ + OTP)",
+      "item": [
+        {
+          "name": "1) ขอ OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{reset_phone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password/request-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "request-otp"
+              ]
+            },
+            "description": "เบอร์ต้องมีบัญชีอยู่แล้ว / ขอใหม่ได้ทุก 60 วินาที"
+          },
+          "response": []
+        },
+        {
+          "name": "2) ยืนยัน OTP → reset_token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{reset_phone}}\",\n  \"code\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "verify-otp"
+              ]
+            },
+            "description": "ได้ reset_token (บันทึกลงตัวแปรให้อัตโนมัติ)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.data && j.data.reset_token) { pm.collectionVariables.set('reset_token', j.data.reset_token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3) ตั้งรหัสผ่านใหม่",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{reset_phone}}\",\n  \"reset_token\": \"{{reset_token}}\",\n  \"password\": \"newpass123\",\n  \"password_confirmation\": \"newpass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "reset"
+              ]
+            },
+            "description": "สำเร็จแล้ว token เดิมทุกเครื่องถูกยกเลิก ต้อง login ใหม่"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -1586,6 +1726,14 @@
       "key": "product_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "reset_phone",
+      "value": "0812345678"
+    },
+    {
+      "key": "reset_token",
+      "value": ""
     }
   ]
 }
