@@ -72,14 +72,10 @@
 
         /* --- Unified Box with Specific Opacity Gradient --- */
         .privilege-unified-box {
-            /* ไล่สี: แดง 15% (rgba 0.15) -> น้ำเงิน 10% (rgba 0.10) -> หายไป 0% */
             background: linear-gradient(180deg,
                     rgba(244, 22, 41, 0.15) 0%,
-                    /* สีแดงทึบ 15% */
                     rgba(23, 46, 89, 0.10) 50%,
-                    /* สีน้ำเงินทึบ 10% */
                     rgba(248, 249, 250, 0) 100%
-                    /* จางหายไป 0% */
                 );
             border-radius: 30px;
             padding: 60px 20px;
@@ -94,11 +90,10 @@
             overflow-x: auto;
             flex-wrap: nowrap;
             padding-bottom: 15px;
-            scrollbar-width: none; /* 🌟 ซ่อน Scrollbar ของ Firefox */
-            -ms-overflow-style: none; /* 🌟 ซ่อน Scrollbar ของ IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
-        /* 🌟 ซ่อน Scrollbar ของ Chrome/Safari/มือถือ */
         .privilege-nav::-webkit-scrollbar {
             display: none; 
         }
@@ -255,7 +250,6 @@
                 height: 200px;
             }
 
-            /* 🌟 ปรับให้เมนูชิดซ้าย จะได้ปัดเลื่อนซ้ายขวาได้โดยไม่ตกขอบ */
             .privilege-nav {
                 justify-content: flex-start; 
                 padding-left: 5px;
@@ -270,13 +264,11 @@
                 height: 65px;
             }
 
-            /* 🌟 ลด Padding กล่องสีชมพูเพื่อไม่ให้ดันการ์ดทะลุจอ */
             .privilege-unified-box {
                 padding: 40px 15px; 
                 border-radius: 20px;
             }
 
-            /* 🌟 ย่อขนาดตัวอักษรของการ์ดลงนิดนึงให้อ่านง่ายบนมือถือ */
             .reward-title {
                 font-size: 1.3rem; 
             }
@@ -297,18 +289,13 @@
                     @foreach($banners as $index => $banner)
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <a href="{{ $banner->link_url ?? '#' }}" target="_blank" rel="noopener">
-                            <!-- 🌟 1. รูปสำหรับจอคอมพิวเตอร์ (ซ่อนในมือถือ) -->
                             @php $isEnBanner = str_starts_with(app()->getLocale(), 'en'); @endphp
                             <img src="{{ ($isEnBanner && $banner->image_url_en) ? $banner->image_url_en : $banner->image_url }}" class="d-none d-md-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
-                            
-                            <!-- 🌟 2. รูปสำหรับจอมือถือ (ซ่อนในจอคอม) -->
-                            <!-- ใส่ ?? $banner->image_url เผื่อไว้ในกรณีที่บางแบนเนอร์ลืมอัปโหลดรูปมือถือ ระบบจะดึงรูปคอมมาโชว์แทนเพื่อไม่ให้ภาพพังครับ -->
                             <img src="{{ ($isEnBanner && ($banner->image_url_m_en ?: $banner->image_url_en)) ? ($banner->image_url_m_en ?: $banner->image_url_en) : ($banner->image_url_m ?? $banner->image_url) }}" class="d-block d-md-none w-100" alt="{{ $banner->title ?? 'Banner' }}">
                             </a>
                         </div>
                     @endforeach
                 @else
-                    <!-- รูป Default หากยังไม่มีข้อมูลแบนเนอร์ -->
                     <div class="carousel-item active">
                         <img src="{{ asset('assets/image/slider.webp') }}" class="d-block w-100" alt="Default Banner">
                     </div>
@@ -328,12 +315,28 @@
                 <p class="text-muted">{{ __('สะสมพอยท์เพื่อแลกของรางวัล และดีลพิเศษมากมาย') }}</p>
             </div>
 
+            {{-- เตรียมข้อมูลสุ่ม 6 รายการ (fallback สุ่มจาก $rewardsByCategory หาก Controller ยังไม่ได้ส่ง $randomRewards มา) --}}
+            @php
+                $randomItems = $randomRewards ?? (isset($rewardsByCategory) ? collect($rewardsByCategory)->flatten()->shuffle()->take(6) : collect());
+            @endphp
+
             <div class="privilege-tabs-container mb-5">
                 <ul class="nav nav-pills privilege-nav" id="pills-tab" role="tablist">
+                    {{-- 🌟 แท็บเริ่มต้น: ทั้งหมด / สิทธิพิเศษแนะนำ (แสดงผลสุ่ม 6 รายการ) --}}
+                    <!-- <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cat-random">
+                            <div class="nav-icon-wrapper">
+                                <img src="{{ asset('assets/image/w-default.webp') }}" class="icon-default">
+                                <img src="{{ asset('assets/image/gd-default.webp') }}" class="icon-active">
+                            </div>
+                            <span>{{ __('ทั้งหมด') }}</span>
+                        </button>
+                    </li> -->
+
                     @if(!empty($categories))
-                        @foreach($categories as $index => $category)
+                        @foreach($categories as $category)
                             <li class="nav-item">
-                                <button class="nav-link {{ $index === 0 ? 'active' : '' }}" data-bs-toggle="pill" data-bs-target="#cat-{{ $category->id }}">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#cat-{{ $category->id }}">
                                     <div class="nav-icon-wrapper">
                                         <img src="{{ $category->icon_url ?? asset('assets/image/w-default.webp') }}" class="icon-default">
                                         <img src="{{ $category->icon_url_active ?? asset('assets/image/gd-default.webp') }}" class="icon-active">
@@ -347,14 +350,11 @@
             </div>
 
             <div class="tab-content" id="pills-tabContent">
-                @if(!empty($categories))
-                @foreach($categories as $index => $category_cal)
-
-                <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" id="cat-{{ $category_cal->id }}" role="tabpanel">
+                {{-- 🌟 1. เนื้อหาของแท็บเริ่มต้น (สุ่ม 6 รายการ) --}}
+                <div class="tab-pane fade show active" id="cat-random" role="tabpanel">
                     <div class="row g-4">
-
-                        @if(isset($rewardsByCategory[$category_cal->id]) && $rewardsByCategory[$category_cal->id]->count() > 0)
-                            @foreach($rewardsByCategory[$category_cal->id] as $reward)
+                        @if($randomItems->count() > 0)
+                            @foreach($randomItems as $reward)
                                 <div class="col-md-6 col-lg-4">
                                     <div class="reward-card">
                                         <a href="{{ route('rewards-detail', $reward->id ?? 0) }}" style="text-decoration: none !important;">
@@ -376,13 +376,48 @@
                         @else
                             <div class="col-12">
                                 <div class="alert alert-info text-center" role="alert">
-                                    {{ __('ขณะนี้ยังไม่มีสิทธิพิเศษในหมวดนี้ กรุณาตรวจสอบอีกครั้งในภายหลัง') }}
+                                    {{ __('ขณะนี้ยังไม่มีสิทธิพิเศษ กรุณาตรวจสอบอีกครั้งในภายหลัง') }}
                                 </div>
                             </div>
                         @endif
                     </div>
                 </div>
-                @endforeach
+
+                {{-- 🌟 2. เนื้อหาของแต่ละ Category ตามปกติ --}}
+                @if(!empty($categories))
+                    @foreach($categories as $category_cal)
+                        <div class="tab-pane fade" id="cat-{{ $category_cal->id }}" role="tabpanel">
+                            <div class="row g-4">
+                                @if(isset($rewardsByCategory[$category_cal->id]) && $rewardsByCategory[$category_cal->id]->count() > 0)
+                                    @foreach($rewardsByCategory[$category_cal->id] as $reward)
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="reward-card">
+                                                <a href="{{ route('rewards-detail', $reward->id ?? 0) }}" style="text-decoration: none !important;">
+                                                    <div class="reward-img-container"><img src="{{ $reward->image_url ?? asset('assets/image/asd.webp') }}"></div>
+                                                    <div class="reward-body">
+                                                        <h3 class="reward-title">{{ \App\Support\Loc::f($reward, 'title', 'Reward Title') }}</h3>
+                                                        <p class="reward-desc">{{ \App\Support\Loc::f($reward, 'description', '') }}</p>
+                                                        <div class="reward-points-wrapper"><img src="{{ asset('assets/image/objects.webp') }}" class="coin-icon"><span class="points-text">{{ $reward->points_required ?? 0 }}</span></div>
+                                                        <div class="dashed-line"></div>
+                                                        <div class="reward-expiry-wrapper">
+                                                            <img src="{{ asset('assets/image/clock-icon.webp') }}" class="clock-icon">
+                                                            <span class="expiry-text">{{ __('จำนวนคงเหลือ :') }} <span class="expiry-date">{{ $reward->stock_quantity }} {{ __('สิทธิ์') }}</span></span>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="col-12">
+                                        <div class="alert alert-info text-center" role="alert">
+                                            {{ __('ขณะนี้ยังไม่มีสิทธิพิเศษในหมวดนี้ กรุณาตรวจสอบอีกครั้งในภายหลัง') }}
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                 @endif
             </div>
         </div>
