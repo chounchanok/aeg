@@ -99,11 +99,9 @@ class EaseClubController extends Controller
         // 🌟 สิทธิพิเศษ: แสดงเฉพาะรางวัลที่กำหนด Tier ไว้ และ Tier ของลูกค้า (customer_wallets) ถึงแล้ว
         // (เดิม hardcode เป็น 'Advance' — ตอนนี้ผูกกับ Tier จริงของลูกค้า; guest เห็นเฉพาะ Tier ต่ำสุด)
         $exclusiveQuery = DB::table('rewards')
-            ->where('is_active', true)
-            ->whereNotNull('minimum_tier_required')
-            ->where('minimum_tier_required', '!=', '');
+            ->where('is_active', true);
         RewardService::applyTierFilter($exclusiveQuery, $user?->id);
-        $exclusive = $exclusiveQuery->orderByDesc('id')->limit(4)->get();
+        $exclusive = $exclusiveQuery->inRandomOrder()->take(6)->get();
 
         return $this->successResponse([
             'categories' => $categories,
