@@ -53,7 +53,7 @@
                         <thead>
                             <tr>
                                 <th class="whitespace-nowrap">ลูกค้า</th>
-                                <th class="whitespace-nowrap">เบอร์โทร</th>
+                                <th class="whitespace-nowrap">เบอร์โทร / อีเมล</th>
                                 <th class="text-right whitespace-nowrap">แต้มที่เพิ่ม</th>
                             </tr>
                         </thead>
@@ -65,7 +65,13 @@
                                             {{ $row->first_name ? $row->first_name . ' ' . $row->last_name : '#' . $row->user_id }}
                                         </a>
                                     </td>
-                                    <td>{{ $row->phone }}</td>
+                                    <td>
+                                        <div>{{ $row->phone ?: '-' }}</div>
+                                        <div class="text-slate-500 text-xs">{{ $row->email }}</div>
+                                        @if(str_contains((string) $row->description, 'จับคู่ด้วยอีเมล'))
+                                            <span class="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">ค้นจากอีเมล</span>
+                                        @endif
+                                    </td>
                                     <td class="text-right text-success font-medium">+{{ number_format($row->amount) }}</td>
                                 </tr>
                             @empty
@@ -85,7 +91,7 @@
                         <thead>
                             <tr>
                                 <th class="whitespace-nowrap">แถวที่</th>
-                                <th class="whitespace-nowrap">เบอร์โทร (ตามไฟล์)</th>
+                                <th class="whitespace-nowrap">เบอร์โทร / อีเมล (ตามไฟล์)</th>
                                 <th class="whitespace-nowrap">สาเหตุ</th>
                             </tr>
                         </thead>
@@ -93,7 +99,10 @@
                             @forelse($failDetails as $fail)
                                 <tr>
                                     <td>{{ $fail['row'] ?? '-' }}</td>
-                                    <td>{{ $fail['phone'] ?? '-' }}</td>
+                                    <td>
+                                        <div>{{ ($fail['phone'] ?? '') !== '' ? $fail['phone'] : '-' }}</div>
+                                        @if(!empty($fail['email']))<div class="text-slate-500 text-xs">{{ $fail['email'] }}</div>@endif
+                                    </td>
                                     <td class="text-danger">{{ $fail['reason'] ?? '-' }}</td>
                                 </tr>
                             @empty

@@ -38,10 +38,18 @@
                 <div class="font-medium text-base border-b border-slate-200/60 pb-5 mb-3">อัปโหลดไฟล์</div>
 
                 <div class="text-slate-500 text-sm mb-4">
-                    ไฟล์ต้องมี 2 คอลัมน์ โดย<b>แถวแรกเป็นหัวตาราง</b> (จะถูกข้ามอัตโนมัติ):<br>
+                    ไฟล์ต้องมี 3 คอลัมน์ โดย<b>แถวแรกเป็นหัวตาราง</b> (จะถูกข้ามอัตโนมัติ):<br>
                     คอลัมน์ที่ 1 = เบอร์โทรศัพท์ลูกค้า<br>
-                    คอลัมน์ที่ 2 = จำนวนแต้มที่จะบวกเพิ่ม<br><br>
-                    รองรับไฟล์ .xlsx, .xls, .csv ขนาดไม่เกิน 5MB
+                    คอลัมน์ที่ 2 = อีเมลลูกค้า<br>
+                    คอลัมน์ที่ 3 = จำนวนแต้มที่จะบวกเพิ่ม<br><br>
+                    <b>การค้นหาลูกค้า:</b> ใช้<b>เบอร์โทรเป็นหลัก</b> ถ้าแถวนั้นไม่มีเบอร์โทร (หรือหาเบอร์ไม่พบ) ระบบจะค้นจาก<b>อีเมล</b>แทน
+                    — ใส่อย่างใดอย่างหนึ่งหรือทั้งสองก็ได้<br>
+                    <span class="text-xs">* ไฟล์รูปแบบเดิม 2 คอลัมน์ (เบอร์โทร | แต้ม) ยังใช้ได้ และถ้าหัวตารางเขียนว่า เบอร์โทร / อีเมล / แต้ม จะสลับลำดับคอลัมน์ได้</span><br><br>
+                    รองรับไฟล์ .xlsx, .xls, .csv ขนาดไม่เกิน 5MB<br>
+                    <a href="data:text/csv;charset=utf-8,%EF%BB%BF%E0%B9%80%E0%B8%9A%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B9%82%E0%B8%97%E0%B8%A3%E0%B8%A8%E0%B8%B1%E0%B8%9E%E0%B8%97%E0%B9%8C,%E0%B8%AD%E0%B8%B5%E0%B9%80%E0%B8%A1%E0%B8%A5,%E0%B9%81%E0%B8%95%E0%B9%89%E0%B8%A1%0A0812345678,,100%0A,customer@example.com,50%0A0898765432,someone@example.com,200%0A"
+                       download="points-import-template.csv" class="text-primary underline inline-flex items-center mt-1">
+                        <i data-lucide="download" class="w-4 h-4 mr-1"></i> ดาวน์โหลดไฟล์ตัวอย่าง (.csv)
+                    </a>
                 </div>
 
                 <form action="{{ route('admin.customers.points-import.store') }}" method="POST" enctype="multipart/form-data">

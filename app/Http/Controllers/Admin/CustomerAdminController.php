@@ -171,7 +171,10 @@ class CustomerAdminController extends Controller
 
         // อ่านทั้งชีตเป็น array (index เริ่มที่ 0), ตัดแถวหัวตาราง (แถวแรก) ทิ้ง
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
-        array_shift($rows);
+        $header = array_shift($rows) ?? [];
+
+        // 🌟 หาตำแหน่งคอลัมน์จากหัวตาราง (เบอร์โทร / อีเมล / แต้ม) — รองรับทั้งไฟล์ใหม่ 3 คอลัมน์ และไฟล์เดิม 2 คอลัมน์
+        [$phoneCol, $emailCol, $pointsCol] = $this->detectPointImportColumns($header);
 
         // หา tier ที่ min_spending ต่ำสุดไว้ล่วงหน้า เผื่อต้องสร้าง wallet ใหม่ให้ลูกค้าที่ยังไม่เคยมี
         $defaultTierId = DB::table('loyalty_tiers')->orderBy('min_spending', 'asc')->value('id');
@@ -191,28 +194,30 @@ class CustomerAdminController extends Controller
 
         foreach ($rows as $index => $row) {
             $lineNo = $index + 2; // +1 เพราะ index เริ่มที่ 0, +1 อีกทีเพราะตัดแถวหัวตารางออกไปแล้ว
-            $rawPhone = trim((string) ($row[0] ?? ''));
-            $rawPoints = trim((string) ($row[1] ?? ''));
+            $rawPhone = $phoneCol !== null ? trim((string) ($row[$phoneCol] ?? '')) : '';
+            $rawEmail = $emailCol !== null ? trim((string) ($row[$emailCol] ?? '')) : '';
+            $rawPoints = $pointsCol !== null ? trim((string) ($row[$pointsCol] ?? '')) : '';
 
-            if ($rawPhone === '' && $rawPoints === '') {
+            if ($rawPhone === '' && $rawEmail === '' && $rawPoints === '') {
                 continue; // ข้ามแถวว่างเปล่า
             }
 
-            $phone = $this->normalizePhone($rawPhone);
+            $fail = fn ($reason) => ['row' => $lineNo, 'phone' => $rawPhone, 'email' => $rawEmail, 'reason' => $reason];
             $points = (int) preg_replace('/[^0-9\-]/', '', $rawPoints);
 
-            if (!$phone || !preg_match('/^0[0-9]{8,9}$/', $phone)) {
-                $failDetails[] = ['row' => $lineNo, 'phone' => $rawPhone, 'reason' => 'รูปแบบเบอร์โทรไม่ถูกต้อง'];
+            if ($rawPhone === '' && $rawEmail === '') {
+                $failDetails[] = $fail('ไม่มีทั้งเบอร์โทรและอีเมล');
                 continue;
             }
             if ($points === 0) {
-                $failDetails[] = ['row' => $lineNo, 'phone' => $rawPhone, 'reason' => 'จำนวนแต้มไม่ถูกต้องหรือเป็น 0'];
+                $failDetails[] = $fail('จำนวนแต้มไม่ถูกต้องหรือเป็น 0');
                 continue;
             }
 
-            $user = DB::table('users')->where('phone', $phone)->where('role', 'customer')->first();
+            // 🌟 หาลูกค้า: เบอร์โทรเป็นหลัก → ถ้าไม่มีเบอร์ / เบอร์ผิดรูปแบบ / ไม่พบเบอร์ในระบบ จึงใช้อีเมลแทน
+            [$user, $matchedBy, $reason] = $this->findCustomerForPointImport($rawPhone, $rawEmail);
             if (!$user) {
-                $failDetails[] = ['row' => $lineNo, 'phone' => $rawPhone, 'reason' => 'ไม่พบลูกค้าเบอร์นี้ในระบบ'];
+                $failDetails[] = $fail($reason);
                 continue;
             }
 
@@ -237,7 +242,7 @@ class CustomerAdminController extends Controller
                     'amount' => $points,
                     'type' => 'adjust', // ยืมค่า enum เดิม (earn/redeem/adjust) ที่มีอยู่แล้ว ไม่ต้องแก้โครงสร้างตาราง
                     'reference_id' => 'IMPORT-' . $batchId,
-                    'description' => 'นำเข้าแต้มโดยแอดมิน (ไฟล์: ' . $originalName . ', แถวที่ ' . $lineNo . ')',
+                    'description' => 'นำเข้าแต้มโดยแอดมิน (ไฟล์: ' . $originalName . ', แถวที่ ' . $lineNo . ', จับคู่ด้วย' . ($matchedBy === 'email' ? 'อีเมล' : 'เบอร์โทร') . ')',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -246,7 +251,7 @@ class CustomerAdminController extends Controller
                 $successCount++;
             } catch (\Throwable $e) {
                 DB::rollBack();
-                $failDetails[] = ['row' => $lineNo, 'phone' => $rawPhone, 'reason' => 'บันทึกไม่สำเร็จ: ' . $e->getMessage()];
+                $failDetails[] = $fail('บันทึกไม่สำเร็จ: ' . $e->getMessage());
             }
         }
 
@@ -276,6 +281,8 @@ class CustomerAdminController extends Controller
             ->select(
                 'users.id as user_id',
                 'users.phone',
+                'users.email',
+                'point_transactions.description',
                 'customer_profiles.first_name',
                 'customer_profiles.last_name',
                 'point_transactions.amount',
@@ -292,6 +299,68 @@ class CustomerAdminController extends Controller
             'second_level_active_index' => '',
             'third_level_active_index' => ''
         ]);
+    }
+
+    /**
+     * 🌟 หาตำแหน่งคอลัมน์ [เบอร์โทร, อีเมล, แต้ม] จากหัวตาราง
+     * - หัวตารางมีคำว่า เบอร์/โทร/phone/tel/mobile, อีเมล/email/mail, แต้ม/คะแนน/พอยท์/point → ใช้ตามนั้น (สลับลำดับได้)
+     * - อ่านหัวตารางไม่ออก: มีตั้งแต่ 3 คอลัมน์ = เบอร์โทร | อีเมล | แต้ม, มี 2 คอลัมน์ = เบอร์โทร | แต้ม (ไฟล์รูปแบบเดิม)
+     */
+    private function detectPointImportColumns(array $header): array
+    {
+        $phone = $email = $points = null;
+        foreach ($header as $i => $cell) {
+            $h = mb_strtolower(trim((string) $cell));
+            if ($h === '') continue;
+            if ($email === null && preg_match('/อีเมล|อีเมว|e-?mail|mail/u', $h)) { $email = $i; continue; }
+            if ($phone === null && preg_match('/เบอร์|โทร|phone|tel|mobile/u', $h)) { $phone = $i; continue; }
+            if ($points === null && preg_match('/แต้ม|คะแนน|พอยท์|พอยต์|point/u', $h)) { $points = $i; continue; }
+        }
+
+        if ($points !== null && ($phone !== null || $email !== null)) {
+            return [$phone, $email, $points];
+        }
+
+        $filled = count(array_filter($header, fn ($c) => trim((string) $c) !== ''));
+        return $filled >= 3 ? [0, 1, 2] : [0, null, 1];
+    }
+
+    /**
+     * 🌟 หาลูกค้าสำหรับนำเข้าแต้ม — เบอร์โทรเป็นหลัก ถ้าใช้เบอร์ไม่ได้ค่อยใช้อีเมล
+     * @return array [user|null, 'phone'|'email'|null, เหตุผลเมื่อไม่พบ]
+     */
+    private function findCustomerForPointImport(string $rawPhone, string $rawEmail): array
+    {
+        $phoneReason = null;
+        if ($rawPhone !== '') {
+            $phone = $this->normalizePhone($rawPhone);
+            if (!preg_match('/^0[0-9]{8,9}$/', $phone)) {
+                $phoneReason = 'รูปแบบเบอร์โทรไม่ถูกต้อง';
+            } else {
+                $user = DB::table('users')->where('phone', $phone)->where('role', 'customer')->first();
+                if ($user) {
+                    return [$user, 'phone', null];
+                }
+                $phoneReason = 'ไม่พบลูกค้าเบอร์นี้ในระบบ';
+            }
+        }
+
+        if ($rawEmail !== '') {
+            $email = mb_strtolower($rawEmail);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return [null, null, trim(($phoneReason ? $phoneReason . ' และ' : '') . 'รูปแบบอีเมลไม่ถูกต้อง')];
+            }
+            $users = DB::table('users')->whereRaw('LOWER(email) = ?', [$email])->where('role', 'customer')->limit(2)->get();
+            if ($users->count() === 1) {
+                return [$users->first(), 'email', null];
+            }
+            if ($users->count() > 1) {
+                return [null, null, 'อีเมลนี้ซ้ำกันหลายบัญชี กรุณาระบุเบอร์โทร'];
+            }
+            return [null, null, ($phoneReason ? $phoneReason . ' และ' : '') . 'ไม่พบลูกค้าอีเมลนี้ในระบบ'];
+        }
+
+        return [null, null, $phoneReason ?? 'ไม่พบลูกค้าในระบบ'];
     }
 
     // ปรับรูปแบบเบอร์โทรให้เป็นมาตรฐานเดียวกับที่ระบบเก็บไว้ (เลขไทยขึ้นต้นด้วย 0 ไม่มีรหัสประเทศ)
