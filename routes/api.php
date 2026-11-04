@@ -179,6 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // EASE CLUB Rewards
     Route::prefix('ease-club')->group(function () {
         Route::get('/user-info', [EaseClubController::class, 'getUserInfo']); // ข้อมูล User + คะแนน
+        Route::get('/membership', [EaseClubController::class, 'getMembership']); // 🌟 ระดับสมาชิก: เกณฑ์, ความคืบหน้า, วันหมดอายุสถานะ, ประวัติ
         Route::get('/banners', [EaseClubController::class, 'getBanners']); // Banner หน้า EASE CLUB
         Route::get('/banners/category', [EaseClubController::class, 'getBannersCategory']); // Banner หน้า EASE CLUB / Category
         Route::get('/rewards/{rewardId}', [EaseClubController::class, 'getRewardDetail']); // รายละเอียดของรางวัล

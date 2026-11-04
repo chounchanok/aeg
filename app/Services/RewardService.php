@@ -68,7 +68,8 @@ class RewardService
     {
         static $ranks = null;
         if ($ranks === null) {
-            $ranks = DB::table('loyalty_tiers')->orderBy('min_spending')->orderBy('id')->pluck('name')
+            // 🌟 ลำดับเดียวกับ LoyaltyTierService (Advance < Platinum < Beyond ตามแต้มขั้นต่ำ)
+            $ranks = LoyaltyTierService::tiers()->pluck('name')
                 ->values()->mapWithKeys(fn ($name, $i) => [strtolower(trim($name)) => $i])->all();
         }
         return $ranks;

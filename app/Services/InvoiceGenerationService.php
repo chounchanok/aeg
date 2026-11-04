@@ -280,6 +280,9 @@ class InvoiceGenerationService
             }
         });
 
+        // 🌟 ยอดซื้อ (ใบแจ้งหนี้ / ออเดอร์ในใบสรุปยอด) → เช็คเลื่อนระดับสมาชิก
+        LoyaltyTierService::evaluateQuietly((int) $invoice->user_id);
+
         try {
             DB::table('notifications')->insert([
                 'user_id' => $invoice->user_id,

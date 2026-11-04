@@ -48,6 +48,84 @@
                 </div>
             </div>
 
+            {{-- 🌟 ระดับสมาชิก (Advance / Platinum / Beyond) + เพิ่ม/หักแต้มรายคน --}}
+            <div class="box p-5 mt-5">
+                <div class="flex items-center border-b border-slate-200/60 pb-3 mb-3">
+                    <div class="font-medium text-base mr-auto">ระดับสมาชิก & แต้ม</div>
+                    @can('customers.manage')
+                        <a href="{{ route('admin.customers.tier-settings') }}" class="text-xs text-primary">ตั้งค่าเกณฑ์</a>
+                    @endcan
+                </div>
+
+                @if($tierStatus)
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg font-medium text-primary">{{ $tierStatus['tier_name'] ?? '-' }}</span>
+                        <span class="text-xs text-slate-500">
+                            ใช้ได้ถึง {{ $tierStatus['tier_expires_at'] ? \Carbon\Carbon::parse($tierStatus['tier_expires_at'])->format('d/m/Y') : '-' }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+                        <div class="bg-slate-50 rounded p-2">
+                            <div class="text-slate-500 text-xs">แต้มสะสม 12 เดือน</div>
+                            <div class="font-medium">{{ number_format($tierStatus['points_12m']) }}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded p-2">
+                            <div class="text-slate-500 text-xs">ยอดซื้อ 12 เดือน</div>
+                            <div class="font-medium">฿{{ number_format($tierStatus['spending_12m'], 2) }}</div>
+                        </div>
+                    </div>
+                    @if($tierStatus['next_tier'])
+                        <div class="text-xs text-slate-500 mt-2">
+                            ขึ้น {{ $tierStatus['next_tier']['tier_name'] }}:
+                            @if($tierStatus['next_tier']['points_needed'] !== null) อีก {{ number_format($tierStatus['next_tier']['points_needed']) }} แต้ม @endif
+                            @if($tierStatus['next_tier']['spending_needed'] !== null) หรือซื้อเพิ่มอีก ฿{{ number_format($tierStatus['next_tier']['spending_needed'], 2) }} @endif
+                        </div>
+                    @else
+                        <div class="text-xs text-success mt-2">อยู่ระดับสูงสุดแล้ว</div>
+                    @endif
+                @else
+                    <div class="text-slate-500 text-sm">ยังไม่มีกระเป๋าแต้ม (จะสร้างให้อัตโนมัติเมื่อเพิ่มแต้มครั้งแรก)</div>
+                @endif
+
+                @can('customers.manage')
+                    <form action="{{ route('admin.customers.points.adjust', $customer->id) }}" method="POST" class="mt-4 border-t border-slate-200/60 pt-4"
+                          onsubmit="return confirm('ยืนยันการ' + (this.direction.value === 'add' ? 'เพิ่ม' : 'หัก') + ' ' + this.points.value + ' แต้ม ให้ลูกค้ารายนี้?');">
+                        @csrf
+                        <div class="font-medium text-sm mb-2">เพิ่ม / หักแต้ม</div>
+                        <div class="grid grid-cols-12 gap-2">
+                            <select name="direction" class="form-select col-span-5">
+                                <option value="add">+ เพิ่มแต้ม</option>
+                                <option value="deduct">− หักแต้ม</option>
+                            </select>
+                            <input type="number" name="points" min="1" step="1" class="form-control col-span-7" placeholder="จำนวนแต้ม" required>
+                            <input type="text" name="note" maxlength="200" class="form-control col-span-12" placeholder="เหตุผล เช่น ชดเชยงานล่าช้า / ปรับยอดผิดพลาด" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-full mt-2">บันทึกแต้ม</button>
+                        <div class="text-xs text-slate-500 mt-1">ระบบจะประเมินระดับสมาชิกใหม่ให้อัตโนมัติหลังบันทึก</div>
+                    </form>
+                    <form action="{{ route('admin.customers.tier.evaluate', $customer->id) }}" method="POST" class="mt-2">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary w-full btn-sm">ประเมินระดับสมาชิกใหม่ตอนนี้</button>
+                    </form>
+                @endcan
+
+                @if($tierHistory->isNotEmpty())
+                    <div class="mt-4 border-t border-slate-200/60 pt-3">
+                        <div class="font-medium text-sm mb-2">ประวัติระดับสมาชิก</div>
+                        @foreach($tierHistory as $h)
+                            <div class="text-xs mb-2">
+                                <span class="text-slate-500">{{ \Carbon\Carbon::parse($h->created_at)->format('d/m/Y H:i') }}</span>
+                                · {{ \App\Services\LoyaltyTierService::reasonLabel($h->reason) }}
+                                <div>
+                                    @if($h->from_name && $h->from_name !== $h->to_name){{ $h->from_name }} → @endif<b>{{ $h->to_name }}</b>
+                                    <span class="text-slate-500">(แต้ม {{ number_format($h->points_12m) }} / ยอดซื้อ ฿{{ number_format($h->spending_12m) }}@if($h->admin_name) · โดย {{ $h->admin_name }}@endif)</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
             @can('invoices.manage')
             {{-- 🌟 ตั้งค่าลูกค้า "วางบิลรายเดือน" — คำสั่งซื้อที่ยังไม่ชำระของลูกค้าคนนี้จะถูกรวมเป็นใบแจ้งหนี้เดียวตอนสิ้นเดือน
                  แทนที่จะให้จ่ายทีละออเดอร์ (ดูรายละเอียดที่เมนู "ใบแจ้งหนี้รายเดือน") --}}

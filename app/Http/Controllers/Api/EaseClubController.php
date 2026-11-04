@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponseTrait;
 use App\Services\RewardService;
+use App\Services\LoyaltyTierService;
 
 class EaseClubController extends Controller
 {
@@ -28,6 +29,7 @@ class EaseClubController extends Controller
     public function getUserInfo(Request $request)
     {
         $user = $request->user();
+        LoyaltyTierService::evaluateQuietly((int) $user->id); // 🌟 เช็คครบ 1 ปี / ถึงเกณฑ์ ก่อนแสดงผล
 
         // จอยข้อมูล Profile กับ Wallet เพื่อดึง ชื่อ, Tier, Points, Member ID และ วันหมดอายุ
         $userInfo = DB::table('users')
@@ -83,10 +85,50 @@ class EaseClubController extends Controller
             'current_points' => $userInfo->current_points ?? 0,
             'points_expiry_date' => $expiryDate,
             'profile_image_url' => $userInfo->profile_image_url ?? null,
-            'profile_image_card' => $profile_image_card
+            'profile_image_card' => $profile_image_card,
+            // 🌟 ระดับสมาชิก (รายละเอียดเต็มดูที่ GET /ease-club/membership)
+            'tier_expires_at' => $this->tierFields($user->id)['tier_expires_at'],
+            'points_12m' => $this->tierFields($user->id)['points_12m'],
+            'spending_12m' => $this->tierFields($user->id)['spending_12m'],
+            'next_tier' => $this->tierFields($user->id)['next_tier'],
         ];
 
         return $this->successResponse($data, 'User info retrieved successfully');
+    }
+
+    /** สถานะระดับสมาชิก (cache ต่อ request) */
+    private function tierFields(int $userId): array
+    {
+        static $cache = [];
+        return $cache[$userId] ??= LoyaltyTierService::status($userId);
+    }
+
+    /**
+     * 🌟 GET /ease-club/membership — ระดับสมาชิกปัจจุบัน + เกณฑ์ทุกระดับ + ความคืบหน้า + ประวัติการเปลี่ยนระดับ
+     */
+    public function getMembership(Request $request)
+    {
+        $userId = (int) $request->user()->id;
+        $status = LoyaltyTierService::evaluate($userId);
+
+        $status['history'] = DB::table('customer_tier_histories as h')
+            ->leftJoin('loyalty_tiers as f', 'h.from_tier_id', '=', 'f.id')
+            ->leftJoin('loyalty_tiers as t', 'h.to_tier_id', '=', 't.id')
+            ->where('h.user_id', $userId)
+            ->orderByDesc('h.created_at')->orderByDesc('h.id')
+            ->limit(20)
+            ->get(['h.reason', 'f.name as from_tier', 't.name as to_tier', 'h.points_12m', 'h.spending_12m', 'h.expires_at', 'h.created_at'])
+            ->map(function ($h) {
+                $h->reason_label = LoyaltyTierService::reasonLabel($h->reason);
+                return $h;
+            });
+        $status['rules'] = [
+            'window_months' => LoyaltyTierService::WINDOW_MONTHS,
+            'valid_months' => LoyaltyTierService::VALID_MONTHS,
+            'description' => 'ระดับสมาชิกตัดสินจากแต้มที่ได้รับสะสม หรือยอดซื้อสินค้า/บริการ ในรอบ 12 เดือน ขึ้นระดับทันทีเมื่อถึงเกณฑ์ และสถานะอยู่ได้ 1 ปีหลังเปลี่ยนระดับ',
+        ];
+
+        return $this->successResponse($status, 'Membership retrieved');
     }
 
     public function getOverview(Request $request)

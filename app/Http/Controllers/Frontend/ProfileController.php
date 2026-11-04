@@ -21,7 +21,15 @@ class ProfileController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('frontend.my-account', compact('user', 'profile', 'addresses'));
+        // 🌟 ระดับสมาชิก (เช็คครบ 1 ปี / ถึงเกณฑ์ก่อนแสดง)
+        \App\Services\LoyaltyTierService::evaluateQuietly((int) $user->id);
+        try {
+            $tierStatus = \App\Services\LoyaltyTierService::status((int) $user->id);
+        } catch (\Throwable $e) {
+            $tierStatus = null;
+        }
+
+        return view('frontend.my-account', compact('user', 'profile', 'addresses', 'tierStatus'));
     }
 
     // อัปเดตข้อมูลผู้ใช้

@@ -1674,6 +1674,83 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "13. ระดับสมาชิก (Tier อัตโนมัติ)",
+      "item": [
+        {
+          "name": "ข้อมูลสมาชิก + tier (user-info)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/user-info",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "user-info"
+              ]
+            },
+            "description": "เพิ่ม tier_expires_at, points_12m, spending_12m, next_tier"
+          },
+          "response": []
+        },
+        {
+          "name": "ระดับสมาชิก (membership)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ease-club/membership",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ease-club",
+                "membership"
+              ]
+            },
+            "description": "ระดับปัจจุบัน เกณฑ์ทุกระดับ ความคืบหน้า และประวัติการเปลี่ยนระดับ"
+          },
+          "response": []
+        },
+        {
+          "name": "ประวัติแต้ม",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/point-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "point-history"
+              ]
+            },
+            "description": "adjust = แอดมินเพิ่ม/หัก (amount ติดลบ = หัก)"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

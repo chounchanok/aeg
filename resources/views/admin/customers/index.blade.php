@@ -10,6 +10,9 @@
         <h2 class="text-lg font-medium mr-auto">รายชื่อลูกค้าทั้งหมด (Customers)</h2>
         {{-- 🌟 หน้าลูกค้าเป็น Read-only สำหรับทุกแผนก — ปุ่มเขียนแสดงเฉพาะคนที่มี customers.manage (IT) --}}
         @can('customers.manage')
+        <a href="{{ route('admin.customers.tier-settings') }}" class="btn btn-outline-secondary shadow-md mr-2">
+            <i data-lucide="award" class="w-4 h-4 mr-1"></i> เกณฑ์ระดับสมาชิก
+        </a>
         <a href="{{ route('admin.customers.points-import') }}" class="btn btn-primary shadow-md">
             <i data-lucide="upload" class="w-4 h-4 mr-1"></i> นำเข้าแต้มลูกค้า (Excel)
         </a>

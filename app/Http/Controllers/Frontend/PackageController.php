@@ -149,6 +149,7 @@ class PackageController extends Controller
             ]);
 
             DB::commit();
+            \App\Services\LoyaltyTierService::evaluateQuietly((int) $user->id); // 🌟 ได้แต้ม → เช็คเลื่อนระดับสมาชิก
             return redirect()->route('packages.mine')->with('success', __('ขอบคุณสำหรับคำติชม คุณได้รับ 1 EASE Coin แล้ว'));
 
         } catch (\Exception $e) {

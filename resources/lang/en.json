@@ -789,5 +789,12 @@
     "อย่างน้อย :min ตัวอักษร": "At least :min characters",
     "บันทึกรหัสผ่านใหม่": "Save New Password",
     "แสดง": "Show",
-    "ซ่อน": "Hide"
+    "ซ่อน": "Hide",
+    "ระดับ": "Tier",
+    "ใช้ได้ถึง": "Valid until",
+    "แต้มคงเหลือ": "Points balance",
+    "แต้มสะสม 12 เดือน": "Points earned (12 months)",
+    "อีก :points แต้มเพื่อเลื่อนเป็น :tier": ":points more points to reach :tier",
+    "หรือซื้อสินค้า/บริการเพิ่มอีก ฿:amount": "or spend ฿:amount more on products/services",
+    "คุณอยู่ระดับสูงสุดแล้ว": "You are at the highest tier"
 }

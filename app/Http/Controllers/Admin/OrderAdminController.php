@@ -122,6 +122,9 @@ class OrderAdminController extends Controller
             \Illuminate\Support\Facades\Log::warning('[OrderAdminController] ส่ง push แจ้งเตือนล้มเหลว: ' . $e->getMessage());
         }
 
+        // 🌟 ออเดอร์ชำระแล้ว → ยอดซื้อเพิ่ม เช็คเลื่อนระดับสมาชิก
+        \App\Services\LoyaltyTierService::evaluateQuietly((int) $order->user_id);
+
         return redirect()->back()->with('success', 'อัปเดตสถานะคำสั่งซื้อเรียบร้อยแล้ว');
     }
 

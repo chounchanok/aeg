@@ -116,6 +116,7 @@ class BblPaymentController extends Controller
                     'gateway_response' => json_encode($data),
                     'updated_at' => now()
                 ]);
+                \App\Services\LoyaltyTierService::evaluateQuietly((int) DB::table('orders')->where('order_number', $orderNumber)->value('user_id')); // 🌟 ยอดซื้อ → เช็คระดับสมาชิก
             }
             
             // 🌟 กรณีเป็นบิลจองตู้เซฟ (ขึ้นต้นด้วย LCK-)
@@ -130,6 +131,8 @@ class BblPaymentController extends Controller
                         'gateway_response' => json_encode($data),
                         'updated_at' => now()
                     ]);
+
+                    \App\Services\LoyaltyTierService::evaluateQuietly((int) $booking->user_id); // 🌟 ยอดซื้อ (ตู้เซฟ) → เช็คระดับสมาชิก
 
                     if (!empty($booking->renewal_of_booking_id)) {
                         DB::table('locker_bookings')->where('id', $booking->renewal_of_booking_id)->update([

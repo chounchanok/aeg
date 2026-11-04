@@ -435,3 +435,46 @@ Flow เดียวกับหน้าเว็บ `/forgot-password` — ไ
 - รหัสผ่านอย่างน้อย 6 ตัว (เท่ากับตอนสมัคร) และต้องส่ง `password_confirmation`
 - `reset_token` ใช้ได้ครั้งเดียว อายุ 15 นาที — หมดอายุ/ผิด → 410 ให้เริ่มใหม่ตั้งแต่ขั้นที่ 1
 - ตั้งรหัสสำเร็จแล้ว **token ล็อกอินเดิมของบัญชีนี้ทุกเครื่องจะถูกยกเลิก** ต้อง login ใหม่ด้วย `POST /login`
+
+---
+
+## 13. ระดับสมาชิกอัตโนมัติ (Advance / Platinum / Beyond) (ใหม่ 2026-11-04)
+
+**กติกา** (ตั้งค่าเกณฑ์ได้ที่หลังบ้าน → ลูกค้าและแพ็กเกจ → เกณฑ์ระดับสมาชิก)
+| ระดับ | แต้มสะสมในรอบ 12 เดือน | หรือยอดซื้อในรอบ 12 เดือน |
+|---|---|---|
+| Advance | 0 – 1,999 | – |
+| Platinum | 2,000 – 9,999 | ตาม `loyalty_tiers.min_spending` |
+| Beyond | 10,000 ขึ้นไป | ตาม `loyalty_tiers.min_spending` |
+
+- **แต้มสะสม** = แต้มที่ได้รับเข้ามา (earn + แอดมินปรับ/นำเข้า) — การแลกของรางวัลไม่ทำให้ระดับตก
+- **ยอดซื้อ** = ออเดอร์ที่ชำระแล้ว + ใบแจ้งหนี้รายเดือนที่ชำระแล้ว + การจองตู้เซฟที่ชำระแล้ว
+- ถึงเกณฑ์ → **ขึ้นระดับทันที** (มีแจ้งเตือน type `privilege`) และสถานะ**อยู่ได้ 1 ปี**นับจากวันเปลี่ยน
+- ครบ 1 ปี → ประเมินใหม่จากรอบ 12 เดือนล่าสุด (ถึง = ต่ออายุ, ไม่ถึง = ลดระดับ)
+- สิทธิพิเศษ/ของรางวัลที่ซ่อนตาม Tier (ข้อ 3) ใช้ระดับนี้อัตโนมัติ
+
+### `GET /ease-club/user-info` (auth) — เพิ่ม field
+```json
+{ "tier": "Platinum", "current_points": 1500, "tier_expires_at": "2027-11-04 10:00:00",
+  "points_12m": 2350, "spending_12m": 18500.00,
+  "next_tier": { "tier_id": 3, "tier_name": "Beyond", "min_points": 10000, "points_needed": 7650, "min_spending": 100000, "spending_needed": 81500 } }
+```
+`next_tier` = `null` เมื่ออยู่ระดับสูงสุด · `min_spending`/`spending_needed` = `null` ถ้าระดับนั้นไม่ใช้ยอดซื้อ
+
+### `GET /ease-club/membership` (auth) — หน้า "ระดับสมาชิก" ในแอป
+```json
+{ "status": "success", "data": {
+  "tier_id": 2, "tier_name": "Platinum", "tier_started_at": "2026-11-04 10:00:00", "tier_expires_at": "2027-11-04 10:00:00",
+  "current_points": 1500, "points_12m": 2350, "spending_12m": 18500.0,
+  "next_tier": { "...": "เหมือนด้านบน" },
+  "tiers": [ { "tier_id": 1, "tier_name": "Advance", "min_points": 0, "min_spending": null },
+             { "tier_id": 2, "tier_name": "Platinum", "min_points": 2000, "min_spending": 50000 },
+             { "tier_id": 3, "tier_name": "Beyond", "min_points": 10000, "min_spending": 100000 } ],
+  "history": [ { "reason": "upgrade_points", "reason_label": "เลื่อนระดับ (แต้มถึงเกณฑ์)", "from_tier": "Advance", "to_tier": "Platinum",
+                 "points_12m": 2350, "spending_12m": 18500, "expires_at": "2027-11-04 10:00:00", "created_at": "2026-11-04 10:00:00" } ],
+  "rules": { "window_months": 12, "valid_months": 12, "description": "..." } } }
+```
+`reason`: `upgrade_points`, `upgrade_spending`, `renew`, `downgrade`, `init`
+
+### ประวัติแต้ม — ใช้ `GET /user/point-history` (เดิม)
+รายการที่แอดมินเพิ่ม/หักให้รายคนจะเป็น `type: "adjust"` (`amount` ติดลบ = หักแต้ม) พร้อม `description` เหตุผล

@@ -264,6 +264,12 @@ Route::middleware('auth')->group(function() {
             Route::post('/admin/customers/points-import', [CustomerAdminController::class, 'pointsImportStore'])->name('admin.customers.points-import.store');
             Route::get('/admin/customers/points-import/{batchId}', [CustomerAdminController::class, 'pointsImportShow'])->name('admin.customers.points-import.show');
 
+            // 🌟 ระดับสมาชิก / แต้มรายคน
+            Route::get('/admin/customers/tier-settings', [CustomerAdminController::class, 'tierSettings'])->name('admin.customers.tier-settings');
+            Route::post('/admin/customers/tier-settings', [CustomerAdminController::class, 'tierSettingsUpdate'])->name('admin.customers.tier-settings.update');
+            Route::post('/admin/customers/{id}/points', [CustomerAdminController::class, 'adjustPoints'])->whereNumber('id')->name('admin.customers.points.adjust');
+            Route::post('/admin/customers/{id}/tier/evaluate', [CustomerAdminController::class, 'evaluateTier'])->whereNumber('id')->name('admin.customers.tier.evaluate');
+
             Route::post('/admin/customers/{id}/products', [CustomerAdminController::class, 'storeProduct'])->name('admin.customers.products.store');
             Route::post('/admin/customers/{id}/insurances', [CustomerAdminController::class, 'storeInsurance'])->name('admin.customers.insurances.store');
             Route::post('/admin/customers/{id}/lockers', [CustomerAdminController::class, 'storeLocker'])->name('admin.customers.lockers.store');

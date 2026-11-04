@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Services\LoyaltyTierService;
 
 class CustomerAdminController extends Controller
 {
@@ -44,6 +45,18 @@ class CustomerAdminController extends Controller
         // 🌟 ดึงข้อมูล Master ของประกันและตู้เซฟ
         $masterInsurances = DB::table('insurances')->get();
         $masterLockers = DB::table('smart_lockers')->get();
+
+        // 🌟 ระดับสมาชิก: ประเมินใหม่ทุกครั้งที่เปิดหน้า (เช็คครบ 1 ปี / ถึงเกณฑ์) แล้วค่อยดึงข้อมูล
+        LoyaltyTierService::evaluateQuietly((int) $id);
+        $tierStatus = DB::table('customer_wallets')->where('user_id', $id)->exists() ? LoyaltyTierService::status((int) $id) : null;
+        $tierHistory = DB::table('customer_tier_histories as h')
+            ->leftJoin('loyalty_tiers as f', 'h.from_tier_id', '=', 'f.id')
+            ->leftJoin('loyalty_tiers as t', 'h.to_tier_id', '=', 't.id')
+            ->leftJoin('users as a', 'h.changed_by', '=', 'a.id')
+            ->where('h.user_id', $id)
+            ->orderByDesc('h.created_at')->orderByDesc('h.id')
+            ->limit(30)
+            ->get(['h.*', 'f.name as from_name', 't.name as to_name', 'a.username as admin_name']);
 
         // 🌟 ข้อมูลแต้มสะสม (wallet + tier)
         $wallet = DB::table('customer_wallets')
@@ -84,6 +97,8 @@ class CustomerAdminController extends Controller
             'masterInsurances' => $masterInsurances, // 🌟 ส่งตัวแปรเพิ่ม
             'masterLockers' => $masterLockers,       // 🌟 ส่งตัวแปรเพิ่ม
             'wallet' => $wallet,
+            'tierStatus' => $tierStatus,
+            'tierHistory' => $tierHistory,
             'pointHistory' => $pointHistory,
             'redeemedRewards' => $redeemedRewards,
             'first_level_active_index' => 'customers',
@@ -249,6 +264,7 @@ class CustomerAdminController extends Controller
 
                 DB::commit();
                 $successCount++;
+                LoyaltyTierService::evaluateQuietly((int) $user->id); // 🌟 ได้แต้มแล้วเช็คเลื่อนระดับทันที
             } catch (\Throwable $e) {
                 DB::rollBack();
                 $failDetails[] = $fail('บันทึกไม่สำเร็จ: ' . $e->getMessage());
@@ -264,6 +280,78 @@ class CustomerAdminController extends Controller
 
         return redirect()->route('admin.customers.points-import.show', $batchId)
             ->with('success', "นำเข้าแต้มเสร็จสิ้น สำเร็จ {$successCount} รายการ ไม่สำเร็จ " . count($failDetails) . ' รายการ');
+    }
+
+    // 🌟 เพิ่ม/หักแต้มรายคนจากหน้ารายละเอียดลูกค้า (ไม่ต้องผ่านไฟล์ CSV)
+    public function adjustPoints(Request $request, $id)
+    {
+        $data = $request->validate([
+            'direction' => 'required|in:add,deduct',
+            'points' => 'required|integer|min:1|max:10000000',
+            'note' => 'required|string|max:200',
+        ], [
+            'points.required' => 'กรุณากรอกจำนวนแต้ม',
+            'points.min' => 'จำนวนแต้มต้องมากกว่า 0',
+            'note.required' => 'กรุณาระบุเหตุผล (จะแสดงในประวัติแต้มของลูกค้า)',
+        ]);
+
+        $customer = DB::table('users')->where('id', $id)->where('role', 'customer')->first();
+        abort_unless($customer, 404);
+
+        $amount = $data['direction'] === 'add' ? (int) $data['points'] : -(int) $data['points'];
+        $admin = Auth::user();
+        $result = LoyaltyTierService::adjustPoints(
+            (int) $id,
+            $amount,
+            trim($data['note']) . ' (โดยแอดมิน ' . ($admin->username ?? $admin->name ?? $admin->id) . ')',
+            (int) Auth::id(),
+            'ADMIN-' . Auth::id()
+        );
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
+
+    // 🌟 กดประเมินระดับสมาชิกใหม่ทันที (เช่น หลังแก้เกณฑ์ หรือหลังลูกค้าชำระเงินนอกระบบ)
+    public function evaluateTier($id)
+    {
+        abort_unless(DB::table('users')->where('id', $id)->exists(), 404);
+        $before = DB::table('customer_wallets')->where('user_id', $id)->value('current_tier_id');
+        $status = LoyaltyTierService::evaluate((int) $id, (int) Auth::id());
+        $changed = (int) $before !== (int) $status['tier_id'];
+
+        return back()->with('success', $changed
+            ? 'ประเมินแล้ว — ระดับสมาชิกเปลี่ยนเป็น ' . $status['tier_name']
+            : 'ประเมินแล้ว — ระดับสมาชิกยังเป็น ' . $status['tier_name'] . ' (ใช้ได้ถึง ' . ($status['tier_expires_at'] ? \Carbon\Carbon::parse($status['tier_expires_at'])->format('d/m/Y') : '-') . ')');
+    }
+
+    // 🌟 ตั้งค่าเกณฑ์ระดับสมาชิก (แต้มสะสม / ยอดซื้อ ในรอบ 12 เดือน)
+    public function tierSettings()
+    {
+        return view('admin.customers.tier-settings', [
+            'tiers' => LoyaltyTierService::tiers(),
+            'first_level_active_index' => 'customers',
+            'second_level_active_index' => '',
+            'third_level_active_index' => ''
+        ]);
+    }
+
+    public function tierSettingsUpdate(Request $request)
+    {
+        $data = $request->validate([
+            'tiers' => 'required|array',
+            'tiers.*.min_points' => 'nullable|integer|min:0',
+            'tiers.*.min_spending' => 'nullable|numeric|min:0',
+        ]);
+
+        foreach ($data['tiers'] as $tierId => $row) {
+            DB::table('loyalty_tiers')->where('id', (int) $tierId)->update([
+                'min_points' => ($row['min_points'] ?? '') === '' ? null : (int) $row['min_points'],
+                'min_spending' => ($row['min_spending'] ?? '') === '' ? null : (float) $row['min_spending'],
+                'updated_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'บันทึกเกณฑ์ระดับสมาชิกแล้ว — ลูกค้าจะถูกประเมินใหม่เมื่อได้แต้ม/ชำระเงิน/เปิดดูโปรไฟล์ หรือรัน php artisan loyalty:refresh-tiers --all');
     }
 
     // 6. หน้ารายละเอียดผลลัพธ์การนำเข้าแต่ละครั้ง (ดูว่าแถวไหนพลาดเพราะอะไร)

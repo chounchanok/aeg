@@ -38,7 +38,7 @@
                                 
                                 <!-- 🌟 เขียน PHP เช็คเงื่อนไข Level เพื่อดึงรูปภาพ -->
                                 @php
-                                    $memberLevel = strtolower($profile->level ?? 'standard');
+                                    $memberLevel = strtolower($tierStatus['tier_name'] ?? $profile->level ?? 'standard');
                                     $bgImage = '';
 
                                     if ($memberLevel == 'advance') {
@@ -61,7 +61,7 @@
                                             <div class="bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
                                                 <span style="color:#0a1931; font-weight: 800; font-size: 8px;">AEG</span>
                                             </div>
-                                            <div class="card-label-top">{{ $profile->level ?? 'Standard Member' }}</div>
+                                            <div class="card-label-top">{{ $tierStatus['tier_name'] ?? $profile->level ?? 'Standard Member' }}</div>
                                         </div>
                                         <div class="card-brand-main">
                                             <h2>EASE</h2>
@@ -76,6 +76,39 @@
                                     @endif
                                     
                                 </div>
+
+                                {{-- 🌟 สถานะระดับสมาชิก + ความคืบหน้าไประดับถัดไป --}}
+                                @if(!empty($tierStatus))
+                                    @php
+                                        $next = $tierStatus['next_tier'];
+                                        $pct = ($next && $next['min_points']) ? min(100, round($tierStatus['points_12m'] / max(1, $next['min_points']) * 100)) : 100;
+                                    @endphp
+                                    <div class="mt-3 p-3 rounded-3" style="background:#f8fafc; font-size:0.9rem;">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-bold">{{ __('ระดับ') }} {{ $tierStatus['tier_name'] }}</span>
+                                            @if($tierStatus['tier_expires_at'])
+                                                <span class="text-muted small">{{ __('ใช้ได้ถึง') }} {{ \Carbon\Carbon::parse($tierStatus['tier_expires_at'])->format('d/m/Y') }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            {{ __('แต้มคงเหลือ') }} {{ number_format($tierStatus['current_points']) }}
+                                            · {{ __('แต้มสะสม 12 เดือน') }} {{ number_format($tierStatus['points_12m']) }}
+                                        </div>
+                                        @if($next)
+                                            <div class="progress mt-2" style="height:6px;">
+                                                <div class="progress-bar" role="progressbar" style="width: {{ $pct }}%; background:#bd1e2d;"></div>
+                                            </div>
+                                            <div class="small mt-1">
+                                                {{ __('อีก :points แต้มเพื่อเลื่อนเป็น :tier', ['points' => number_format($next['points_needed'] ?? 0), 'tier' => $next['tier_name']]) }}
+                                                @if($next['spending_needed'] !== null)
+                                                    {{ __('หรือซื้อสินค้า/บริการเพิ่มอีก ฿:amount', ['amount' => number_format($next['spending_needed'], 2)]) }}
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="small mt-1 text-success">{{ __('คุณอยู่ระดับสูงสุดแล้ว') }}</div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                             
                             <!-- โค้ดข้อมูลส่วนตัวฝั่งขวา (เหมือนเดิม) -->

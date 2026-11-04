@@ -201,6 +201,18 @@ class EcommerceController extends Controller
         // แจก 1 Point
         $setting = DB::table('settings')->where('id', 1)->first();
         DB::table('customer_wallets')->where('user_id', $userId)->increment('current_points', $setting->review_point);
+        // 🌟 บันทึกประวัติแต้ม (นับเป็นแต้มสะสมของระดับสมาชิก) แล้วเช็คเลื่อนระดับ
+        if ((int) $setting->review_point > 0) {
+            DB::table('point_transactions')->insert([
+                'user_id' => $userId,
+                'amount' => (int) $setting->review_point,
+                'type' => 'earn',
+                'description' => 'ได้รับพอยท์จากการรีวิว',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            \App\Services\LoyaltyTierService::evaluateQuietly((int) $userId);
+        }
 
         return $this->successResponse(null, 'Review submitted successfully');
     }
@@ -1094,6 +1106,7 @@ class EcommerceController extends Controller
                     'gateway_response' => json_encode($request->all())
                 ]);
             // TODO: แจกแต้ม (Point Earn) เข้า Wallet ของลูกค้าหลังจากจ่ายเงินสำเร็จ
+            \App\Services\LoyaltyTierService::evaluateQuietly((int) DB::table('orders')->where('order_number', $orderNumber)->value('user_id')); // 🌟 ยอดซื้อ → เช็คระดับสมาชิก
         }
 
         return response()->json(['status' => 'ok']); // ตอบกลับ Gateway ว่ารับข้อมูลแล้ว
@@ -1184,6 +1197,7 @@ class EcommerceController extends Controller
             }
 
             DB::commit();
+            \App\Services\LoyaltyTierService::evaluateQuietly((int) $order->user_id); // 🌟 ยอดซื้อ → เช็คเลื่อนระดับสมาชิกทันที
 
             // 🌟 แจ้งเตือนแผนก Security และบัญชี ที่ดูแลออเดอร์ โดยอัตโนมัติ (เมล QA ข้อ 5)
             // — จุดนี้การันตีว่าเป็นครั้งแรกที่ออเดอร์นี้เปลี่ยนเป็น completed เท่านั้น (เช็ค status
