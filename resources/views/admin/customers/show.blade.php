@@ -92,14 +92,15 @@
                           onsubmit="return confirm('ยืนยันการ' + (this.direction.value === 'add' ? 'เพิ่ม' : 'หัก') + ' ' + this.points.value + ' แต้ม ให้ลูกค้ารายนี้?');">
                         @csrf
                         <div class="font-medium text-sm mb-2">เพิ่ม / หักแต้ม</div>
-                        <div class="grid grid-cols-12 gap-2">
-                            <select name="direction" class="form-select col-span-5">
+                        {{-- ใช้ inline style เพราะ CSS ของธีมไม่มีคลาส col-span-5/7 (กล่องเลยบี้กัน) --}}
+                        <div style="display:flex; gap:8px; width:100%;">
+                            <select name="direction" class="form-select" style="flex:0 0 42%; min-width:0;">
                                 <option value="add">+ เพิ่มแต้ม</option>
                                 <option value="deduct">− หักแต้ม</option>
                             </select>
-                            <input type="number" name="points" min="1" step="1" class="form-control col-span-7" placeholder="จำนวนแต้ม" required>
-                            <input type="text" name="note" maxlength="200" class="form-control col-span-12" placeholder="เหตุผล เช่น ชดเชยงานล่าช้า / ปรับยอดผิดพลาด" required>
+                            <input type="number" name="points" min="1" step="1" class="form-control" style="flex:1 1 auto; min-width:0;" placeholder="จำนวนแต้ม" required>
                         </div>
+                        <input type="text" name="note" maxlength="200" class="form-control" style="width:100%; margin-top:8px;" placeholder="เหตุผล เช่น ชดเชยงานล่าช้า / ปรับยอดผิดพลาด" required>
                         <button type="submit" class="btn btn-primary w-full mt-2">บันทึกแต้ม</button>
                         <div class="text-xs text-slate-500 mt-1">ระบบจะประเมินระดับสมาชิกใหม่ให้อัตโนมัติหลังบันทึก</div>
                     </form>
