@@ -118,6 +118,12 @@ class AppServiceProvider extends ServiceProvider
                     'sales' => ['icon' => 'phone-call', 'title' => 'ติดต่อฝ่ายขาย', 'route_name' => 'admin.contacts.index', 'params' => ['type' => 'sales'], 'permission' => 'contacts.sales'],
                 ]
             ],
+            // 🌟 QR ดาวน์โหลดแอปแยกทีม + Dashboard อันดับยอดดาวน์โหลด
+            'app-downloads' => [
+                'icon' => 'qr-code', 'title' => 'QR ดาวน์โหลดแอป (ทีม)',
+                'route_name' => 'admin.app-downloads.index', 'params' => [],
+                'permission' => 'cms.manage',
+            ],
             'devider',
             'cms' => [
                 'icon' => 'layout', 'title' => 'จัดการแอป (CMS)',

@@ -478,3 +478,50 @@ Flow เดียวกับหน้าเว็บ `/forgot-password` — ไ
 
 ### ประวัติแต้ม — ใช้ `GET /user/point-history` (เดิม)
 รายการที่แอดมินเพิ่ม/หักให้รายคนจะเป็น `type: "adjust"` (`amount` ติดลบ = หักแต้ม) พร้อม `description` เหตุผล
+
+---
+
+## 14. รายงานการติดตั้งแอป (นับยอดดาวน์โหลดแยกทีมจาก QR) (ใหม่ 2026-11-16)
+
+หลังบ้านสร้าง "ทีม" ได้ แต่ละทีมมีลิงก์/QR ของตัวเอง `https://app.aeginc.co/d/{code}` → สแกนแล้วระบบพาไป App Store / Google Play อัตโนมัติ
+**แอปต้องเรียก API นี้ 1 ครั้งตอนเปิดครั้งแรกหลังติดตั้ง** เพื่อให้ยอดติดตั้งขึ้นใน Dashboard ของทีม
+
+### `POST /app-installs` (ไม่ต้องล็อกอิน — ถ้ามี token แนบมาด้วยจะผูกกับผู้ใช้)
+```json
+{
+  "platform": "android",
+  "device_id": "8f1c0f7e-6a1b-4b3e-9a55-2f0d1c9e7a10",
+  "install_referrer": "utm_source=aeg_qr&utm_medium=qr&utm_campaign=sales-bkk-1",
+  "app_version": "1.4.0"
+}
+```
+| field | บังคับ | หมายเหตุ |
+|---|---|---|
+| `platform` | ✅ | `ios` / `android` |
+| `device_id` | ✅ | UUID ที่แอปสุ่มสร้างครั้งแรกแล้วเก็บไว้ในเครื่อง (ส่งซ้ำได้ ระบบไม่นับซ้ำ) |
+| `install_referrer` | Android | ค่า `installReferrer` จาก **Google Play Install Referrer API** (`com.android.installreferrer:installreferrer`) ส่งมาทั้งสตริงตามที่ได้ |
+| `team_code` | – | ถ้าแอปมีช่องให้กรอกรหัสทีม/ผู้แนะนำ ส่งมาได้ |
+| `app_version` | – | |
+
+Response
+```json
+{ "status": "success", "message": "Install recorded",
+  "data": { "recorded": true, "team_code": "sales-bkk-1", "attribution": "referrer" } }
+```
+- `recorded: false` = เครื่องนี้เคยรายงานแล้ว (เรียกซ้ำได้ ไม่ error)
+- `attribution`: `referrer` (Android ยืนยัน), `team_code`, `ip_match` (iOS โดยประมาณ), `none` (ไม่ได้มาจาก QR ทีม)
+- iOS ไม่มี install referrer — ส่งแค่ `platform` + `device_id` ระบบจะจับคู่กับการสแกน QR บน iPhone จากเครือข่ายเดียวกันภายใน 24 ชม. ให้เอง
+
+**ตัวอย่าง Android (Kotlin)**
+```kotlin
+val client = InstallReferrerClient.newBuilder(context).build()
+client.startConnection(object : InstallReferrerStateListener {
+    override fun onInstallReferrerSetupFinished(code: Int) {
+        val referrer = if (code == InstallReferrerClient.InstallReferrerResponse.OK)
+            client.installReferrer.installReferrer else null
+        // POST /app-installs { platform:"android", device_id, install_referrer: referrer, app_version }
+        client.endConnection()
+    }
+    override fun onInstallReferrerServiceDisconnected() {}
+})
+```

@@ -72,6 +72,9 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 // 3. กรอกข้อมูลส่วนตัวต่อให้จบ (มีอยู่แล้ว)
 Route::post('/register', [AuthController::class, 'register']);
 
+// 🌟 แอปรายงานการติดตั้งตอนเปิดครั้งแรก (ใช้นับยอดดาวน์โหลดแยกทีมจาก QR) — ไม่ต้องล็อกอิน
+Route::post('/app-installs', [\App\Http\Controllers\Api\AppInstallController::class, 'store'])->middleware('throttle:30,1');
+
 // 🌟 ลืมรหัสผ่านด้วยเบอร์มือถือ (flow เดียวกับเว็บ): ขอ OTP → ยืนยัน OTP (ได้ reset_token) → ตั้งรหัสผ่านใหม่
 Route::prefix('auth/forgot-password')->middleware('throttle:10,1')->group(function () {
     Route::post('/request-otp', [AuthController::class, 'forgotPasswordRequestOtp']);

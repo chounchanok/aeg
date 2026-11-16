@@ -1751,6 +1751,89 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "14. รายงานการติดตั้งแอป (QR ทีม)",
+      "item": [
+        {
+          "name": "Android (มี install referrer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"android\",\n  \"device_id\": \"test-android-0001\",\n  \"install_referrer\": \"utm_source=aeg_qr&utm_medium=qr&utm_campaign=sales-bkk-1\",\n  \"app_version\": \"1.4.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/app-installs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "app-installs"
+              ]
+            },
+            "description": "เรียกครั้งเดียวตอนเปิดแอปครั้งแรก"
+          },
+          "response": []
+        },
+        {
+          "name": "iOS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"ios\",\n  \"device_id\": \"test-ios-0001\",\n  \"app_version\": \"1.4.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/app-installs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "app-installs"
+              ]
+            },
+            "description": "iOS ไม่มี referrer — ระบบจับคู่กับการสแกน QR บน iPhone ให้เอง (โดยประมาณ)"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

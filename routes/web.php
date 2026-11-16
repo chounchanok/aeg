@@ -93,6 +93,10 @@ Route::get('/insurance/{id}', [InsuranceController::class, 'show'])->where('id',
 Route::get('/insurance/{id}/contact', [InsuranceController::class, 'contact'])->where('id', '[0-9]+')->name('insurance-contact');
 Route::post('/insurance-contact/submit', [InsuranceController::class, 'submitContact'])->name('insurance-contact.submit'); // 🌟 เพิ่มเส้นรับค่าฟอร์มประกัน
 
+// 🌟 ลิงก์/QR ดาวน์โหลดแอปของแต่ละทีม (public) — นับการสแกนแล้วพาไป App Store / Google Play
+Route::get('/d/{code}', [\App\Http\Controllers\Frontend\AppDownloadController::class, 'go'])->where('code', '[A-Za-z0-9\-]+')->name('app-download');
+Route::get('/d/{code}/{platform}', [\App\Http\Controllers\Frontend\AppDownloadController::class, 'goPlatform'])->where(['code' => '[A-Za-z0-9\-]+', 'platform' => 'ios|android'])->name('app-download.platform');
+
 // ระบบตู้เซฟ (Safe / Locker)
 Route::get('/safe-contact/{id}/contact', [ProductController::class, 'safeContact'])->where('id', '[0-9]+')->name('safe-contact'); // 🌟 ย้ายมาใช้ ProductController แทน
 Route::post('/safe-contact/submit', [ProductController::class, 'submitSafeContact'])->name('safe-contact.submit'); // 🌟 เพิ่มเส้นรับค่าฟอร์มตู้เซฟ
@@ -438,6 +442,14 @@ Route::middleware('auth')->group(function() {
         // รีวิวจากลูกค้า (RBAC: จัดกลุ่มร่วมกับ CMS -> marketing)
         Route::middleware('permission:cms.manage')->group(function() {
             Route::get('/admin/reviews', [ReviewAdminController::class, 'index'])->name('admin.reviews');
+        });
+
+        // 🌟 QR ดาวน์โหลดแอปแยกทีม + Dashboard อันดับ (RBAC: cms.manage -> marketing)
+        Route::middleware('permission:cms.manage')->prefix('admin/app-downloads')->name('admin.app-downloads.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\AppDownloadAdminController::class, 'index'])->name('index');
+            Route::post('/teams', [\App\Http\Controllers\Admin\AppDownloadAdminController::class, 'store'])->name('store');
+            Route::post('/teams/{id}', [\App\Http\Controllers\Admin\AppDownloadAdminController::class, 'update'])->whereNumber('id')->name('update');
+            Route::post('/teams/{id}/delete', [\App\Http\Controllers\Admin\AppDownloadAdminController::class, 'destroy'])->whereNumber('id')->name('destroy');
         });
 
     });
