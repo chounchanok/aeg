@@ -191,6 +191,27 @@
                             <div class="mr-auto">
                                 <div class="font-medium text-lg">{{ $cp->product_name }}</div>
                                 <div class="text-slate-500 mt-1">S/N: <span class="font-medium text-slate-700">{{ $cp->serial_number ?? '-' }}</span></div>
+                                {{-- 🌟 แผนบำรุงรักษาของแพ็กเกจนี้ --}}
+                                @if(!empty($cp->visit_interval_months))
+                                    <div class="text-xs mt-1" style="color:#1e3a8a;">
+                                        🔧 ดูแลทุก {{ $cp->visit_interval_months }} เดือน
+                                        · รอบถัดไป {{ $cp->next_service_date ? \Carbon\Carbon::parse($cp->next_service_date)->format('d/m/Y') : '-' }}
+                                        {{ $cp->auto_schedule ? '' : '(ปิดอัตโนมัติ)' }}
+                                        @can('service_requests.manage')
+                                            · <a href="{{ route('admin.maintenance-plans.index', ['customer_id' => $customer->id]) }}" class="underline">จัดการแผน</a>
+                                        @endcan
+                                    </div>
+                                @elseif(($cp->reference_type ?? 'product') === 'product' && ($cp->status ?? 'active') === 'active')
+                                    @can('service_requests.manage')
+                                        <form action="{{ route('admin.maintenance-plans.store', $cp->id) }}" method="POST" class="mt-1" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                            @csrf
+                                            <span class="text-xs text-slate-500">ยังไม่มีแผนบำรุงรักษา — เข้าดูแลทุก</span>
+                                            <input type="number" name="visit_interval_months" min="1" max="60" value="3" class="form-control" style="width:70px; padding:2px 8px; font-size:12px;">
+                                            <span class="text-xs text-slate-500">เดือน</span>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" style="padding:2px 10px; font-size:12px;">สร้างแผน</button>
+                                        </form>
+                                    @endcan
+                                @endif
                             </div>
                             <div class="text-right">
                                 <div class="text-xs text-slate-500">วันที่ซื้อ: {{ $cp->purchase_date ? \Carbon\Carbon::parse($cp->purchase_date)->format('d/m/Y') : '-' }}</div>

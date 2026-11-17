@@ -241,6 +241,16 @@ Route::middleware('auth')->group(function() {
         Route::get('/home', [DashboardAdminController::class, 'index'])->name('admin.home');
         Route::get('/admin/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
+        // --- 🌟 ช่างซ่อม: "งานของฉัน" บนเว็บ (ทำงานเหมือนแอปช่าง — เห็นเฉพาะงานที่ได้รับมอบหมาย) ---
+        Route::prefix('admin/my-jobs')->name('admin.tech.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'jobs'])->name('jobs');
+            Route::get('/profile', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'profile'])->name('profile');
+            Route::post('/profile', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'updateProfile'])->name('profile.update');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'show'])->whereNumber('id')->name('show');
+            Route::post('/{id}/status', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'updateStatus'])->whereNumber('id')->name('status');
+            Route::post('/{id}/complete', [\App\Http\Controllers\Admin\TechnicianPortalController::class, 'complete'])->whereNumber('id')->name('complete');
+        });
+
         // --- แจ้งเตือนภายในระบบของแผนกตัวเอง (ไม่ผูก permission — ทุกแผนกดูของตัวเองได้เสมอ) ---
         Route::prefix('admin/staff-notifications')->name('admin.staff-notifications.')->group(function() {
             Route::get('/', [\App\Http\Controllers\Admin\StaffNotificationAdminController::class, 'index'])->name('index');
@@ -250,6 +260,14 @@ Route::middleware('auth')->group(function() {
 
         // --- Service Requests (RBAC: security_admin) ---
         Route::middleware('permission:service_requests.manage')->group(function() {
+            // 🌟 แผนบำรุงรักษา (เปิดใบงานตามรอบ)
+            Route::get('/admin/maintenance-plans', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'index'])->name('admin.maintenance-plans.index');
+            Route::post('/admin/maintenance-plans/run-due', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'runDue'])->name('admin.maintenance-plans.run-due');
+            Route::post('/admin/maintenance-plans/apply-defaults', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'applyDefaults'])->name('admin.maintenance-plans.apply-defaults');
+            Route::post('/admin/maintenance-plans/{id}', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'update'])->whereNumber('id')->name('admin.maintenance-plans.update');
+            Route::post('/admin/maintenance-plans/{id}/create', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'store'])->whereNumber('id')->name('admin.maintenance-plans.store');
+            Route::post('/admin/maintenance-plans/{id}/run', [\App\Http\Controllers\Admin\MaintenancePlanAdminController::class, 'run'])->whereNumber('id')->name('admin.maintenance-plans.run');
+
             Route::get('/admin/service-requests', [ServiceRequestAdminController::class, 'index'])->name('admin.service-requests');
             Route::get('/admin/service-requests/{id}', [ServiceRequestAdminController::class, 'show'])->name('admin.service-requests.show');
             Route::post('/admin/service-requests/{id}/status', [ServiceRequestAdminController::class, 'updateStatus'])->name('admin.service-requests.status');

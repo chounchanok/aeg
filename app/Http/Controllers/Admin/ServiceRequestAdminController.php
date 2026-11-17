@@ -70,6 +70,14 @@ class ServiceRequestAdminController extends Controller
         // 4. ดึงประวัติสถานะ (Tracking)
         $tracking = DB::table('service_request_tracking')->where('service_request_id', $id)->orderBy('created_at', 'desc')->get();
 
+        // 🌟 หลักฐานการซ่อมจากช่าง (รูปก่อน/หลัง, ลายเซ็นลูกค้า, คะแนน, พิกัดตอนปิดงาน) — ชุดเดียวกับที่ช่าง/ลูกค้าเห็น
+        $completion = \App\Services\TechnicianJobService::completion($id);
+        $technicianName = $request->technician_id
+            ? DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')
+                ->where('users.id', $request->technician_id)
+                ->value(DB::raw("COALESCE(customer_profiles.first_name, users.username)"))
+            : null;
+
         // 🌟 ดึงรายชื่อพนักงานที่มี Role เป็น technician
         $technicians = DB::table('users')
             ->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')
@@ -82,6 +90,8 @@ class ServiceRequestAdminController extends Controller
             'images' => $images,
             'chats' => $chats,
             'tracking' => $tracking,
+            'completion' => $completion,
+            'technicianName' => $technicianName,
             'technicians' => $technicians, // 🌟 ส่งตัวแปรนี้ไปที่ View
             'display_address' => $display_address,
             'first_level_active_index' => 'service-requests',

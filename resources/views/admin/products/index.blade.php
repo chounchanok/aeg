@@ -9,9 +9,21 @@
     <h2 class="intro-y text-lg font-medium mt-10">รายการสินค้าและบริการ (Master Products)</h2>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-            <a href="{{ route('admin.products.create') }}" class="btn btn-primary shadow-md mr-2">
-                <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มสินค้าใหม่
-            </a>
+            {{-- 🌟 แยกหน้าจอสินค้า (อุปกรณ์) / แพ็กเกจ & บริการ --}}
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-right:auto;">
+                @foreach(['all' => 'ทั้งหมด', 'equipment' => 'สินค้า (อุปกรณ์)', 'service' => 'แพ็กเกจ & บริการ'] as $g => $label)
+                    <a href="{{ route('admin.products', $g === 'all' ? [] : ['group' => $g]) }}"
+                       class="btn {{ ($group ?? 'all') === $g ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $label }}</a>
+                @endforeach
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <a href="{{ route('admin.products.create', ['group' => 'equipment']) }}" class="btn btn-primary shadow-md">
+                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มสินค้า
+                </a>
+                <a href="{{ route('admin.products.create', ['group' => 'service']) }}" class="btn btn-primary shadow-md">
+                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> เพิ่มแพ็กเกจ/บริการ
+                </a>
+            </div>
         </div>
         <div class="intro-y col-span-12 overflow-auto lg:overflow-visible box p-5">
             <table class="table table-report -mt-2 w-full datatable">
@@ -42,9 +54,13 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if($p->type == 'service') <span class="text-info">บริการ</span>
-                                @elseif($p->type == 'package') <span class="text-warning">แพ็กเกจ</span>
+                                @if(($p->category_group ?? null) === 'service') <span class="text-info">บริการ</span>
+                                @elseif(($p->category_group ?? null) === 'package') <span class="text-warning">แพ็กเกจ</span>
                                 @else <span class="text-success">อุปกรณ์</span> @endif
+                                @if($p->category_title)<div class="text-xs text-slate-500">{{ $p->category_title }}</div>@endif
+                                @if(!empty($p->visit_interval_months))
+                                    <div class="text-xs text-primary">ดูแลทุก {{ $p->visit_interval_months }} เดือน{{ $p->auto_schedule ? ' · อัตโนมัติ' : '' }}</div>
+                                @endif
                             </td>
                             <td class="text-right font-medium">{{ number_format($p->price, 2) }}</td>
                             <td class="text-center text-primary">{{ number_format($p->point_earn) }} Pt</td>

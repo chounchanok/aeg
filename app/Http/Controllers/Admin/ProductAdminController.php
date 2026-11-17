@@ -9,22 +9,34 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductAdminController extends Controller
 {
-    public function index()
+    // 🌟 แยกหน้าจอ "สินค้า (อุปกรณ์)" กับ "แพ็กเกจ & บริการ" ด้วย group ของหมวดหมู่ (ใช้ตาราง products เดียวกัน)
+    public function index(Request $request)
     {
-        $products = DB::table('products')->orderBy('created_at', 'desc')->get();
+        $group = in_array($request->query('group'), ['equipment', 'service'], true) ? $request->query('group') : 'all';
+
+        $products = DB::table('products')
+            ->leftJoin('service_categories as c', 'products.type', '=', 'c.id')
+            ->when($group === 'equipment', fn ($q) => $q->where('c.group', 'equipment'))
+            ->when($group === 'service', fn ($q) => $q->whereIn('c.group', ['package', 'service']))
+            ->orderBy('products.created_at', 'desc')
+            ->select('products.*', 'c.group as category_group', 'c.title_th as category_title')
+            ->get();
+
         return view('admin.products.index', [
             'products' => $products,
+            'group' => $group,
             'first_level_active_index' => 'products',
             'second_level_active_index' => '',
             'third_level_active_index' => ''
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = DB::table('service_categories')->orderBy('created_at', 'desc')->get();
         return view('admin.products.form', [
             'categories' => $categories,
+            'presetGroup' => in_array($request->query('group'), ['equipment', 'service'], true) ? $request->query('group') : null,
             'first_level_active_index' => 'products',
             'second_level_active_index' => '',
             'third_level_active_index' => ''
@@ -49,6 +61,11 @@ class ProductAdminController extends Controller
             'shipping_fee' => 'nullable|numeric|min:0',
             'install_fee' => 'nullable|numeric|min:0',
             'compatible_with' => 'nullable|string',
+            // 🌟 แผนบำรุงรักษา (บริการ/แพ็กเกจ)
+            'contract_months' => 'nullable|integer|min:1|max:120',
+            'service_visits' => 'nullable|integer|min:0|max:1000',
+            'visit_interval_months' => 'nullable|integer|min:1|max:60',
+            'ticket_lead_days' => 'nullable|integer|min:0|max:90',
             'images' => 'nullable|array', // เปลี่ยนจาก image เป็น images (Array)
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480' // ตรวจสอบไฟล์ใน Array
         ]);
@@ -77,6 +94,7 @@ class ProductAdminController extends Controller
                 'shipping_fee' => $request->shipping_fee,
                 'install_fee' => $request->install_fee,
                 'compatible_with' => $request->compatible_with,
+                ...$this->maintenanceFields($request),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -152,6 +170,11 @@ class ProductAdminController extends Controller
             'shipping_fee' => 'nullable|numeric|min:0',
             'install_fee' => 'nullable|numeric|min:0',
             'compatible_with' => 'nullable|string',
+            // 🌟 แผนบำรุงรักษา (บริการ/แพ็กเกจ)
+            'contract_months' => 'nullable|integer|min:1|max:120',
+            'service_visits' => 'nullable|integer|min:0|max:1000',
+            'visit_interval_months' => 'nullable|integer|min:1|max:60',
+            'ticket_lead_days' => 'nullable|integer|min:0|max:90',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:20480'
         ]);
@@ -179,6 +202,7 @@ class ProductAdminController extends Controller
                 'shipping_fee' => $request->shipping_fee,
                 'install_fee' => $request->install_fee,
                 'compatible_with' => $request->compatible_with,
+                ...$this->maintenanceFields($request),
                 'updated_at' => now()
             ]);
 
@@ -250,5 +274,18 @@ class ProductAdminController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการลบ: ' . $e->getMessage());
         }
+    }
+
+    /** 🌟 ค่าตั้งต้นแผนบำรุงรักษาของบริการ (ว่าง "เข้าทุกกี่เดือน" = บริการนี้ไม่มีแผน) */
+    private function maintenanceFields(Request $request): array
+    {
+        $interval = $request->filled('visit_interval_months') ? (int) $request->visit_interval_months : null;
+        return [
+            'contract_months' => $request->filled('contract_months') ? (int) $request->contract_months : null,
+            'service_visits' => $request->filled('service_visits') ? (int) $request->service_visits : null,
+            'visit_interval_months' => $interval,
+            'ticket_lead_days' => $request->filled('ticket_lead_days') ? (int) $request->ticket_lead_days : 10,
+            'auto_schedule' => $interval ? $request->boolean('auto_schedule') : false,
+        ];
     }
 }

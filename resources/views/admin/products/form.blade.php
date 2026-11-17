@@ -29,15 +29,29 @@
 
                     <div class="mt-4">
                         <label class="form-label font-medium">หมวดสินค้า (Category) <span class="text-danger">*</span></label>
-                        <select name="type" class="form-select">
+                        @php
+                            $groupLabels = ['equipment' => 'สินค้า (อุปกรณ์)', 'package' => 'แพ็กเกจ', 'service' => 'บริการ'];
+                            $presetGroup = $presetGroup ?? null;
+                        @endphp
+                        <select name="type" id="categorySelect" class="form-select">
                             @if(!empty($categories))
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}" {{ (isset($product) && $product->type == $cat->id) ? 'selected' : '' }}>
-                                        {{ $cat->title_th }} ({{ ucfirst($cat->group) }})
-                                    </option>
+                                @foreach(collect($categories)->groupBy('group') as $g => $cats)
+                                    <optgroup label="{{ $groupLabels[$g] ?? $g }}">
+                                        @foreach($cats as $cat)
+                                            @php
+                                                $sel = isset($product) ? $product->type == $cat->id
+                                                    : ($presetGroup && (($presetGroup === 'equipment') === ($cat->group === 'equipment')) && !isset($presetPicked));
+                                                if ($sel && !isset($product)) $presetPicked = true;
+                                            @endphp
+                                            <option value="{{ $cat->id }}" data-group="{{ $cat->group }}" {{ $sel ? 'selected' : '' }}>
+                                                {{ $cat->title_th }} ({{ $groupLabels[$cat->group] ?? ucfirst($cat->group) }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
                                 @endforeach
                             @endif
                         </select>
+                        <div class="text-xs text-slate-500 mt-1">หมวดกลุ่ม "สินค้า (อุปกรณ์)" จะแสดงช่องข้อมูลสินค้า — กลุ่ม "แพ็กเกจ / บริการ" จะแสดงช่องแผนบำรุงรักษา</div>
                     </div>
 
                     <div class="col-span-12 mt-3 flex items-center">
@@ -68,7 +82,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 border-t border-slate-200/60 pt-4">
+                    <div class="mt-4 border-t border-slate-200/60 pt-4" id="equipmentFields">
                         <label class="form-label font-medium text-slate-500 mb-2">ข้อมูลเพิ่มเติมสำหรับหน้ารายละเอียดสินค้า (ช่วยลูกค้าตัดสินใจซื้อ)</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -108,6 +122,38 @@
                                 <textarea name="compatible_with" class="form-control" rows="3" placeholder="เช่น ใช้ร่วมกับกล่องควบคุมรุ่น SP55/SP68">{{ $product->compatible_with ?? '' }}</textarea>
                             </div>
                         </div>
+                    </div>
+
+
+                    {{-- 🌟 แผนบำรุงรักษา (แสดงเมื่อเลือกหมวดกลุ่มแพ็กเกจ/บริการ) — ค่าตั้งต้นของบริการตัวนี้
+                         ตอนลูกค้าซื้อ / แอดมินเพิ่มให้ลูกค้า ระบบจะคัดลอกไปเป็นแผนของลูกค้ารายนั้น (ปรับรายคนได้ที่เมนูแผนบำรุงรักษา) --}}
+                    <div class="mt-4 border-t border-slate-200/60 pt-4" id="maintenanceFields">
+                        <label class="form-label font-medium mb-1">แผนบำรุงรักษา (ค่าตั้งต้นของบริการนี้)</label>
+                        <div class="text-xs text-slate-500 mb-3">เว้น "เข้าบริการทุกกี่เดือน" ว่างไว้ ถ้าบริการนี้ไม่มีการเข้าดูแลตามรอบ</div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:14px;">
+                            <div>
+                                <label class="form-label">ระยะสัญญา (เดือน)</label>
+                                <input name="contract_months" type="number" min="1" max="120" class="form-control" value="{{ old('contract_months', $product->contract_months ?? '') }}" placeholder="เช่น 12">
+                            </div>
+                            <div>
+                                <label class="form-label">จำนวนครั้งเข้าบริการ / สัญญา</label>
+                                <input name="service_visits" type="number" min="0" class="form-control" value="{{ old('service_visits', $product->service_visits ?? '') }}" placeholder="เช่น 4 (0 = ไม่จำกัด)">
+                            </div>
+                            <div>
+                                <label class="form-label">เข้าบริการทุกกี่เดือน</label>
+                                <input name="visit_interval_months" type="number" min="1" max="60" class="form-control" value="{{ old('visit_interval_months', $product->visit_interval_months ?? '') }}" placeholder="1 = รายเดือน, 3 = รายไตรมาส">
+                            </div>
+                            <div>
+                                <label class="form-label">เปิดใบงานล่วงหน้า (วัน)</label>
+                                <input name="ticket_lead_days" type="number" min="0" max="90" class="form-control" value="{{ old('ticket_lead_days', $product->ticket_lead_days ?? 10) }}">
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-3">
+                            <input type="hidden" name="auto_schedule" value="0">
+                            <input name="auto_schedule" id="auto_schedule" type="checkbox" value="1" class="form-check-input border mr-2" {{ old('auto_schedule', $product->auto_schedule ?? false) ? 'checked' : '' }}>
+                            <label for="auto_schedule">เปิดใบงานบำรุงรักษาตามรอบให้อัตโนมัติ (แอดมินมอบหมายช่างต่อ)</label>
+                        </div>
+                        <div id="planPreview" class="text-xs text-primary mt-2"></div>
                     </div>
 
                     @if(isset($product) && isset($productImages) && count($productImages) > 0)
@@ -151,4 +197,39 @@
             </form>
         </div>
     </div>
+@endsection
+
+@section('script')
+<script>
+    // 🌟 แสดงช่องตามกลุ่มของหมวดหมู่: สินค้า (อุปกรณ์) ↔ แพ็กเกจ/บริการ
+    (function () {
+        const sel = document.getElementById('categorySelect');
+        const eq = document.getElementById('equipmentFields');
+        const mt = document.getElementById('maintenanceFields');
+        const preview = document.getElementById('planPreview');
+        function groupOf() { const o = sel && sel.options[sel.selectedIndex]; return o ? o.dataset.group : 'equipment'; }
+        function toggle() {
+            const isEquipment = groupOf() === 'equipment';
+            if (eq) eq.style.display = isEquipment ? '' : 'none';
+            if (mt) mt.style.display = isEquipment ? 'none' : '';
+            updatePreview();
+        }
+        function val(n) { const el = document.querySelector('[name="' + n + '"]'); return el && el.value ? parseInt(el.value, 10) : null; }
+        function updatePreview() {
+            if (!preview) return;
+            const months = val('contract_months'), visits = val('service_visits'), every = val('visit_interval_months');
+            if (!every) { preview.textContent = 'บริการนี้ไม่มีการเข้าดูแลตามรอบ'; return; }
+            let t = 'เข้าดูแลทุก ' + every + ' เดือน';
+            if (months) t += ' ตลอดสัญญา ' + months + ' เดือน (≈ ' + Math.floor(months / every) + ' รอบ)';
+            if (visits) t += ' · โควต้า ' + visits + ' ครั้ง';
+            if (months && visits && Math.floor(months / every) < visits) t += ' ⚠️ จำนวนรอบในสัญญาน้อยกว่าโควต้า';
+            preview.textContent = t;
+        }
+        if (sel) sel.addEventListener('change', toggle);
+        ['contract_months', 'service_visits', 'visit_interval_months'].forEach(n => {
+            const el = document.querySelector('[name="' + n + '"]'); if (el) el.addEventListener('input', updatePreview);
+        });
+        toggle();
+    })();
+</script>
 @endsection

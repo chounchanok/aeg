@@ -1176,23 +1176,30 @@ class EcommerceController extends Controller
                                 ->orderBy('sort_order', 'asc')
                                 ->value('image_url');
 
+                // 🌟 ระยะสัญญา / โควต้าเรียกช่าง อ่านจากบริการ (ค่าตั้งต้นแผนบำรุงรักษา) — เดิมตายตัว 1 ปี / 4 ครั้ง
+                $master = DB::table('products')->where('id', $item->product_id)->first();
+                $contractMonths = (int) ($item->duration_months ?? 0) ?: (int) ($master->contract_months ?? 0) ?: 12;
+                $serviceVisits = isset($master->service_visits) && $master->service_visits !== null ? (int) $master->service_visits : 4;
+
                 // แจกแพ็กเกจตามจำนวนชิ้นที่ลูกค้าซื้อ
                 for ($i = 0; $i < $item->quantity; $i++) {
-                    DB::table('customer_products')->insert([
+                    $customerProductId = DB::table('customer_products')->insertGetId([
                         'customer_id' => $order->user_id,
                         'product_name' => $item->product_name,
                         'reference_type' => 'product',
                         'reference_id' => $item->product_id,
                         'purchase_date' => \Carbon\Carbon::now(),
                         'serial_number' => 'PKG-' . strtoupper(\Illuminate\Support\Str::random(8)),
-                        'warranty_expire_date' => \Carbon\Carbon::now()->addYear(), // หมดอายุใน 1 ปี
+                        'warranty_expire_date' => \Carbon\Carbon::now()->addMonthsNoOverflow($contractMonths),
                         'status' => 'active',
-                        'total_service_count' => 4, // โควต้าเรียกช่าง
+                        'total_service_count' => $serviceVisits, // โควต้าเรียกช่าง
                         'used_service_count' => 0,
                         'image_url' => $coverImage,
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);
+                    // 🌟 สร้างแผนบำรุงรักษาจากค่าตั้งต้นของบริการ (ถ้าบริการนี้มีแผน)
+                    \App\Services\MaintenancePlanService::applyFromProduct($customerProductId);
                 }
             }
 

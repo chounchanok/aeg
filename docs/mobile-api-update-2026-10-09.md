@@ -525,3 +525,17 @@ client.startConnection(object : InstallReferrerStateListener {
     override fun onInstallReferrerServiceDisconnected() {}
 })
 ```
+
+---
+
+## 15. แอปช่าง (`/technician/*`) — ปรับความปลอดภัย (2026-11-17)
+
+ทุกเส้นยังใช้ request / response รูปแบบเดิม (ตอนนี้ใช้ตรรกะชุดเดียวกับหน้า "งานของฉัน" บนเว็บหลังบ้าน) มีเปลี่ยนเฉพาะกรณี error:
+
+| เส้น | เดิม | ตอนนี้ |
+|---|---|---|
+| `POST /technician/tasks/{id}/update-status` | งานไม่ใช่ของช่างคนนี้ ก็ตอบ success (และเขียน tracking log ลงงานนั้น) | **404** "ไม่พบข้อมูลงานนี้" |
+| `POST /technician/tasks/{id}/update-status` | งานที่ปิด/ยกเลิกแล้วยังเปลี่ยนสถานะได้ | **400** "งานนี้ปิด/ยกเลิกไปแล้ว เปลี่ยนสถานะไม่ได้" |
+| `POST /technician/profile/update` | เปลี่ยนเบอร์ซ้ำกับบัญชีอื่นได้ | **422** (เบอร์ใช้เข้าสู่ระบบ ห้ามซ้ำ) |
+
+`before_media` / `after_media` ส่งได้ทั้งแบบหลายไฟล์ (`before_media[]`) และไฟล์เดียว

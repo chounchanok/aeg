@@ -483,20 +483,31 @@ class CustomerAdminController extends Controller
         // ดึงชื่อสินค้าจาก Master มาบันทึก (ตามที่ออกแบบ DB ไว้ว่าเก็บแค่ชื่อ)
         $masterProduct = DB::table('products')->where('id', $request->master_product_id)->first();
 
-        DB::table('customer_products')->insert([
+        // 🌟 ค่าตั้งต้นจากบริการ: วันหมดสัญญา (ถ้าไม่ได้กรอก) และโควต้าเข้าบริการ
+        $purchaseDate = $request->purchase_date ?: now()->toDateString();
+        $warrantyExpire = $request->warranty_expire_date
+            ?: (!empty($masterProduct->contract_months) ? \Carbon\Carbon::parse($purchaseDate)->addMonthsNoOverflow((int) $masterProduct->contract_months)->toDateString() : null);
+
+        $customerProductId = DB::table('customer_products')->insertGetId([
             'customer_id' => $id,
             'reference_type' => 'product', // 🌟 เพิ่มบรรทัดนี้
             'reference_id' => $request->master_product_id, // 🌟 เพิ่มบรรทัดนี้
             'product_name' => $masterProduct->name_th . ' / ' . $masterProduct->name_en,
             'serial_number' => $request->serial_number,
-            'purchase_date' => $request->purchase_date,
-            'warranty_expire_date' => $request->warranty_expire_date,
+            'purchase_date' => $purchaseDate,
+            'warranty_expire_date' => $warrantyExpire,
+            'total_service_count' => (int) ($masterProduct->service_visits ?? 0),
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
-        return redirect()->back()->with('success', 'เพิ่มสินค้าให้ลูกค้าเรียบร้อยแล้ว');
+        // 🌟 สร้างแผนบำรุงรักษาจากค่าตั้งต้นของบริการ (ถ้ามี)
+        \App\Services\MaintenancePlanService::applyFromProduct($customerProductId);
+        $hasPlan = DB::table('customer_products')->where('id', $customerProductId)->whereNotNull('visit_interval_months')->exists();
+
+        return redirect()->back()->with('success', 'เพิ่มสินค้าให้ลูกค้าเรียบร้อยแล้ว'
+            . ($hasPlan ? ' — สร้างแผนบำรุงรักษาให้แล้ว (ปรับวัน/ช่างประจำได้ที่เมนูแผนบำรุงรักษา)' : ''));
     }
 
     // ฟังก์ชันบันทึกการเพิ่ม ประกันภัย ให้ลูกค้า

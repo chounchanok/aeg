@@ -45,10 +45,27 @@ class AppServiceProvider extends ServiceProvider
                 'icon' => 'home', 'title' => 'หน้าหลัก (Dashboard)',
                 'route_name' => 'admin.dashboard', 'params' => []
             ],
+            // 🌟 เมนูของช่างซ่อม (แสดงเฉพาะ users.role = technician)
+            'tech-jobs' => [
+                'icon' => 'clipboard-list', 'title' => 'งานของฉัน',
+                'route_name' => 'admin.tech.jobs', 'params' => [],
+                'technician_only' => true,
+            ],
+            'tech-profile' => [
+                'icon' => 'user', 'title' => 'โปรไฟล์ & KPI',
+                'route_name' => 'admin.tech.profile', 'params' => [],
+                'technician_only' => true,
+            ],
             'devider',
             'service-requests' => [
                 'icon' => 'wrench', 'title' => 'จัดการแจ้งซ่อม',
                 'route_name' => 'admin.service-requests', 'params' => [],
+                'permission' => 'service_requests.manage',
+            ],
+            // 🌟 แผนบำรุงรักษา — เปิดใบงานเข้าดูแลตามรอบ (สิทธิ์เดียวกับจัดการแจ้งซ่อม)
+            'maintenance-plans' => [
+                'icon' => 'calendar', 'title' => 'แผนบำรุงรักษา',
+                'route_name' => 'admin.maintenance-plans.index', 'params' => [],
                 'permission' => 'service_requests.manage',
             ],
             'customers' => [
@@ -167,6 +184,7 @@ class AppServiceProvider extends ServiceProvider
 
         $permissionKeys = $user->role === 'super_admin' ? ['*'] : $user->permissionKeys();
         $hasFullAccess = in_array('*', $permissionKeys, true);
+        $isTechnician = $user->role === 'technician';
 
         $filtered = [];
         foreach ($menu as $key => $item) {
@@ -175,10 +193,20 @@ class AppServiceProvider extends ServiceProvider
                 continue;
             }
 
+            // 🌟 เมนูช่าง: ช่างเห็น / คนอื่นไม่เห็น — ส่วนช่างไม่เห็นเมนูที่ไม่ผูกสิทธิ์ (dashboard, ลูกค้า ฯลฯ)
+            if (!empty($item['technician_only'])) {
+                if ($isTechnician) $filtered[$key] = $item;
+                continue;
+            }
+            if ($isTechnician && !isset($item['sub_menu']) && empty($item['permission'])) {
+                continue;
+            }
+
             if (isset($item['sub_menu'])) {
                 $subMenu = [];
                 foreach ($item['sub_menu'] as $subKey => $subItem) {
                     $required = $subItem['permission'] ?? null;
+                    if ($isTechnician && $required === null) continue;
                     if ($required === null || $hasFullAccess || in_array($required, $permissionKeys, true)) {
                         $subMenu[$subKey] = $subItem;
                     }
@@ -196,6 +224,22 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
-        return $filtered;
+        // ตัดเส้นคั่นที่ซ้อนกัน/อยู่ท้ายสุด (เกิดจากการซ่อนเมนู)
+        $clean = [];
+        $prevDivider = true;
+        foreach ($filtered as $key => $item) {
+            if ($item === 'devider') {
+                if ($prevDivider) continue;
+                $prevDivider = true;
+            } else {
+                $prevDivider = false;
+            }
+            $clean[$key] = $item;
+        }
+        while (!empty($clean) && end($clean) === 'devider') {
+            array_pop($clean);
+        }
+
+        return $clean;
     }
 }
