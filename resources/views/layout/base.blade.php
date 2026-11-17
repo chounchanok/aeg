@@ -39,6 +39,16 @@ License: You must have a valid license purchased only from themeforest(the above
             background-color: color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-hover)) !important;
             color: white !important;
         }
+
+        /* 🌟 ป๊อปอัปแจ้งเตือน (SweetAlert) ต้องอยู่หน้ากล่อง Modal ของธีมเสมอ
+           — ค่าเดิมของ SweetAlert คือ z-index 1060 ซึ่งต่ำกว่า modal ของธีม เลยไปโผล่ข้างหลังกล่อง */
+        .swal2-container {
+            z-index: 100000 !important;
+        }
+        /* dropdown ของ select2 ที่อยู่ใน modal ให้ขึ้นหน้า modal ด้วย */
+        .select2-container--open .select2-dropdown {
+            z-index: 100001 !important;
+        }
     </style>
 </head>
 <!-- END: Head -->

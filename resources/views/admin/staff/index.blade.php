@@ -55,10 +55,9 @@
                 <thead>
                     <tr>
                         <th class="whitespace-nowrap">ชื่อ-นามสกุล</th>
-                        <th class="whitespace-nowrap">Username (ใช้ Login)</th>
+                        <th class="whitespace-nowrap">เบอร์โทร (ใช้เข้าสู่ระบบ)</th>
                         <th class="text-center whitespace-nowrap">ตำแหน่ง (Role)</th>
                         <th class="whitespace-nowrap">แผนก / สิทธิ์การใช้งาน (RBAC)</th>
-                        <th class="text-center whitespace-nowrap">เบอร์โทรติดต่อ</th>
                         <th class="text-center whitespace-nowrap">สถานะ</th>
                         <th class="text-center whitespace-nowrap">จัดการ</th>
                     </tr>
@@ -67,7 +66,7 @@
                     @foreach ($staffs as $staff)
                         <tr class="intro-x">
                             <td class="font-medium whitespace-nowrap">{{ $staff->name ?? '-' }}</td>
-                            <td>{{ $staff->username }}</td>
+                            <td>{{ $staff->phone ?: '-' }}</td>
                             <td class="text-center">
                                 @if($staff->role == 'technician')
                                     <span class="px-2 py-1 rounded-full bg-warning/20 text-warning font-medium">ช่างซ่อม</span>
@@ -78,7 +77,6 @@
                                 @endif
                             </td>
                             <td class="whitespace-nowrap">{{ $staff->department_names ?? '-' }}</td>
-                            <td class="text-center">{{ $staff->phone ?? '-' }}</td>
                             <td class="text-center">
                                 @if($staff->is_active)
                                     <span class="text-success"><i data-lucide="check-circle" class="w-4 h-4 mr-1 inline"></i> ใช้งานปกติ</span>
@@ -144,24 +142,20 @@
                 </div>
                 <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                     <div class="col-span-12">
-                        <label class="form-label">ชื่อ-นามสกุล</label>
+                        <label class="form-label">ชื่อ-นามสกุล <span style="color:#dc2626">*</span></label>
                         <input id="staff-name" name="staff_name" type="text" class="form-control" placeholder="เช่น นายสมชาย ช่างแอร์" autocomplete="off">
                     </div>
                     <div class="col-span-12">
-                        <label class="form-label">เบอร์โทรศัพท์</label>
-                        <input id="staff-phone" name="staff_phone" type="text" class="form-control" placeholder="089xxxxxxx" autocomplete="off">
+                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ) <span style="color:#dc2626">*</span></label>
+                        <input id="staff-phone" name="staff_phone" type="tel" class="form-control" placeholder="089xxxxxxx" autocomplete="off">
                     </div>
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">Username (ใช้เข้าสู่ระบบ)</label>
-                        <input id="staff-username" name="staff_username" type="text" class="form-control" placeholder="tech_somchai" autocomplete="off">
-                    </div>
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">รหัสผ่านชั่วคราว</label>
+                    <div class="col-span-12">
+                        <label class="form-label">รหัสผ่านชั่วคราว <span style="color:#dc2626">*</span></label>
                         {{-- autocomplete="new-password" = บอก Chrome ว่านี่คือช่องตั้งรหัสใหม่ ไม่ใช่ช่อง login → ไม่ดึงรหัส/username ที่จำไว้มาเติม --}}
                         <input id="staff-password" name="staff_password" type="password" class="form-control" placeholder="******" autocomplete="new-password">
                     </div>
                     <div class="col-span-12">
-                        <label class="form-label">ตำแหน่ง</label>
+                        <label class="form-label">ตำแหน่ง <span style="color:#dc2626">*</span></label>
                         <select id="staff-role" class="form-select">
                             <option value="technician">ช่างซ่อม (Technician)</option>
                             <option value="admin">แอดมินส่วนกลาง (Admin)</option>
@@ -196,15 +190,15 @@
                 <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                     <input type="hidden" id="edit-staff-id">
                     <div class="col-span-12">
-                        <label class="form-label">ชื่อ-นามสกุล</label>
+                        <label class="form-label">ชื่อ-นามสกุล <span style="color:#dc2626">*</span></label>
                         <input id="edit-staff-name" name="edit_staff_name" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12">
-                        <label class="form-label">เบอร์โทรศัพท์</label>
+                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ) <span style="color:#dc2626">*</span></label>
                         <input id="edit-staff-phone" name="edit_staff_phone" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">ตำแหน่ง</label>
+                        <label class="form-label">ตำแหน่ง <span style="color:#dc2626">*</span></label>
                         <select id="edit-staff-role" class="form-select">
                             <option value="technician">ช่างซ่อม (Technician)</option>
                             <option value="admin">แอดมินส่วนกลาง (Admin)</option>
@@ -268,7 +262,6 @@
             axios.post(`{{ route('admin.staff.store') }}`, {
                 name: $('#staff-name').val(),
                 phone: $('#staff-phone').val(),
-                username: $('#staff-username').val(),
                 password: $('#staff-password').val(),
                 role: $('#staff-role').val(),
                 role_ids: roleIds,

@@ -69,22 +69,30 @@ class StaffAdminController extends Controller
 
     public function store(Request $request)
     {
+        // 🌟 พนักงานเข้าสู่ระบบด้วยเบอร์โทร (หน้า login ใช้เบอร์ + รหัสผ่าน) — ไม่ต้องกรอก username แล้ว
+        $request->merge(['phone' => $this->normalizePhone($request->phone)]);
         $request->validate([
             'name' => 'required|string',
-            'username' => 'required|string|unique:users',
             'password' => 'required|string|min:6',
-            'phone' => 'required|string',
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/', 'unique:users,phone'],
             'role' => 'required|in:admin,technician',
             'role_ids' => 'nullable|array',
             'role_ids.*' => 'exists:roles,id',
-        ]);
+        ], $this->messages());
+
+        // username ยังต้องมีในตาราง users (ไม่ใช้ login แล้ว) → สร้างจากเบอร์ให้อัตโนมัติ
+        $username = 'staff_' . $request->phone;
+        $i = 2;
+        while (User::where('username', $username)->exists()) {
+            $username = 'staff_' . $request->phone . '_' . $i++;
+        }
 
         DB::beginTransaction();
         try {
             // 1. สร้างบัญชีเข้าสู่ระบบ
             $user = User::create([
-                'username' => $request->username,
-                'email' => $request->username . '@aeg.com', // อีเมลจำลองสำหรับพนักงาน
+                'username' => $username,
+                'email' => $username . '@aeg.com', // อีเมลจำลองสำหรับพนักงาน
                 'password' => Hash::make($request->password),
                 'phone' => $request->phone,
                 'role' => $request->role,
@@ -142,15 +150,17 @@ class StaffAdminController extends Controller
     {
         $user = User::findOrFail($id);
 
+        $request->merge(['phone' => $this->normalizePhone($request->phone)]);
         $request->validate([
             'name' => 'required|string',
-            'phone' => 'required|string',
+            // เบอร์ใช้เข้าสู่ระบบ ต้องไม่ซ้ำกับบัญชีอื่น
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/', 'unique:users,phone,' . $user->id],
             'role' => 'required|in:admin,technician,super_admin',
             'is_active' => 'nullable|boolean',
             'password' => 'nullable|string|min:6',
             'role_ids' => 'nullable|array',
             'role_ids.*' => 'exists:roles,id',
-        ]);
+        ], $this->messages());
 
         DB::beginTransaction();
         try {
@@ -181,5 +191,33 @@ class StaffAdminController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()], 500);
         }
+    }
+
+    /** แปลงเบอร์เป็น 0xxxxxxxxx (เหมือนหน้า login) — รับ 08x-xxx-xxxx, +66, 66 ได้ */
+    private function normalizePhone(?string $phone): string
+    {
+        $phone = preg_replace('/[^0-9+]/', '', (string) $phone);
+        if (str_starts_with($phone, '+66')) {
+            $phone = '0' . substr($phone, 3);
+        } elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
+            $phone = '0' . substr($phone, 2);
+        }
+        if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) {
+            $phone = '0' . $phone;
+        }
+        return $phone;
+    }
+
+    private function messages(): array
+    {
+        return [
+            'name.required' => 'กรุณากรอกชื่อ-นามสกุล',
+            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ)',
+            'phone.regex' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ตัวอย่าง 0891234567)',
+            'phone.unique' => 'เบอร์โทรศัพท์นี้มีบัญชีในระบบแล้ว (ใช้เข้าสู่ระบบซ้ำกันไม่ได้)',
+            'password.required' => 'กรุณากรอกรหัสผ่านชั่วคราว',
+            'password.min' => 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
+            'role.required' => 'กรุณาเลือกตำแหน่ง',
+        ];
     }
 }
