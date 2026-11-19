@@ -55,7 +55,8 @@
                 <thead>
                     <tr>
                         <th class="whitespace-nowrap">ชื่อ-นามสกุล</th>
-                        <th class="whitespace-nowrap">เบอร์โทร (ใช้เข้าสู่ระบบ)</th>
+                        <th class="whitespace-nowrap">อีเมล (เข้าหลังบ้าน)</th>
+                        <th class="whitespace-nowrap">เบอร์โทร (เข้าแอป)</th>
                         <th class="text-center whitespace-nowrap">ตำแหน่ง (Role)</th>
                         <th class="whitespace-nowrap">แผนก / สิทธิ์การใช้งาน (RBAC)</th>
                         <th class="text-center whitespace-nowrap">สถานะ</th>
@@ -66,6 +67,12 @@
                     @foreach ($staffs as $staff)
                         <tr class="intro-x">
                             <td class="font-medium whitespace-nowrap">{{ $staff->name ?? '-' }}</td>
+                            <td class="whitespace-nowrap">
+                                {{ $staff->email ?: '-' }}
+                                @if(empty($staff->email) || (str_starts_with((string) $staff->email, 'staff_') && str_ends_with((string) $staff->email, '@aeg.com')))
+                                    <div class="text-xs" style="color:#b45309;">ยังไม่ได้ตั้งอีเมลจริง — กดแก้ไขเพื่อตั้ง</div>
+                                @endif
+                            </td>
                             <td>{{ $staff->phone ?: '-' }}</td>
                             <td class="text-center">
                                 @if($staff->role == 'technician')
@@ -146,7 +153,11 @@
                         <input id="staff-name" name="staff_name" type="text" class="form-control" placeholder="เช่น นายสมชาย ช่างแอร์" autocomplete="off">
                     </div>
                     <div class="col-span-12">
-                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ) <span style="color:#dc2626">*</span></label>
+                        <label class="form-label">อีเมล (ใช้เข้าสู่ระบบหลังบ้าน) <span style="color:#dc2626">*</span></label>
+                        <input id="staff-email" name="staff_email" type="email" class="form-control" placeholder="name@company.com" autocomplete="off">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าแอปมือถือ) <span style="color:#dc2626">*</span></label>
                         <input id="staff-phone" name="staff_phone" type="tel" class="form-control" placeholder="089xxxxxxx" autocomplete="off">
                     </div>
                     <div class="col-span-12">
@@ -194,7 +205,11 @@
                         <input id="edit-staff-name" name="edit_staff_name" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12">
-                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ) <span style="color:#dc2626">*</span></label>
+                        <label class="form-label">อีเมล (ใช้เข้าสู่ระบบหลังบ้าน) <span style="color:#dc2626">*</span></label>
+                        <input id="edit-staff-email" name="edit_staff_email" type="email" class="form-control" placeholder="name@company.com" autocomplete="off">
+                    </div>
+                    <div class="col-span-12">
+                        <label class="form-label">เบอร์โทรศัพท์ (ใช้เข้าแอปมือถือ) <span style="color:#dc2626">*</span></label>
                         <input id="edit-staff-phone" name="edit_staff_phone" type="text" class="form-control" autocomplete="off">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
@@ -261,6 +276,7 @@
 
             axios.post(`{{ route('admin.staff.store') }}`, {
                 name: $('#staff-name').val(),
+                email: $('#staff-email').val(),
                 phone: $('#staff-phone').val(),
                 password: $('#staff-password').val(),
                 role: $('#staff-role').val(),
@@ -293,6 +309,9 @@
                 $('#edit-staff-id').val(staff.id);
                 $('#edit-staff-name').val(staff.name);
                 $('#edit-staff-phone').val(staff.phone);
+                // อีเมลจำลองแบบเดิม (staff_xxx@aeg.com) ให้เว้นว่าง เพื่อบังคับตั้งอีเมลจริง
+                let em = staff.email || '';
+                $('#edit-staff-email').val(/^staff_.*@aeg\.com$/.test(em) ? '' : em);
                 $('#edit-staff-role').val(staff.role);
                 $('#edit-staff-password').val('');
                 $('#edit-staff-is-active').prop('checked', staff.is_active == 1);
@@ -317,6 +336,7 @@
 
             axios.post(`/admin/staff/${id}/update`, {
                 name: $('#edit-staff-name').val(),
+                email: $('#edit-staff-email').val(),
                 phone: $('#edit-staff-phone').val(),
                 role: $('#edit-staff-role').val(),
                 password: $('#edit-staff-password').val(),

@@ -70,9 +70,11 @@ class StaffAdminController extends Controller
     public function store(Request $request)
     {
         // 🌟 พนักงานเข้าสู่ระบบด้วยเบอร์โทร (หน้า login ใช้เบอร์ + รหัสผ่าน) — ไม่ต้องกรอก username แล้ว
-        $request->merge(['phone' => $this->normalizePhone($request->phone)]);
+        $request->merge(['phone' => $this->normalizePhone($request->phone), 'email' => $this->normalizeEmail($request->email)]);
         $request->validate([
             'name' => 'required|string',
+            // 🌟 อีเมลใช้เข้าสู่ระบบหลังบ้าน (/admin/login) — ห้ามซ้ำกับบัญชีอื่น
+            'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/', 'unique:users,phone'],
             'role' => 'required|in:admin,technician',
@@ -92,7 +94,7 @@ class StaffAdminController extends Controller
             // 1. สร้างบัญชีเข้าสู่ระบบ
             $user = User::create([
                 'username' => $username,
-                'email' => $username . '@aeg.com', // อีเมลจำลองสำหรับพนักงาน
+                'email' => $request->email, // ใช้เข้าสู่ระบบหลังบ้าน
                 'password' => Hash::make($request->password),
                 'phone' => $request->phone,
                 'role' => $request->role,
@@ -150,9 +152,10 @@ class StaffAdminController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $request->merge(['phone' => $this->normalizePhone($request->phone)]);
+        $request->merge(['phone' => $this->normalizePhone($request->phone), 'email' => $this->normalizeEmail($request->email)]);
         $request->validate([
             'name' => 'required|string',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             // เบอร์ใช้เข้าสู่ระบบ ต้องไม่ซ้ำกับบัญชีอื่น
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/', 'unique:users,phone,' . $user->id],
             'role' => 'required|in:admin,technician,super_admin',
@@ -165,6 +168,7 @@ class StaffAdminController extends Controller
         DB::beginTransaction();
         try {
             $updateData = [
+                'email' => $request->email,
                 'phone' => $request->phone,
                 'role' => $request->role,
                 'is_active' => $request->has('is_active') ? (bool) $request->is_active : $user->is_active,
@@ -193,6 +197,11 @@ class StaffAdminController extends Controller
         }
     }
 
+    private function normalizeEmail(?string $email): string
+    {
+        return mb_strtolower(trim((string) $email));
+    }
+
     /** แปลงเบอร์เป็น 0xxxxxxxxx (เหมือนหน้า login) — รับ 08x-xxx-xxxx, +66, 66 ได้ */
     private function normalizePhone(?string $phone): string
     {
@@ -212,7 +221,10 @@ class StaffAdminController extends Controller
     {
         return [
             'name.required' => 'กรุณากรอกชื่อ-นามสกุล',
-            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์ (ใช้เข้าสู่ระบบ)',
+            'email.required' => 'กรุณากรอกอีเมล (ใช้เข้าสู่ระบบหลังบ้าน)',
+            'email.email' => 'รูปแบบอีเมลไม่ถูกต้อง',
+            'email.unique' => 'อีเมลนี้มีบัญชีในระบบแล้ว',
+            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์',
             'phone.regex' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ตัวอย่าง 0891234567)',
             'phone.unique' => 'เบอร์โทรศัพท์นี้มีบัญชีในระบบแล้ว (ใช้เข้าสู่ระบบซ้ำกันไม่ได้)',
             'password.required' => 'กรุณากรอกรหัสผ่านชั่วคราว',

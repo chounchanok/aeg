@@ -45,10 +45,10 @@
 
                     <form method="POST" action="{{ route('admin.login.check') }}" class="intro-x mt-8" id="adminLoginForm">
                         @csrf
-                        <label for="phone" class="form-label">เบอร์มือถือ</label>
-                        <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="username" autofocus
-                               value="{{ old('phone') }}" placeholder="เช่น 0812345678"
-                               class="login__input form-control py-3 px-4 block {{ $errors->has('phone') ? 'border-danger' : '' }}">
+                        <label for="email" class="form-label">อีเมล</label>
+                        <input id="email" name="email" type="email" inputmode="email" autocomplete="username" autofocus
+                               value="{{ old('email') }}" placeholder="name@company.com"
+                               class="login__input form-control py-3 px-4 block {{ $errors->has('email') ? 'border-danger' : '' }}">
 
                         <label for="password" class="form-label mt-4">รหัสผ่าน</label>
                         <div class="al-pass">

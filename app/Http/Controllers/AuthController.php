@@ -121,41 +121,32 @@ class AuthController extends Controller
 
     public function adminLogin(Request $request)
     {
-        $this->normalizePhoneInput($request);
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
 
-        $credentials = $request->validate([
-            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+        $request->validate([
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ], [
-            'phone.required' => 'กรุณากรอกเบอร์มือถือ',
-            'phone.regex' => 'รูปแบบเบอร์มือถือไม่ถูกต้อง',
+            'email.required' => 'กรุณากรอกอีเมล',
+            'email.email' => 'รูปแบบอีเมลไม่ถูกต้อง',
             'password.required' => 'กรุณากรอกรหัสผ่าน',
         ]);
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['phone' => 'เบอร์มือถือหรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('phone');
-        }
+        // 🌟 หลังบ้านเข้าด้วยอีเมล — หาเฉพาะบัญชีพนักงาน/ช่าง (ลูกค้าเข้าหลังบ้านไม่ได้)
+        $user = User::whereRaw('LOWER(email) = ?', [$request->email])
+            ->where('role', '!=', 'customer')
+            ->first();
 
-        $user = Auth::user();
-
-        // บัญชีลูกค้าเข้าหลังบ้านไม่ได้ — ให้ไปใช้หน้าเข้าสู่ระบบของลูกค้า
-        if ($user->role === 'customer') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return redirect()->route('admin.login')
-                ->withErrors(['phone' => 'บัญชีนี้เป็นบัญชีลูกค้า ไม่มีสิทธิ์เข้าระบบหลังบ้าน'])->onlyInput('phone');
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['email' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('email');
         }
 
         // บัญชีพนักงานที่ถูกปิดใช้งาน
         if (isset($user->is_active) && !$user->is_active) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return redirect()->route('admin.login')
-                ->withErrors(['phone' => 'บัญชีนี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ'])->onlyInput('phone');
+            return back()->withErrors(['email' => 'บัญชีนี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ'])->onlyInput('email');
         }
 
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         if ($user->role === 'technician') {
