@@ -31,6 +31,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\CheckAdminRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
+        // 🌟 ยังไม่ล็อกอินแล้วเข้า /admin/* → ไปหน้า login หลังบ้าน (หน้าอื่นไปหน้า login ลูกค้าเหมือนเดิม)
+        $middleware->redirectGuestsTo(fn (\Illuminate\Http\Request $request) => $request->is('admin', 'admin/*')
+            ? route('admin.login')
+            : route('login'));
+        // 🌟 ล็อกอินอยู่แล้วเปิดหน้า login อีก → พนักงานไปหลังบ้าน (ช่างไปงานของฉัน) / ลูกค้าไปหน้าแรก
+        $middleware->redirectUsersTo(function () {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            if ($user && $user->role !== 'customer') {
+                return $user->role === 'technician' ? route('admin.tech.jobs') : '/admin/dashboard';
+            }
+            return '/';
+        });
         $middleware->preventRequestsDuringMaintenance(except: [
             'api/*', // ยอมให้แอปฝั่งช่างและลูกค้าเข้า API ได้ปกติ
         ]);

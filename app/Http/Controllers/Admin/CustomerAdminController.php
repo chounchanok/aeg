@@ -20,7 +20,7 @@ class CustomerAdminController extends Controller
             ->leftJoin('customer_wallets', 'users.id', '=', 'customer_wallets.user_id')
             ->leftJoin('loyalty_tiers', 'customer_wallets.current_tier_id', '=', 'loyalty_tiers.id')
             ->where('users.role', 'customer')
-            ->select('users.id', 'users.username', 'users.email', 'users.phone', 'customer_profiles.first_name', 'customer_profiles.last_name', 'users.created_at',
+            ->select('users.id', 'users.username', 'users.email', 'users.phone', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.company', 'users.created_at',
                 'loyalty_tiers.name as tier_name', 'customer_wallets.current_points', 'customer_wallets.member_id')
             ->orderBy('users.created_at', 'desc')
             ->get();
@@ -38,6 +38,20 @@ class CustomerAdminController extends Controller
     {
         $customer = DB::table('users')->leftJoin('customer_profiles', 'users.id', '=', 'customer_profiles.user_id')->where('users.id', $id)->select('users.*', 'customer_profiles.first_name', 'customer_profiles.last_name', 'customer_profiles.address', 'customer_profiles.profile_image_url', 'customer_profiles.tax_id', 'customer_profiles.branch', 'customer_profiles.is_invoice_customer', 'customer_profiles.invoice_payment_method')->first();
         if (!$customer) abort(404);
+
+        // 🌟 ข้อมูลทั้งหมดที่ลูกค้ากรอกตอนสมัคร/แก้ไขโปรไฟล์ (มือถือ/เว็บ) — ดึงทั้งแถวเพื่อไม่พังถ้าบางคอลัมน์ไม่มี
+        $profile = DB::table('customer_profiles')->where('user_id', $id)->first();
+        $serviceInteresting = [];
+        if ($profile && !empty($profile->service_interesting)) {
+            $decoded = json_decode($profile->service_interesting, true);
+            $serviceInteresting = is_array($decoded) ? array_values(array_filter($decoded, fn ($v) => is_string($v) && $v !== '')) : [];
+        }
+        // ที่อยู่ที่ลูกค้าบันทึกไว้ในแอป/เว็บ (ที่อยู่หลักขึ้นก่อน, ไม่รวมที่ลบแล้ว)
+        $addressQuery = DB::table('customer_addresses')->where('user_id', $id);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('customer_addresses', 'deleted_at')) {
+            $addressQuery->whereNull('deleted_at');
+        }
+        $addresses = $addressQuery->orderByDesc('is_default')->orderByDesc('id')->get();
 
         $customerProducts = DB::table('customer_products')->where('customer_id', $id)->orderBy('created_at', 'desc')->get();
         $masterProducts = DB::table('products')->where('is_active', true)->get();
@@ -92,6 +106,9 @@ class CustomerAdminController extends Controller
 
         return view('admin.customers.show', [
             'customer' => $customer,
+            'profile' => $profile,
+            'serviceInteresting' => $serviceInteresting,
+            'addresses' => $addresses,
             'customerProducts' => $customerProducts,
             'masterProducts' => $masterProducts,
             'masterInsurances' => $masterInsurances, // 🌟 ส่งตัวแปรเพิ่ม

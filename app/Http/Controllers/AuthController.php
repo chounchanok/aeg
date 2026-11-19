@@ -54,29 +54,7 @@ class AuthController extends Controller
         // =========================================
         // 🌟 ส่วนที่ 1: ดักจับและจัดฟอร์แมตเบอร์มือถือ (Format Phone Number)
         // =========================================
-        $phone = $request->input('phone');
-
-        if ($phone) {
-            // ลบอักขระพิเศษ (ช่องว่าง, ขีด, วงเล็บ) ให้เหลือแต่ตัวเลขและเครื่องหมาย +
-            $phone = preg_replace('/[^0-9+]/', '', $phone);
-
-            // ถ้าขึ้นต้นด้วย +66 ให้ตัดออกแล้วแทนด้วย 0
-            if (str_starts_with($phone, '+66')) {
-                $phone = '0' . substr($phone, 3);
-            }
-            // ถ้าขึ้นต้นด้วย 66 และมีความยาว 11 ตัว ให้แทนด้วย 0 (เผื่อ User พิมพ์ 66812345678)
-            elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
-                $phone = '0' . substr($phone, 2);
-            }
-
-            // ถ้าความยาวเหลือ 9 ตัว (แปลว่าลืมพิมพ์ 0 นำหน้า) ให้เติม 0 เข้าไป
-            if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) {
-                $phone = '0' . $phone;
-            }
-
-            // นำค่าที่แปลงจนสมบูรณ์แล้ว กลับไปอัปเดตใน Request
-            $request->merge(['phone' => $phone]);
-        }
+        $this->normalizePhoneInput($request);
 
         // =========================================
         // 🌟 ส่วนที่ 2: Validate ข้อมูล (หลังจากฟอร์แมตแล้ว)
@@ -109,13 +87,93 @@ class AuthController extends Controller
         ])->onlyInput('phone');
     }
 
+    // 🌟 จัดฟอร์แมตเบอร์มือถือ (ใช้ร่วมกันทั้งหน้า login ลูกค้าและหลังบ้าน)
+    private function normalizePhoneInput(Request $request): void
+    {
+        $phone = $request->input('phone');
+        if (!$phone) {
+            return;
+        }
+        // ลบอักขระพิเศษ (ช่องว่าง, ขีด, วงเล็บ) ให้เหลือแต่ตัวเลขและเครื่องหมาย +
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+        // ถ้าขึ้นต้นด้วย +66 ให้ตัดออกแล้วแทนด้วย 0
+        if (str_starts_with($phone, '+66')) {
+            $phone = '0' . substr($phone, 3);
+        }
+        // ถ้าขึ้นต้นด้วย 66 และมีความยาว 11 ตัว ให้แทนด้วย 0
+        elseif (str_starts_with($phone, '66') && strlen($phone) == 11) {
+            $phone = '0' . substr($phone, 2);
+        }
+        // ถ้าความยาวเหลือ 9 ตัว (ลืมพิมพ์ 0 นำหน้า) ให้เติม 0
+        if (strlen($phone) == 9 && in_array(substr($phone, 0, 1), ['6', '8', '9'])) {
+            $phone = '0' . $phone;
+        }
+        $request->merge(['phone' => $phone]);
+    }
+
+    // ==========================================
+    // 🌟 หน้าเข้าสู่ระบบหลังบ้าน (แยกจากหน้า login ลูกค้า) — /admin/login
+    // ==========================================
+    public function adminLoginView()
+    {
+        return view('admin.auth.login');
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $this->normalizePhoneInput($request);
+
+        $credentials = $request->validate([
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'password' => ['required'],
+        ], [
+            'phone.required' => 'กรุณากรอกเบอร์มือถือ',
+            'phone.regex' => 'รูปแบบเบอร์มือถือไม่ถูกต้อง',
+            'password.required' => 'กรุณากรอกรหัสผ่าน',
+        ]);
+
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+            return back()->withErrors(['phone' => 'เบอร์มือถือหรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('phone');
+        }
+
+        $user = Auth::user();
+
+        // บัญชีลูกค้าเข้าหลังบ้านไม่ได้ — ให้ไปใช้หน้าเข้าสู่ระบบของลูกค้า
+        if ($user->role === 'customer') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('admin.login')
+                ->withErrors(['phone' => 'บัญชีนี้เป็นบัญชีลูกค้า ไม่มีสิทธิ์เข้าระบบหลังบ้าน'])->onlyInput('phone');
+        }
+
+        // บัญชีพนักงานที่ถูกปิดใช้งาน
+        if (isset($user->is_active) && !$user->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('admin.login')
+                ->withErrors(['phone' => 'บัญชีนี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ'])->onlyInput('phone');
+        }
+
+        $request->session()->regenerate();
+
+        if ($user->role === 'technician') {
+            return redirect()->intended(route('admin.tech.jobs'));
+        }
+        return redirect()->intended('/admin/dashboard');
+    }
+
     public function logout(Request $request)
     {
+        // 🌟 พนักงาน/ช่าง ออกจากระบบแล้วกลับไปหน้า login หลังบ้าน — ลูกค้ากลับหน้า login หน้าบ้านเหมือนเดิม
+        $isStaff = Auth::check() && Auth::user()->role !== 'customer';
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect($isStaff ? route('admin.login') : '/login');
     }
 
     // ==========================================

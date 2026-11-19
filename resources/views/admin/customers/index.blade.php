@@ -25,6 +25,7 @@
                     <tr>
                         <th class="whitespace-nowrap">รหัสอ้างอิง</th>
                         <th class="whitespace-nowrap">ชื่อ-นามสกุล / Username</th>
+                        <th class="whitespace-nowrap">ชื่อบริษัท</th>
                         <th class="text-center whitespace-nowrap">เบอร์โทรศัพท์</th>
                         <th class="text-center whitespace-nowrap">Tier</th>
                         <th class="text-right whitespace-nowrap">แต้มสมาชิก</th>
@@ -40,6 +41,7 @@
                                 <div class="font-medium whitespace-nowrap">{{ $c->first_name ? $c->first_name . ' ' . $c->last_name : $c->username }}</div>
                                 <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $c->email }}</div>
                             </td>
+                            <td>{{ $c->company ?: '-' }}</td>
                             <td class="text-center">{{ $c->phone ?? '-' }}</td>
                             <td class="text-center">
                                 @php

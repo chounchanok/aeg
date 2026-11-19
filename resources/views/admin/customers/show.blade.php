@@ -29,15 +29,105 @@
                 <div class="w-24 h-24 image-fit mx-auto zoom-in">
                     <img class="rounded-full shadow-md" src="{{ $customer->profile_image_url ?? asset('dist/images/profile-1.jpg') }}">
                 </div>
-                <div class="mt-4 font-medium text-lg">{{ $customer->first_name ?? $customer->username }}</div>
+                @php
+                    $pf = $profile ?? null;
+                    $fullName = trim(($pf->first_name ?? '') . ' ' . ($pf->last_name ?? ''));
+                    $defaultAddr = $addresses->first();
+                    $fmtAddr = function ($a) {
+                        if (!$a) return null;
+                        $parts = array_filter([
+                            $a->address_line ?? null,
+                            !empty($a->subdistrict) ? 'ต.' . $a->subdistrict : null,
+                            !empty($a->district) ? 'อ.' . $a->district : null,
+                            !empty($a->province) ? 'จ.' . $a->province : null,
+                            $a->zipcode ?? null,
+                        ]);
+                        return $parts ? implode(' ', $parts) : null;
+                    };
+                    $genderMap = ['male' => 'ชาย', 'female' => 'หญิง', 'other' => 'อื่น ๆ', 'm' => 'ชาย', 'f' => 'หญิง'];
+                    $gender = !empty($pf->gender) ? ($genderMap[strtolower($pf->gender)] ?? $pf->gender) : null;
+                    $loginVia = array_filter([
+                        !empty($customer->google_id) ? 'Google' : null,
+                        !empty($customer->line_id) ? 'LINE' : null,
+                        !empty($customer->facebook_id) ? 'Facebook' : null,
+                        !empty($customer->whatsapp_id) ? 'WhatsApp' : null,
+                    ]);
+                    $rows = [
+                        ['ชื่อ-นามสกุล', $fullName ?: null],
+                        ['Username', $customer->username ?? null],
+                        ['อีเมล', $customer->email ?? null],
+                        ['เบอร์โทรศัพท์', $customer->phone ?? ($pf->phone ?? null)],
+                        ['ชื่อบริษัท', $pf->company ?? null],
+                        ['ประเภทธุรกิจ', $pf->company_type ?? null],
+                        ['เลขผู้เสียภาษี', $pf->tax_id ?? null],
+                        ['สาขา', $pf->branch ?? null],
+                        ['เพศ', $gender],
+                        ['วันเกิด', !empty($pf->birthday) ? \Carbon\Carbon::parse($pf->birthday)->format('d/m/Y') : null],
+                        ['ที่อยู่', ($pf->address ?? null) ?: $fmtAddr($defaultAddr)],
+                        ['ข้อมูลอื่น ๆ', $pf->other ?? null],
+                        ['ช่องทางเข้าสู่ระบบ', $loginVia ? 'เบอร์มือถือ, ' . implode(', ', $loginVia) : null],
+                        ['วันที่สมัคร', !empty($customer->created_at) ? \Carbon\Carbon::parse($customer->created_at)->format('d/m/Y H:i') : null],
+                    ];
+                @endphp
+                <div class="mt-4 font-medium text-lg">{{ $fullName ?: $customer->username }}</div>
+                @if(!empty($pf->company))
+                    <div class="text-slate-600 mt-1"><i data-lucide="building-2" class="w-4 h-4 inline mr-1 text-slate-500"></i>{{ $pf->company }}</div>
+                @endif
                 <div class="text-slate-500 mt-1">{{ $customer->email }}</div>
-                <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
-                    <div class="mb-2"><i data-lucide="phone" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->phone ?? 'ไม่ระบุ' }}</div>
-                    <div class="mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline mr-2 text-slate-500"></i> {{ $customer->address ?? 'ยังไม่มีข้อมูลที่อยู่' }}</div>
-                    <div class="mb-2"><i data-lucide="receipt" class="w-4 h-4 inline mr-2 text-slate-500"></i> เลขผู้เสียภาษี: {{ $customer->tax_id ?? 'ไม่ระบุ' }}</div>
-                    <div class="mb-2"><i data-lucide="building-2" class="w-4 h-4 inline mr-2 text-slate-500"></i> สาขา: {{ $customer->branch ?? 'ไม่ระบุ' }}</div>
+
+                {{-- 🌟 ข้อมูลที่ลูกค้ากรอกตอนสมัคร/แก้ไขโปรไฟล์ (มือถือ/เว็บ) --}}
+                <div class="mt-5 border-t border-slate-200/60 pt-4 text-left">
+                    <div class="font-medium mb-2">ข้อมูลที่ลูกค้ากรอก</div>
+                    <table class="w-full text-sm">
+                        @foreach($rows as [$label, $value])
+                            <tr>
+                                <td class="text-slate-500 align-top py-1 pr-3 whitespace-nowrap" style="width: 1%;">{{ $label }}</td>
+                                <td class="py-1 align-top" style="word-break: break-word;">{{ ($value !== null && $value !== '') ? $value : '-' }}</td>
+                            </tr>
+                        @endforeach
+                        <tr>
+                            <td class="text-slate-500 align-top py-1 pr-3 whitespace-nowrap" style="width: 1%;">บริการที่สนใจ</td>
+                            <td class="py-1 align-top">
+                                @forelse($serviceInteresting as $svc)
+                                    <span class="inline-block bg-slate-100 text-slate-600 rounded px-2 py-0.5 text-xs mb-1">{{ $svc }}</span>
+                                @empty
+                                    -
+                                @endforelse
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <div class="mt-5 border-t border-slate-200/60 pt-5 text-left">
+            </div>
+
+            {{-- 🌟 ที่อยู่ที่ลูกค้าบันทึกไว้ในแอป/เว็บ --}}
+            <div class="box p-5 mt-5">
+                <div class="flex items-center border-b border-slate-200/60 pb-3 mb-3">
+                    <div class="font-medium text-base mr-auto">ที่อยู่ของลูกค้า</div>
+                    <span class="text-xs text-slate-500">{{ $addresses->count() }} รายการ</span>
+                </div>
+                @forelse($addresses as $a)
+                    <div class="text-sm {{ !$loop->last ? 'border-b border-slate-200/60 pb-3 mb-3' : '' }}">
+                        <div class="font-medium">
+                            {{ $a->title ?? 'ที่อยู่' }}
+                            @if(!empty($a->is_default))
+                                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded ml-1">ที่อยู่หลัก</span>
+                            @endif
+                        </div>
+                        @if(!empty($a->contact_name) || !empty($a->contact_phone))
+                            <div class="text-slate-600 mt-0.5">{{ $a->contact_name ?? '' }}{{ !empty($a->contact_phone) ? ' · ' . $a->contact_phone : '' }}</div>
+                        @endif
+                        <div class="text-slate-500 mt-0.5">{{ $fmtAddr($a) ?? '-' }}</div>
+                        @if(!empty($a->latitude) && !empty($a->longitude))
+                            <a href="https://www.google.com/maps?q={{ $a->latitude }},{{ $a->longitude }}" target="_blank" rel="noopener" class="text-xs text-primary underline">เปิดแผนที่</a>
+                        @endif
+                    </div>
+                @empty
+                    <div class="text-slate-400 text-sm">ลูกค้ายังไม่ได้บันทึกที่อยู่</div>
+                @endforelse
+            </div>
+
+            <div class="box p-5 mt-5">
+                <div class="text-left">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-slate-500 text-xs">แต้มสะสมปัจจุบัน</span>
                         @if($wallet && $wallet->tier_name)

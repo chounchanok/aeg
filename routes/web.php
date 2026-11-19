@@ -149,6 +149,10 @@ Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
 Route::middleware('guest')->group(function() {
     Route::get('login', [AuthController::class, 'loginView'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.check');
+
+    // 🌟 หน้าเข้าสู่ระบบหลังบ้าน (พนักงาน/ช่าง) แยกจากหน้า login ลูกค้า
+    Route::get('admin/login', [AuthController::class, 'adminLoginView'])->name('admin.login');
+    Route::post('admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.check')->middleware('throttle:10,1');
     Route::post('auth/whatsapp/check-login', [AuthController::class, 'checkWhatsappLogin'])->name('whatsapp.check-login');
 
     Route::get('register', [AuthController::class, 'registerView'])->name('register');
